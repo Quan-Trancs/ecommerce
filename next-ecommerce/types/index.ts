@@ -9,6 +9,7 @@ export type Data = {
     name: string
     href: string
   }[]
+
   carousels: {
     image: string
     title: string
