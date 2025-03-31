@@ -1,7 +1,8 @@
 'use client'
 
-import { ChevronUp, Link } from 'lucide-react'
+import { ChevronUp } from 'lucide-react'
 import { Button } from '../ui/button'
+import Link from 'next/link'
 
 export default function Footer() {
   return (
@@ -17,7 +18,7 @@ export default function Footer() {
         </Button>
       </div>
       <div className='p-4'>
-        <div className='flex justify-between gap-3 text-sm'>
+        <div className='flex justify-center gap-3 text-sm'>
           <Link href='/page/conditions-of-use'>Conditions of Use</Link>
           <Link href='/page/privacy-policy'>Privacy Policy</Link>
           <Link href='/page/help'>Help</Link>

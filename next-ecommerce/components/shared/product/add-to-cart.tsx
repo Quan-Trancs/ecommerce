@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import useCartStore from '@/hooks/use-cart-store'

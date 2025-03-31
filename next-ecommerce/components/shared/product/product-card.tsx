@@ -1,16 +1,18 @@
 import { IProduct } from '@/lib/db/models/product.model'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import Link from 'next/link'
 import ImageHover from './image-hover'
 import Image from 'next/image'
 import Rating from './rating'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, generateId, roundToTwoDecimals } from '@/lib/utils'
 import ProductPrice from './product-price'
+import AddToCart from './add-to-cart'
 
 const ProductCard = ({
   product,
   hideBorders = false,
   hideDetails = false,
+  hideAddToCart = false,
 }: {
   product: IProduct
   hideBorders?: boolean
@@ -68,6 +70,27 @@ const ProductCard = ({
     </div>
   )
 
+  const AddButton = () => (
+    <div className='w-full text-center'>
+      <AddToCart
+        minimal
+        item={{
+          clientId: generateId(),
+          product: product._id,
+          size: product.sizes[0],
+          color: product.colors[0],
+          countInStock: product.countInStock,
+          name: product.name,
+          slug: product.slug,
+          category: product.category,
+          quantity: 1,
+          image: product.images[0],
+          price: roundToTwoDecimals(product.price),
+        }}
+      />
+    </div>
+  )
+
   return hideBorders ? (
     <div className='flex flex-col'>
       <ProductImage />
@@ -76,6 +99,7 @@ const ProductCard = ({
           <div className='flex-1 p-3 text-center'>
             <ProductDetails />
           </div>
+          {!hideAddToCart && <AddButton />}
         </>
       )}
     </div>
@@ -89,6 +113,7 @@ const ProductCard = ({
           <CardContent className='flex-1 p-3 text-center'>
             <ProductDetails />
           </CardContent>
+          <CardFooter>{!hideAddToCart && <AddButton />}</CardFooter>
         </>
       )}
     </Card>
