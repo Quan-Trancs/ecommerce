@@ -11,6 +11,8 @@ import {
 } from '@/lib/actions/product.actions'
 import { Separator } from '@radix-ui/react-select'
 import AddToBrowsingHistory from '@/components/shared/product/add-to-browsing-history'
+import AddToCart from '@/components/shared/product/add-to-cart'
+import { roundToTwoDecimals } from '@/lib/utils'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -108,6 +110,26 @@ export default async function ProductDetails(props: {
                 )}
               </CardContent>
             </Card>
+
+            {product.countInStock !== 0 && (
+              <div className='flex justify-center items-center'>
+                <AddToCart
+                  item={{
+                    clientId: product._id,
+                    product: product._id,
+                    countInStock: product.countInStock,
+                    name: product.name,
+                    slug: product.slug,
+                    category: product.category,
+                    price: roundToTwoDecimals(product.price),
+                    image: product.images[0],
+                    color: color || product.colors[0],
+                    quantity: 1,
+                    size: size || product.sizes[0],
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>
