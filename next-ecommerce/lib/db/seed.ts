@@ -1,7 +1,7 @@
 import { loadEnvConfig } from '@next/env'
 import { cwd } from 'process'
 import data from '@/lib/data'
-import { connectToDataBase } from '.'
+import { connectToDatabase } from '.'
 import Product from './models/product.model'
 
 loadEnvConfig(cwd())
@@ -9,7 +9,7 @@ loadEnvConfig(cwd())
 const main = async () => {
   try {
     const { products } = data
-    await connectToDataBase(process.env.MONGODB_URI)
+    await connectToDatabase(process.env.MONGODB_URI)
 
     await Product.deleteMany()
     const createdProducts = await Product.insertMany(products)

@@ -1,11 +1,11 @@
 'use server'
 
-import { connectToDataBase } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db'
 import Product, { IProduct } from '@/lib/db/models/product.model'
 import { PAGE_SIZE } from '../constants'
 
 export async function getAllCategories() {
-  await connectToDataBase()
+  await connectToDatabase()
   const categories = await Product.find({ isPublished: true }).distinct(
     'category'
   )
@@ -19,7 +19,7 @@ export async function getProductsForCard({
   tag?: string
   limit?: number
 }) {
-  await connectToDataBase()
+  await connectToDatabase()
   const products = await Product.find(
     { tags: { $in: [tag] }, isPublished: true },
     {
@@ -45,7 +45,7 @@ export async function getProductsByTag({
   tag: string
   limit?: number
 }) {
-  await connectToDataBase()
+  await connectToDatabase()
   const products = await Product.find({
     tags: { $in: [tag] },
     isPublished: true,
@@ -56,7 +56,7 @@ export async function getProductsByTag({
 }
 
 export async function getProductBySlug(slug: string) {
-  await connectToDataBase()
+  await connectToDatabase()
   const product = await Product.findOne({ slug, isPublished: true })
   if (!product) throw new Error('Product not found')
   return JSON.parse(JSON.stringify(product)) as IProduct
@@ -74,7 +74,7 @@ export async function getRelatedProductsByCategory({
   limit?: number
   page?: number
 }) {
-  await connectToDataBase()
+  await connectToDatabase()
   const skipAmount = (Number(page) - 1) * limit
   const conditions = {
     isPublished: true,

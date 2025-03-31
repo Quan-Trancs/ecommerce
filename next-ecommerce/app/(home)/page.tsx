@@ -1,4 +1,5 @@
-import ProductSlider from '@/components/product/product-slider'
+import ProductSlider from '@/components/shared/product/product-slider'
+import BrowsingHistoryList from '@/components/shared/browsing-history-list'
 import { HomeCard } from '@/components/shared/home/home-card'
 import { HomeCarousel } from '@/components/shared/home/home-carousel'
 import { Card, CardContent } from '@/components/ui/card'
@@ -78,6 +79,10 @@ export default async function Page() {
             />
           </CardContent>
         </Card>
+      </div>
+
+      <div className='p-4 bg-background'>
+        <BrowsingHistoryList />
       </div>
     </>
   )
