@@ -44,7 +44,7 @@ const ImageHover = ({
         alt={alt}
         fill
         sizes='80vw'
-        className={`absolute inset-0 object-contain transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-500 ${
+        className={`absolute inset-0 object-contain transition-opacity duration-500 ${
           isHovered ? 'opacity-100' : 'opacity-0'
         }`}
       />
