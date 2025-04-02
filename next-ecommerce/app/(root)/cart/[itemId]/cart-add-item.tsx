@@ -91,7 +91,7 @@ export default function CartAddItem({ itemId }: { itemId: string }) {
                   href='/cart'
                   className={cn(
                     buttonVariants({ variant: 'outline' }),
-                    'rounded-full w-full'
+                    'rounded-full w-full border-1 border-gray-500'
                   )}
                 >
                   Go to Cart
