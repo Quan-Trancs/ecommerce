@@ -35,7 +35,7 @@ export default function CartPage() {
               Your Shopping Cart is empty
             </CardHeader>
             <CardContent>
-              <Link href='/'>Shop today's deals</Link>
+              <Link href='/'>{"Shop today's deals"}</Link>
             </CardContent>
           </Card>
         ) : (

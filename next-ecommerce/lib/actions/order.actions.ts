@@ -1,6 +1,6 @@
+import { OrderItem } from '@/types'
 import { FREE_SHIPPING_MINIMUM_PRICE } from '../constants'
 import { roundToTwoDecimals } from '../utils'
-import { OrderItem } from '../validator'
 
 export const calculateDeliveryDateAndPrice = async ({
   items,
