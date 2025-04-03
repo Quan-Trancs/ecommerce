@@ -74,3 +74,43 @@ export const CartSchema = z.object({
   deliveryDateIndex: z.number().optional(),
   expectedDeliveryDate: z.date().optional(),
 })
+
+//USER
+
+const UserName = z
+  .string()
+  .min(1, { message: 'Name is required' })
+  .max(50, { message: 'Name must be at most 50 characters' })
+const UserEmail = z
+  .string()
+  .min(1, { message: 'Email is required' })
+  .email('Email is invalid')
+const UserPassword = z
+  .string()
+  .min(6, { message: 'Password must be at least 6 characters' })
+  .max(20, { message: 'Password must be at most 20 characters' })
+const UserRole = z.string().min(1, { message: 'Role is required' })
+
+export const UserInputSchema = z.object({
+  name: UserName,
+  email: UserEmail,
+  image: z.string().optional(),
+  emailVerified: z.boolean().default(false),
+  password: UserPassword,
+  role: UserRole,
+  paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
+  address: z.object({
+    fullName: z.string().min(1, { message: 'Full name is required' }),
+    street: z.string().min(1, { message: 'Street is required' }),
+    city: z.string().min(1, { message: 'City is required' }),
+    province: z.string().min(1, { message: 'Province is required' }),
+    country: z.string().min(1, { message: 'Country is required' }),
+    postalCode: z.string().min(1, { message: 'Postal code is required' }),
+    phoneNumber: z.string().min(1, { message: 'Phone number is required' }),
+  }),
+})
+
+export const UserSignInSchema = z.object({
+  email: UserEmail,
+  password: UserPassword,
+})
