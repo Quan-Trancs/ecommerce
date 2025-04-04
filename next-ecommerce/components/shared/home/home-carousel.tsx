@@ -12,7 +12,7 @@ import {
 import Image from 'next/image'
 import Autoplay from 'embla-carousel-autoplay'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/custom/custom-button'
 import { cn } from '@/lib/utils'
 
 export function HomeCarousel({

@@ -1,5 +1,4 @@
 import { IUserInput } from '@/types'
-import { Mode } from 'fs'
 import { Model, model, models, Schema } from 'mongoose'
 
 export interface IUser extends Document, IUserInput {

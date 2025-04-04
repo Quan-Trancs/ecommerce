@@ -3,7 +3,7 @@ import ProductPrice from './product/product-price'
 import { FREE_SHIPPING_MINIMUM_PRICE } from '@/lib/constants'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { Button, buttonVariants } from '../ui/button'
+import { Button, buttonVariants } from '../ui/custom/custom-button'
 import { Separator } from '../ui/separator'
 import { ScrollArea } from '../ui/scroll-area'
 import {

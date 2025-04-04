@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronUp } from 'lucide-react'
-import { Button } from '../ui/button'
+import { Button } from '../ui/custom/custom-button'
 import Link from 'next/link'
 
 export default function Footer() {

@@ -2,7 +2,7 @@
 
 import BrowsingHistoryList from '@/components/shared/browsing-history-list'
 import ProductPrice from '@/components/shared/product/product-price'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/custom/custom-button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Select,

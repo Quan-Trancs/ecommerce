@@ -1,5 +1,77 @@
-import { IProductInput } from '@/types'
+import { IProductInput, IUserInput } from '@/types'
 import { toSlug } from './utils'
+import bcrypt from 'bcryptjs'
+
+const users: IUserInput[] = [
+  {
+    name: 'John',
+    email: 'admin@example.com',
+    password: bcrypt.hashSync('changeme', 5),
+    role: 'Admin',
+    address: {
+      fullName: 'John Doe',
+      street: '123 Main St',
+      city: 'Anytown',
+      province: 'AZ',
+      country: 'USA',
+      postalCode: '12345',
+      phoneNumber: '123-456-7890',
+    },
+    paymentMethod: 'Stripe',
+    emailVerified: false,
+  },
+  {
+    name: 'Alice',
+    email: 'alice@example.com',
+    password: bcrypt.hashSync('password123', 5),
+    role: 'User',
+    address: {
+      fullName: 'Alice Johnson',
+      street: '456 Elm St',
+      city: 'Springfield',
+      province: 'CA',
+      country: 'USA',
+      postalCode: '67890',
+      phoneNumber: '234-567-8901',
+    },
+    paymentMethod: 'PayPal',
+    emailVerified: false,
+  },
+  {
+    name: 'Bob',
+    email: 'bob@example.com',
+    password: bcrypt.hashSync('letmein', 5),
+    role: 'User',
+    address: {
+      fullName: 'Bob Smith',
+      street: '789 Oak St',
+      city: 'Metropolis',
+      province: 'NY',
+      country: 'USA',
+      postalCode: '13579',
+      phoneNumber: '345-678-9012',
+    },
+    paymentMethod: 'Stripe',
+    emailVerified: false,
+  },
+  {
+    name: 'Eve',
+    email: 'eve@example.com',
+    password: bcrypt.hashSync('hunter2', 5),
+    role: 'User',
+    address: {
+      fullName: 'Eve Adams',
+      street: '101 Maple St',
+      city: 'Smallville',
+      province: 'TX',
+      country: 'USA',
+      postalCode: '24680',
+      phoneNumber: '456-789-0123',
+    },
+    paymentMethod: 'Credit Card',
+    emailVerified: false,
+  },
+]
 
 const products: IProductInput[] = [
   {
@@ -708,6 +780,7 @@ const products: IProductInput[] = [
 ]
 
 const data = {
+  users,
   products,
   headerMenus: [
     {

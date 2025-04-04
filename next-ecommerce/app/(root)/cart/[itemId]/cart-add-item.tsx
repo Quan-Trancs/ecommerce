@@ -2,7 +2,7 @@
 
 import BrowsingHistoryList from '@/components/shared/browsing-history-list'
 import ProductPrice from '@/components/shared/product/product-price'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/custom/custom-button'
 import { Card, CardContent } from '@/components/ui/card'
 import useCartStore from '@/hooks/use-cart-store'
 import { FREE_SHIPPING_MINIMUM_PRICE } from '@/lib/constants'
