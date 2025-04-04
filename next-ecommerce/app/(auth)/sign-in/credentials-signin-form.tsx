@@ -4,7 +4,7 @@ import { UserSignInSchema } from '@/lib/validator'
 import { IUserSignIn } from '@/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { signInWithcredentials } from '@/lib/actions/user.actions'
+import { signInWithCredentials } from '@/lib/actions/user.actions'
 import { redirect, useSearchParams } from 'next/navigation'
 import { isRedirectError } from 'next/dist/client/components/redirect-error'
 import { toast } from 'sonner'
@@ -42,7 +42,7 @@ export default function CredentialsSignInForm() {
 
   const onSubmit = async (data: IUserSignIn) => {
     try {
-      await signInWithcredentials({
+      await signInWithCredentials({
         email: data.email,
         password: data.password,
       })
@@ -99,7 +99,7 @@ export default function CredentialsSignInForm() {
           />
 
           <div>
-            <Button type='submit' className='w-full rounded-2xl'>
+            <Button type='submit' className='w-full rounded-2xl' size={'sm'}>
               Sign In
             </Button>
           </div>
