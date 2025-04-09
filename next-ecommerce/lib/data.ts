@@ -38,6 +38,23 @@ const users: IUserInput[] = [
     emailVerified: false,
   },
   {
+    name: 'Quan',
+    email: 'quantrancs@gmail.com',
+    password: bcrypt.hashSync('password123', 5),
+    role: 'User',
+    address: {
+      fullName: 'Alice Johnson',
+      street: '456 Elm St',
+      city: 'Springfield',
+      province: 'CA',
+      country: 'USA',
+      postalCode: '67890',
+      phoneNumber: '234-567-8901',
+    },
+    paymentMethod: 'PayPal',
+    emailVerified: false,
+  },
+  {
     name: 'Bob',
     email: 'bob@example.com',
     password: bcrypt.hashSync('letmein', 5),

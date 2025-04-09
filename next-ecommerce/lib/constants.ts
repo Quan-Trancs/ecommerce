@@ -1,4 +1,6 @@
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Next.js App'
+export const SERVER_URL =
+  process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 export const APP_SLOGAN = process.env.NEXT_PUBLIC_APP_SLOGAN || 'Slogan'
 export const APP_DESCRIPTION =
   process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Description'
@@ -59,3 +61,7 @@ export const AVAILABLE_DELIVERY_DATES = [
     freeShippingMinimumPrice: 35,
   },
 ]
+
+//sender
+export const SENDER_EMAIL = 'quantrancs@gmail.com'
+export const SENDER_NAME = 'Next E-Commerce'

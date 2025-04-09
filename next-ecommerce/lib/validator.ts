@@ -86,21 +86,23 @@ export const OrderInputSchema = z.object({
       email: z.string().email(),
     }),
   ]),
-  items: z.array(OrderItemSchema).min(1, 'Order must have at least one item'),
-  ShippingAddress: ShippingAddressSchema,
+  items: z
+    .array(OrderItemSchema)
+    .min(1, 'Order must contain at least one item'),
+  shippingAddress: ShippingAddressSchema,
   paymentMethod: z.string().min(1, 'Payment method is required'),
   paymentResult: z
     .object({
       id: z.string(),
       status: z.string(),
       email_address: z.string(),
-      pricePaid: z.number(),
+      pricePaid: z.string(),
     })
     .optional(),
-  itemsPrice: Price('Items Price'),
-  shippingPrice: Price('Shipping Price'),
-  taxPrice: Price('Tax Price'),
-  totalPrice: Price('Total Price'),
+  itemsPrice: Price('Items price'),
+  shippingPrice: Price('Shipping price'),
+  taxPrice: Price('Tax price'),
+  totalPrice: Price('Total price'),
   expectedDeliveryDate: z
     .date()
     .refine(
