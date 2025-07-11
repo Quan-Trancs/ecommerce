@@ -4,6 +4,7 @@ import './globals.css'
 
 import { APP_DESCRIPTION, APP_NAME, APP_SLOGAN } from '@/lib/constants'
 import ClientProviders from '@/components/shared/client-providers'
+import { ErrorBoundary } from '@/components/shared/error-boundary'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -33,7 +34,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ClientProviders>{children}</ClientProviders>
+        <ErrorBoundary>
+          <ClientProviders>{children}</ClientProviders>
+        </ErrorBoundary>
       </body>
     </html>
   )
