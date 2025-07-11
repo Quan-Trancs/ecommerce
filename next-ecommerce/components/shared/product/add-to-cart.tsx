@@ -22,44 +22,73 @@ export default function AddToCart({
   minimal?: boolean
 }) {
   const router = useRouter()
-
-  const { addItem } = useCartStore()
-
+  const { addItem, isUpdating } = useCartStore()
   const [quantity, setQuantity] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleAddToCart = async (qty: number) => {
+    if (isUpdating || isLoading) {
+      toast.error('Cart is being updated, please wait')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await addItem(item, qty)
+      toast('', {
+        description: 'Added to cart',
+        action: (
+          <Button
+            onClick={() => {
+              router.push('/cart')
+            }}
+          >
+            Go to cart
+          </Button>
+        ),
+      })
+    } catch (error: any) {
+      toast.error('', {
+        description: error.message || 'Failed to add item to cart',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleBuyNow = async (qty: number) => {
+    if (isUpdating || isLoading) {
+      toast.error('Cart is being updated, please wait')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await addItem(item, qty)
+      router.push('/checkout')
+    } catch (error: any) {
+      toast.error('', {
+        description: error.message || 'Failed to add item to cart',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return minimal ? (
     <Button
       className='rounded-full w-auto'
-      onClick={() => {
-        try {
-          addItem(item, 1)
-          toast('', {
-            description: 'Added to cart',
-            action: (
-              <Button
-                onClick={() => {
-                  router.push('/cart')
-                }}
-              >
-                Go to cart
-              </Button>
-            ),
-          })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-          toast.error('', {
-            description: error.message,
-          })
-        }
-      }}
+      onClick={() => handleAddToCart(1)}
+      disabled={isLoading || isUpdating}
     >
-      Add to cart
+      {isLoading ? 'Adding...' : 'Add to cart'}
     </Button>
   ) : (
     <div className='space-y-2 w-full'>
       <Select
         value={quantity.toString()}
         onValueChange={(value) => setQuantity(Number(value))}
+        disabled={isLoading || isUpdating}
       >
         <SelectTrigger className=''>
           <SelectValue>Quantity: {quantity}</SelectValue>
@@ -77,35 +106,23 @@ export default function AddToCart({
         className='rounded-full w-full'
         type='button'
         onClick={async () => {
-          try {
-            const itemId = await addItem(item, quantity)
+          const itemId = await handleAddToCart(quantity)
+          if (itemId) {
             router.push(`/cart/${itemId}`)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (error: any) {
-            toast.error('', {
-              description: error.message,
-            })
           }
         }}
+        disabled={isLoading || isUpdating}
       >
-        Add to cart
+        {isLoading ? 'Adding...' : 'Add to cart'}
       </Button>
+      
       <Button
         variant='secondary'
         className='rounded-full w-full'
-        onClick={async () => {
-          try {
-            addItem(item, quantity)
-            router.push('/checkout')
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (error: any) {
-            toast.error('', {
-              description: error.message,
-            })
-          }
-        }}
+        onClick={() => handleBuyNow(quantity)}
+        disabled={isLoading || isUpdating}
       >
-        Buy now
+        {isLoading ? 'Processing...' : 'Buy now'}
       </Button>
     </div>
   )

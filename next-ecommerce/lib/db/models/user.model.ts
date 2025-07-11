@@ -21,6 +21,10 @@ const UserSchema = new Schema<IUser>(
   }
 )
 
+// Add indexes for better query performance (email index is auto-created by unique: true)
+UserSchema.index({ role: 1 })
+UserSchema.index({ emailVerified: 1 })
+
 const User = (models.User as Model<IUser>) || model<IUser>('User', UserSchema)
 
 export default User

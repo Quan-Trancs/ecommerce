@@ -17,15 +17,13 @@ const initialState: Cart = {
 
 interface CartState {
   cart: Cart
+  isUpdating: boolean
   addItem: (item: OrderItem, quantity: number) => Promise<string>
-
   updateItem: (item: OrderItem, quantity: number) => Promise<void>
   removeItem: (item: OrderItem) => void
-
   setShippingAddress: (shippingAddress: ShippingAddress) => Promise<void>
   setPaymentMethod: (paymentMethod: string) => void
   setDeliveryDateIndex: (index: number) => Promise<void>
-
   clearCart: () => void
 }
 
@@ -33,120 +31,186 @@ const useCartStore = create(
   persist<CartState>(
     (set, get) => ({
       cart: initialState,
+      isUpdating: false,
 
       addItem: async (item: OrderItem, quantity: number) => {
-        const { items, shippingAddress } = get().cart
-        const existItem = items.find(
-          (x) =>
-            x.product === item.product &&
-            x.size === item.size &&
-            x.color === item.color
-        )
-
-        if (existItem) {
-          if (existItem.countInStock < existItem.quantity + quantity) {
-            throw new Error('Product is out of stock')
-          }
-        } else {
-          if (item.countInStock < item.quantity) {
-            throw new Error('Not enough product in stock')
-          }
+        // Prevent concurrent updates
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
         }
 
-        const updatedCartItems = existItem
-          ? items.map((x) =>
-              x.product === existItem.product &&
-              x.size === existItem.size &&
-              x.color === existItem.color
-                ? { ...existItem, quantity: existItem.quantity + quantity }
-                : x
-            )
-          : [...items, { ...item, quantity }]
+        set({ isUpdating: true })
+        
+        try {
+          const { items, shippingAddress } = get().cart
+          const existItem = items.find(
+            (x) =>
+              x.product === item.product &&
+              x.size === item.size &&
+              x.color === item.color
+          )
 
-        set({
-          cart: {
-            ...get().cart,
+          if (existItem) {
+            if (existItem.countInStock < existItem.quantity + quantity) {
+              throw new Error('Product is out of stock')
+            }
+          } else {
+            if (item.countInStock < quantity) {
+              throw new Error('Not enough product in stock')
+            }
+          }
+
+          const updatedCartItems = existItem
+            ? items.map((x) =>
+                x.product === existItem.product &&
+                x.size === existItem.size &&
+                x.color === existItem.color
+                  ? { ...existItem, quantity: existItem.quantity + quantity }
+                  : x
+              )
+            : [...items, { ...item, quantity }]
+
+          const calculatedPrices = await calculateDeliveryDateAndPrice({
             items: updatedCartItems,
-            ...(await calculateDeliveryDateAndPrice({
-              items: updatedCartItems,
-              shippingAddress,
-            })),
-          },
-        })
+            shippingAddress,
+          })
 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-        return updatedCartItems.find(
-          (x) =>
-            x.product === item.product &&
-            x.size === item.size &&
-            x.color === item.color
-        )?.clientId!
+          set({
+            cart: {
+              ...get().cart,
+              items: updatedCartItems,
+              ...calculatedPrices,
+            },
+            isUpdating: false,
+          })
+
+          const addedItem = updatedCartItems.find(
+            (x) =>
+              x.product === item.product &&
+              x.size === item.size &&
+              x.color === item.color
+          )
+          
+          return addedItem?.clientId || ''
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
       },
 
       updateItem: async (item: OrderItem, quantity: number) => {
-        const { items, shippingAddress } = get().cart
-        const existItem = items.find(
-          (x) =>
-            x.product === item.product &&
-            x.size === item.size &&
-            x.color === item.color
-        )
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
 
-        if (!existItem) return
-        const updatedCartItems = items.map((x) =>
-          x.product === existItem.product &&
-          x.size === existItem.size &&
-          x.color === existItem.color
-            ? { ...existItem, quantity: quantity }
-            : x
-        )
+        set({ isUpdating: true })
+        
+        try {
+          const { items, shippingAddress } = get().cart
+          const existItem = items.find(
+            (x) =>
+              x.product === item.product &&
+              x.size === item.size &&
+              x.color === item.color
+          )
 
-        set({
-          cart: {
-            ...get().cart,
+          if (!existItem) {
+            set({ isUpdating: false })
+            return
+          }
+
+          if (quantity > item.countInStock) {
+            throw new Error('Not enough product in stock')
+          }
+
+          const updatedCartItems = items.map((x) =>
+            x.product === existItem.product &&
+            x.size === existItem.size &&
+            x.color === existItem.color
+              ? { ...existItem, quantity: quantity }
+              : x
+          )
+
+          const calculatedPrices = await calculateDeliveryDateAndPrice({
             items: updatedCartItems,
-            ...(await calculateDeliveryDateAndPrice({
+            shippingAddress,
+          })
+
+          set({
+            cart: {
+              ...get().cart,
               items: updatedCartItems,
-              shippingAddress,
-            })),
-          },
-        })
+              ...calculatedPrices,
+            },
+            isUpdating: false,
+          })
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
       },
 
       removeItem: async (item: OrderItem) => {
-        const { items, shippingAddress } = get().cart
-        const existItem = items.filter(
-          (x) =>
-            x.product !== item.product ||
-            x.size !== item.size ||
-            x.color !== item.color
-        )
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
 
-        set({
-          cart: {
-            ...get().cart,
-            items: existItem,
-            ...(await calculateDeliveryDateAndPrice({
-              items: existItem,
-              shippingAddress,
-            })),
-          },
-        })
+        set({ isUpdating: true })
+        
+        try {
+          const { items, shippingAddress } = get().cart
+          const updatedItems = items.filter(
+            (x) =>
+              x.product !== item.product ||
+              x.size !== item.size ||
+              x.color !== item.color
+          )
+
+          const calculatedPrices = await calculateDeliveryDateAndPrice({
+            items: updatedItems,
+            shippingAddress,
+          })
+
+          set({
+            cart: {
+              ...get().cart,
+              items: updatedItems,
+              ...calculatedPrices,
+            },
+            isUpdating: false,
+          })
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
       },
 
       setShippingAddress: async (shippingAddress: ShippingAddress) => {
-        const { items } = get().cart
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
 
-        set({
-          cart: {
-            ...get().cart,
+        set({ isUpdating: true })
+        
+        try {
+          const { items } = get().cart
+          const calculatedPrices = await calculateDeliveryDateAndPrice({
+            items,
             shippingAddress,
-            ...(await calculateDeliveryDateAndPrice({
-              items,
+          })
+
+          set({
+            cart: {
+              ...get().cart,
               shippingAddress,
-            })),
-          },
-        })
+              ...calculatedPrices,
+            },
+            isUpdating: false,
+          })
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
       },
 
       setPaymentMethod: (paymentMethod: string) => {
@@ -159,29 +223,48 @@ const useCartStore = create(
       },
 
       setDeliveryDateIndex: async (index: number) => {
-        const { items, shippingAddress } = get().cart
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
 
-        set({
-          cart: {
-            ...get().cart,
-            ...(await calculateDeliveryDateAndPrice({
-              items,
-              shippingAddress,
+        set({ isUpdating: true })
+        
+        try {
+          const { items, shippingAddress } = get().cart
+          const calculatedPrices = await calculateDeliveryDateAndPrice({
+            items,
+            shippingAddress,
+            deliveryDateIndex: index,
+          })
+
+          set({
+            cart: {
+              ...get().cart,
+              ...calculatedPrices,
               deliveryDateIndex: index,
-            })),
-          },
-        })
+            },
+            isUpdating: false,
+          })
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
       },
 
-      clearCart: () =>
+      clearCart: () => {
         set({
           cart: {
             ...get().cart,
             items: [],
+            itemsPrice: 0,
+            taxPrice: undefined,
+            shippingPrice: undefined,
+            totalPrice: 0,
           },
-        }),
+        })
+      },
 
-      init: () => set({ cart: { ...initialState } }),
+      init: () => set({ cart: { ...initialState }, isUpdating: false }),
     }),
     {
       name: 'cartStore',

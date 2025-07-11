@@ -13,16 +13,28 @@ const ImageHover = ({
   hoverSrc: string
 }) => {
   const [isHovered, setIsHovered] = React.useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let hoverTimeout: any
+  const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+
   const handleMouseEnter = () => {
-    hoverTimeout = setTimeout(() => setIsHovered(true), 1000)
+    hoverTimeoutRef.current = setTimeout(() => setIsHovered(true), 1000)
   }
 
   const handleMouseLeave = () => {
-    clearTimeout(hoverTimeout)
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
     setIsHovered(false)
   }
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div

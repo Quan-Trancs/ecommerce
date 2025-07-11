@@ -6,25 +6,27 @@ import { UserSignUpSchema } from '../validator'
 import { connectToDatabase } from '../db'
 import User from '../db/models/user.model'
 import bcrypt from 'bcryptjs'
-import { formatError } from '../utils'
+import { formatError, sanitizeInput, sanitizeEmail } from '../utils'
 
 export async function signInWithCredentials(user: IUserSignIn) {
   return await signIn('credentials', { ...user, redirect: false })
 }
 
-export const SignOut = async () => {
-  const redirectTo = await signOut({ redirect: false })
-  redirect(redirectTo.redirect)
+export async function SignOut() {
+  return await signOut()
 }
 
 export async function registerUser(UserSignUp: IUserSignUp) {
   try {
-    const user = await UserSignUpSchema.parseAsync({
-      name: UserSignUp.name,
-      email: UserSignUp.email,
-      password: UserSignUp.password,
-      confirmPassword: UserSignUp.confirmPassword,
-    })
+    // Sanitize user input before validation
+    const sanitizedData = {
+      name: sanitizeInput(UserSignUp.name),
+      email: sanitizeEmail(UserSignUp.email),
+      password: UserSignUp.password, // Don't sanitize password
+      confirmPassword: UserSignUp.confirmPassword, // Don't sanitize password
+    }
+
+    const user = await UserSignUpSchema.parseAsync(sanitizedData)
 
     await connectToDatabase()
     await User.create({

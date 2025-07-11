@@ -42,6 +42,7 @@ export const generateId = () =>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const formatError = (error: any): string => {
+  // Handle different types of errors with specific messages
   if (error.name === 'ZodError') {
     const fieldErrors = Object.keys(error.errors).map((field) => {
       const errorMessage = error.errors[field].message
@@ -57,11 +58,26 @@ export const formatError = (error: any): string => {
   } else if (error.code === 11000) {
     const duplicateField = Object.keys(error.keyValue)[0]
     return `${duplicateField} already exists`
+  } else if (error.message?.includes('not found')) {
+    return 'The requested resource was not found'
+  } else if (error.message?.includes('unauthorized') || error.message?.includes('not authenticated')) {
+    return 'Please sign in to continue'
+  } else if (error.message?.includes('out of stock')) {
+    return 'This item is currently out of stock'
+  } else if (error.message?.includes('insufficient')) {
+    return 'Insufficient stock available'
+  } else if (error.message?.includes('payment')) {
+    return 'Payment processing failed. Please try again'
+  } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+    return 'Network error. Please check your connection and try again'
+  } else if (error.message?.includes('timeout')) {
+    return 'Request timed out. Please try again'
   } else {
-    // return 'Something went wrong. please try again'
+    // Log unexpected errors for debugging
+    console.error('Unexpected error:', error)
     return typeof error.message === 'string'
       ? error.message
-      : JSON.stringify(error.message)
+      : 'An unexpected error occurred. Please try again'
   }
 }
 
@@ -139,4 +155,43 @@ export const formatDateTime = (dateString: Date) => {
 
 export function formatId(id: string) {
   return `..${id.substring(id.length - 6)}`
+}
+
+/**
+ * Sanitize user input to prevent XSS attacks
+ */
+export const sanitizeInput = (input: string): string => {
+  if (typeof input !== 'string') return ''
+  
+  return input
+    .replace(/[<>]/g, '') // Remove < and > characters
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .trim()
+}
+
+/**
+ * Sanitize HTML content
+ */
+export const sanitizeHtml = (html: string): string => {
+  if (typeof html !== 'string') return ''
+  
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Remove iframe tags
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .trim()
+}
+
+/**
+ * Validate and sanitize email address
+ */
+export const sanitizeEmail = (email: string): string => {
+  if (typeof email !== 'string') return ''
+  
+  const sanitized = email.toLowerCase().trim()
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  
+  return emailRegex.test(sanitized) ? sanitized : ''
 }

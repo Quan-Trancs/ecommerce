@@ -91,6 +91,16 @@ const productSchema = new Schema<IProduct>(
   }
 )
 
+// Add indexes for better query performance (slug index is auto-created by unique: true)
+productSchema.index({ category: 1 })
+productSchema.index({ tags: 1 })
+productSchema.index({ isPublished: 1 })
+productSchema.index({ category: 1, isPublished: 1 })
+productSchema.index({ tags: 1, isPublished: 1 })
+productSchema.index({ createdAt: -1 })
+productSchema.index({ price: 1 })
+productSchema.index({ brand: 1 })
+
 const product =
   (models.Product as Model<IProduct>) ||
   model<IProduct>('Product', productSchema)

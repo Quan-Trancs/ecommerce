@@ -60,6 +60,14 @@ const orderSchema = new Schema<IOrder>(
   }
 )
 
+// Add indexes for better query performance
+orderSchema.index({ user: 1 })
+orderSchema.index({ user: 1, createdAt: -1 })
+orderSchema.index({ isPaid: 1 })
+orderSchema.index({ isDelivered: 1 })
+orderSchema.index({ createdAt: -1 })
+orderSchema.index({ 'paymentResult.id': 1 })
+
 const Order =
   (models.Order as Model<IOrder>) || model<IOrder>('Order', orderSchema)
 

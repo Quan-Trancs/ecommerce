@@ -2,17 +2,27 @@ import { IProductInput, IUserInput } from '@/types'
 import { toSlug } from './utils'
 import bcrypt from 'bcryptjs'
 
+// Generate secure passwords for development
+const generateSecurePassword = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+  let password = ''
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
+}
+
 const users: IUserInput[] = [
   {
-    name: 'John',
-    email: 'admin@example.com',
-    password: bcrypt.hashSync('changeme', 5),
+    name: 'Admin User',
+    email: process.env.ADMIN_EMAIL || 'admin@example.com',
+    password: bcrypt.hashSync(process.env.ADMIN_PASSWORD || generateSecurePassword(), 5),
     role: 'Admin',
     address: {
-      fullName: 'John Doe',
-      street: '123 Main St',
-      city: 'Anytown',
-      province: 'AZ',
+      fullName: 'Admin User',
+      street: '123 Admin St',
+      city: 'Admin City',
+      province: 'AD',
       country: 'USA',
       postalCode: '12345',
       phoneNumber: '123-456-7890',
@@ -21,71 +31,20 @@ const users: IUserInput[] = [
     emailVerified: false,
   },
   {
-    name: 'Alice',
-    email: 'alice@example.com',
-    password: bcrypt.hashSync('password123', 5),
+    name: 'Test User',
+    email: 'test@example.com',
+    password: bcrypt.hashSync('TestPassword123!', 5),
     role: 'User',
     address: {
-      fullName: 'Alice Johnson',
-      street: '456 Elm St',
-      city: 'Springfield',
-      province: 'CA',
+      fullName: 'Test User',
+      street: '456 Test St',
+      city: 'Test City',
+      province: 'TS',
       country: 'USA',
       postalCode: '67890',
       phoneNumber: '234-567-8901',
     },
     paymentMethod: 'PayPal',
-    emailVerified: false,
-  },
-  {
-    name: 'Quan',
-    email: 'quantrancs@gmail.com',
-    password: bcrypt.hashSync('password123', 5),
-    role: 'User',
-    address: {
-      fullName: 'Alice Johnson',
-      street: '456 Elm St',
-      city: 'Springfield',
-      province: 'CA',
-      country: 'USA',
-      postalCode: '67890',
-      phoneNumber: '234-567-8901',
-    },
-    paymentMethod: 'PayPal',
-    emailVerified: false,
-  },
-  {
-    name: 'Bob',
-    email: 'bob@example.com',
-    password: bcrypt.hashSync('letmein', 5),
-    role: 'User',
-    address: {
-      fullName: 'Bob Smith',
-      street: '789 Oak St',
-      city: 'Metropolis',
-      province: 'NY',
-      country: 'USA',
-      postalCode: '13579',
-      phoneNumber: '345-678-9012',
-    },
-    paymentMethod: 'Stripe',
-    emailVerified: false,
-  },
-  {
-    name: 'Eve',
-    email: 'eve@example.com',
-    password: bcrypt.hashSync('hunter2', 5),
-    role: 'User',
-    address: {
-      fullName: 'Eve Adams',
-      street: '101 Maple St',
-      city: 'Smallville',
-      province: 'TX',
-      country: 'USA',
-      postalCode: '24680',
-      phoneNumber: '456-789-0123',
-    },
-    paymentMethod: 'Credit Card',
     emailVerified: false,
   },
 ]

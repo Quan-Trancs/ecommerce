@@ -12,10 +12,23 @@ import data from '@/lib/data'
 import { toSlug } from '@/lib/utils'
 
 export default async function Page() {
-  const categories = (await getAllCategories()).slice(0, 4)
-  const newArrivals = await getProductsForCard({ tag: 'new-arrival', limit: 4 })
-  const featureds = await getProductsForCard({ tag: 'featured', limit: 4 })
-  const bestSellers = await getProductsForCard({ tag: 'best-seller', limit: 4 })
+  // Run all database queries in parallel for better performance
+  const [
+    categories,
+    newArrivals,
+    featureds,
+    bestSellers,
+    todaysDeals,
+    bestSellingProducts,
+  ] = await Promise.all([
+    getAllCategories(),
+    getProductsForCard({ tag: 'new-arrival', limit: 4 }),
+    getProductsForCard({ tag: 'featured', limit: 4 }),
+    getProductsForCard({ tag: 'best-seller', limit: 4 }),
+    getProductsByTag({ tag: 'todays-deal' }),
+    getProductsByTag({ tag: 'best-seller' }),
+  ])
+
   const cards = [
     {
       title: 'Categories to explore',
@@ -23,7 +36,7 @@ export default async function Page() {
         text: 'See More',
         href: '/search',
       },
-      items: categories.map((category) => ({
+      items: categories.slice(0, 4).map((category) => ({
         name: category,
         image: `/images/${toSlug(category)}.jpg`,
         href: `/search?category=${category}`,
@@ -54,9 +67,6 @@ export default async function Page() {
       },
     },
   ]
-
-  const todaysDeals = await getProductsByTag({ tag: 'todays-deal' })
-  const bestSellingProducts = await getProductsByTag({ tag: 'best-seller' })
 
   return (
     <>

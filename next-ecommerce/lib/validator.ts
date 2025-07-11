@@ -141,8 +141,14 @@ const UserEmail = z
   .email('Email is invalid')
 const UserPassword = z
   .string()
-  .min(6, { message: 'Password must be at least 6 characters' })
-  .max(20, { message: 'Password must be at most 20 characters' })
+  .min(8, { message: 'Password must be at least 8 characters' })
+  .max(128, { message: 'Password must be at most 128 characters' })
+  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+  })
+  .regex(/^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/, {
+    message: 'Password contains invalid characters'
+  })
 const UserRole = z.string().min(1, { message: 'Role is required' })
 
 export const UserInputSchema = z.object({
