@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { APP_NAME } from '@/lib/constants'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useCSRF } from '@/hooks/use-csrf'
 
 const signInDefaultValues =
   process.env.NODE_ENV === 'development'
@@ -32,6 +33,7 @@ const signInDefaultValues =
 export default function CredentialsSignInForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
+  const { csrfToken, isLoading } = useCSRF()
 
   const form = useForm<IUserSignIn>({
     resolver: zodResolver(UserSignInSchema),
@@ -57,10 +59,21 @@ export default function CredentialsSignInForm() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+        <span className="ml-2">Loading...</span>
+      </div>
+    )
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <input type='hidden' name='callbackUrl' value={callbackUrl} />
+        {/* CSRF Protection */}
+        <input type='hidden' name='csrf' value={csrfToken || ''} />
         <div className='space-y-6'>
           <FormField
             control={control}

@@ -7,7 +7,7 @@ import useCartSidebar from '@/hooks/use-cart-sidebar'
 export default function ClientProviders({
   children,
 }: {
-  children: React.ReactNode
+  children?: any
 }) {
   const isCartSidebarOpen = useCartSidebar()
 

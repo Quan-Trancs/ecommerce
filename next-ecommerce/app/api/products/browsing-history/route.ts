@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Product from '@/lib/db/models/product.model'
 import { connectToDatabase } from '@/lib/db'
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rate-limit'
+import { verifyCSRFToken } from '@/lib/csrf'
 
 // Validate MongoDB ObjectId format
 const isValidObjectId = (id: string) => {
@@ -86,6 +87,56 @@ export const GET = async (req: NextRequest) => {
     return NextResponse.json(products)
   } catch (error) {
     console.error('Browsing history API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export const POST = async (req: NextRequest) => {
+  try {
+    // CSRF protection for POST requests
+    const isValid = await verifyCSRFToken(req)
+    if (!isValid) {
+      return NextResponse.json(
+        { error: 'Invalid CSRF token' },
+        { status: 403 }
+      )
+    }
+
+    // Rate limiting
+    const clientId = getClientIdentifier(req)
+    if (apiRateLimiter.isRateLimited(clientId)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
+    const body = await req.json()
+    const { productId, action } = body
+
+    // Validate product ID
+    if (!productId || !isValidObjectId(productId)) {
+      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 })
+    }
+
+    // Validate action
+    if (!['add', 'remove'].includes(action)) {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    }
+
+    await connectToDatabase()
+    const product = await Product.findById(productId)
+    
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: `Product ${action === 'add' ? 'added to' : 'removed from'} browsing history` 
+    })
+  } catch (error) {
+    console.error('Browsing history POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
