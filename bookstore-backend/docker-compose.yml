@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13-alpine
+    container_name: bookstore-postgres
+    environment:
+      POSTGRES_DB: bookstore
+      POSTGRES_USER: bookstore_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-your_secure_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - bookstore-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookstore_user -d bookstore"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # BookStore Backend Application
+  bookstore-backend:
+    build: .
+    container_name: bookstore-backend
+    environment:
+      # Database Configuration
+      DB_URL: jdbc:postgresql://postgres:5432/bookstore
+      DB_USERNAME: bookstore_user
+      DB_PASSWORD: ${DB_PASSWORD:-your_secure_password}
+      
+      # Server Configuration
+      SERVER_PORT: 8082
+      SERVER_SERVLET_CONTEXT_PATH: /api
+      
+      # Security Configuration
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
+      
+      # Monitoring Configuration
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-WARN}
+      LOGGING_LEVEL_QUANTRAN_API: ${LOGGING_LEVEL_QUANTRAN_API:-INFO}
+      
+      # Rate Limiting
+      APP_RATE_LIMIT_MAX_REQUESTS_PER_MINUTE: ${APP_RATE_LIMIT_MAX_REQUESTS_PER_MINUTE:-100}
+      APP_RATE_LIMIT_ENABLED: ${APP_RATE_LIMIT_ENABLED:-true}
+      
+      # Async Processing
+      APP_ASYNC_TASK_CLEANUP_DAYS_TO_KEEP: ${APP_ASYNC_TASK_CLEANUP_DAYS_TO_KEEP:-7}
+      APP_ASYNC_TASK_TIMEOUT_MINUTES: ${APP_ASYNC_TASK_TIMEOUT_MINUTES:-30}
+    ports:
+      - "8082:8082"
+    volumes:
+      - bookstore_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bookstore-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: bookstore-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - bookstore-backend
+    networks:
+      - bookstore-network
+    restart: unless-stopped
+    profiles:
+      - nginx
+
+volumes:
+  postgres_data:
+    driver: local
+  bookstore_logs:
+    driver: local
+
+networks:
+  bookstore-network:
+    driver: bridge 
