@@ -1,5 +1,9 @@
-import { findUserById } from '@/lib/db/users'
-import type { OrderNoteEmailMode } from '@/lib/db/users'
+import {
+  findUserByEmail,
+  findUserById,
+  quietHoursFromUser,
+  type OrderNoteEmailMode,
+} from '@/lib/db/users'
 import {
   fetchProductsByIds,
   fetchStoreOrderAsAdmin,
@@ -23,6 +27,10 @@ import {
   markOrderNoteEmailsSent,
   type QueuedOrderNoteEmail,
 } from '@/lib/db/order-note-email-queue'
+import {
+  isInQuietHours,
+  type QuietHoursPrefs,
+} from '@/lib/email/quiet-hours'
 
 function storeOrderToEmailOrder(
   order: StoreOrder,
@@ -107,6 +115,14 @@ export async function notifyOrderShipped(orderId: string) {
 type NoteRecipient = {
   email: string
   mode: OrderNoteEmailMode
+  quietHours: QuietHoursPrefs
+}
+
+const NO_QUIET: QuietHoursPrefs = {
+  enabled: false,
+  startHour: 22,
+  endHour: 8,
+  timezone: 'UTC',
 }
 
 async function resolvePublicNoteRecipients(input: {
@@ -142,20 +158,28 @@ async function resolvePublicNoteRecipients(input: {
 
   recipientIds.delete(input.authorUserId)
 
-  const byEmail = new Map<string, OrderNoteEmailMode>()
+  const byEmail = new Map<string, NoteRecipient>()
   for (const userId of recipientIds) {
     const account = await findUserById(userId)
     if (!account?.email) continue
     if (!account.notifyOrderNotes) continue
     const email = account.email.trim().toLowerCase()
-    byEmail.set(email, account.orderNoteEmailMode)
+    byEmail.set(email, {
+      email,
+      mode: account.orderNoteEmailMode,
+      quietHours: quietHoursFromUser(account),
+    })
   }
 
   const supportInbox = process.env.SUPPORT_ORDER_NOTES_EMAIL?.trim()
   if (supportInbox) {
     const email = supportInbox.toLowerCase()
     if (!byEmail.has(email)) {
-      byEmail.set(email, 'DIGEST')
+      byEmail.set(email, {
+        email,
+        mode: 'DIGEST',
+        quietHours: NO_QUIET,
+      })
     }
   }
 
@@ -165,10 +189,7 @@ async function resolvePublicNoteRecipients(input: {
   }
 
   return {
-    recipients: [...byEmail.entries()].map(([email, mode]) => ({
-      email,
-      mode,
-    })),
+    recipients: [...byEmail.values()],
     bodyAuthor: author,
   }
 }
@@ -196,6 +217,12 @@ function shouldFlushRecipient(
   return Date.now() - oldest >= windowMs
 }
 
+async function recipientInQuietHours(email: string): Promise<boolean> {
+  const account = await findUserByEmail(email)
+  if (!account) return false
+  return isInQuietHours(quietHoursFromUser(account))
+}
+
 async function sendDigestForRows(
   to: string,
   rows: QueuedOrderNoteEmail[]
@@ -220,11 +247,14 @@ async function sendDigestForRows(
 
 /**
  * Send queued digests that are due (age/batch) or all pending when forceAll.
+ * Skips recipients currently in quiet hours (even with forceAll=false).
+ * forceAll still respects quiet hours unless ignoreQuietHours is set.
  */
 export async function flushOrderNoteDigests(
-  options?: { forceAll?: boolean }
+  options?: { forceAll?: boolean; ignoreQuietHours?: boolean }
 ): Promise<{ recipients: number; messages: number }> {
   const forceAll = Boolean(options?.forceAll)
+  const ignoreQuietHours = Boolean(options?.ignoreQuietHours)
   const pending = await listPendingOrderNoteEmails()
   const byRecipient = groupPendingByRecipient(pending)
   let recipients = 0
@@ -232,6 +262,7 @@ export async function flushOrderNoteDigests(
 
   for (const [to, rows] of byRecipient) {
     if (!shouldFlushRecipient(rows, forceAll)) continue
+    if (!ignoreQuietHours && (await recipientInQuietHours(to))) continue
     const sent = await sendDigestForRows(to, rows)
     if (!sent) continue
     recipients += 1
@@ -241,13 +272,20 @@ export async function flushOrderNoteDigests(
   return { recipients, messages }
 }
 
-/** Force-flush queued digests for one email (e.g. user switched to immediate). */
+/** Force-flush queued digests for one email (e.g. user left quiet hours / switched mode). */
 export async function flushOrderNoteDigestsForEmail(
-  email: string
+  email: string,
+  options?: { ignoreQuietHours?: boolean }
 ): Promise<{ messages: number }> {
   try {
     const normalized = email.trim().toLowerCase()
     if (!normalized) return { messages: 0 }
+    if (
+      !options?.ignoreQuietHours &&
+      (await recipientInQuietHours(normalized))
+    ) {
+      return { messages: 0 }
+    }
     const pending = await listPendingOrderNoteEmails()
     const rows = pending.filter((row) => row.recipientEmail === normalized)
     if (!rows.length) return { messages: 0 }
@@ -261,9 +299,7 @@ export async function flushOrderNoteDigestsForEmail(
 
 /**
  * Email the buyer and product-scoped sellers when a PUBLIC order note is posted.
- * Skips the author. INTERNAL notes never notify.
- * Per-user mode: DIGEST (queue) or IMMEDIATE (send now).
- * Global ORDER_NOTE_DIGEST_MINUTES=0 forces immediate for everyone.
+ * Quiet hours: defer to the digest queue (even for IMMEDIATE users).
  */
 export async function notifyPublicOrderNote(input: {
   orderId: string
@@ -289,6 +325,11 @@ export async function notifyPublicOrderNote(input: {
     const immediate: string[] = []
     const digest: string[] = []
     for (const recipient of resolved.recipients) {
+      const quiet = isInQuietHours(recipient.quietHours)
+      if (quiet) {
+        digest.push(recipient.email)
+        continue
+      }
       if (forceImmediate || recipient.mode === 'IMMEDIATE') {
         immediate.push(recipient.email)
       } else {

@@ -46,6 +46,22 @@ public class AccountEntity {
     @Builder.Default
     private String orderNoteEmailMode = "DIGEST";
 
+    @Column(name = "quiet_hours_enabled", nullable = false)
+    @Builder.Default
+    private boolean quietHoursEnabled = false;
+
+    @Column(name = "quiet_hours_start", nullable = false)
+    @Builder.Default
+    private Integer quietHoursStart = 22;
+
+    @Column(name = "quiet_hours_end", nullable = false)
+    @Builder.Default
+    private Integer quietHoursEnd = 8;
+
+    @Column(name = "quiet_hours_timezone", nullable = false, length = 64)
+    @Builder.Default
+    private String quietHoursTimezone = "UTC";
+
     @Column(length = 500)
     private String image;
 

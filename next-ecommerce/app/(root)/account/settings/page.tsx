@@ -30,6 +30,10 @@ export default async function AccountSettingsPage() {
         <NotificationPreferencesForm
           notifyOrderNotes={prefs.notifyOrderNotes}
           orderNoteEmailMode={prefs.orderNoteEmailMode}
+          quietHoursEnabled={prefs.quietHoursEnabled}
+          quietHoursStart={prefs.quietHoursStart}
+          quietHoursEnd={prefs.quietHoursEnd}
+          quietHoursTimezone={prefs.quietHoursTimezone}
         />
       </div>
     </div>

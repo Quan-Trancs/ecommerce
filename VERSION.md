@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.26 — 2026-07-25
+
+Quiet hours for order-note emails.
+
+### Backend
+- Flyway `V13__account_quiet_hours.sql` — enabled, start/end hour, timezone
+
+### Frontend
+- Account settings: pause emails overnight (IANA timezone)
+- During quiet hours, IMMEDIATE notes enqueue; digests do not flush
+- Cron/flush skips recipients still in quiet hours
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.26` |
+| Store API | `store-backend/` | `1.3.26` (`store-api`) |
+
+---
+
 ## v1.3.25 — 2026-07-25
 
 Per-user immediate vs digest preference for order-note emails.

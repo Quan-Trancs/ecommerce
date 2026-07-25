@@ -1,5 +1,10 @@
 import { randomUUID } from 'crypto'
 import { normalizeRole, type Role } from '@/lib/auth/roles'
+import {
+  clampHour,
+  normalizeTimezone,
+  type QuietHoursPrefs,
+} from '@/lib/email/quiet-hours'
 import { query, withClient } from './postgres'
 
 export type OrderNoteEmailMode = 'DIGEST' | 'IMMEDIATE'
@@ -15,6 +20,10 @@ export type DbUser = {
   notifyOrderNotes: boolean
   /** DIGEST (batched) or IMMEDIATE (per message). */
   orderNoteEmailMode: OrderNoteEmailMode
+  quietHoursEnabled: boolean
+  quietHoursStart: number
+  quietHoursEnd: number
+  quietHoursTimezone: string
   image: string | null
   active: boolean
   createdAt: Date
@@ -30,6 +39,10 @@ type AccountRow = {
   email_verified: boolean
   notify_order_notes: boolean
   order_note_email_mode: string | null
+  quiet_hours_enabled: boolean
+  quiet_hours_start: number
+  quiet_hours_end: number
+  quiet_hours_timezone: string | null
   image: string | null
   active: boolean
   created_at: Date
@@ -44,6 +57,15 @@ export function normalizeOrderNoteEmailMode(
   return 'DIGEST'
 }
 
+export function quietHoursFromUser(user: DbUser): QuietHoursPrefs {
+  return {
+    enabled: user.quietHoursEnabled,
+    startHour: user.quietHoursStart,
+    endHour: user.quietHoursEnd,
+    timezone: user.quietHoursTimezone,
+  }
+}
+
 function mapRow(row: AccountRow): DbUser {
   return {
     id: row.id,
@@ -54,6 +76,10 @@ function mapRow(row: AccountRow): DbUser {
     emailVerified: Boolean(row.email_verified),
     notifyOrderNotes: row.notify_order_notes !== false,
     orderNoteEmailMode: normalizeOrderNoteEmailMode(row.order_note_email_mode),
+    quietHoursEnabled: Boolean(row.quiet_hours_enabled),
+    quietHoursStart: clampHour(row.quiet_hours_start, 22),
+    quietHoursEnd: clampHour(row.quiet_hours_end, 8),
+    quietHoursTimezone: normalizeTimezone(row.quiet_hours_timezone),
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -65,6 +91,10 @@ const SELECT_COLS = `
   id, email, display_name, password_hash, role, email_verified,
   COALESCE(notify_order_notes, TRUE) AS notify_order_notes,
   COALESCE(order_note_email_mode, 'DIGEST') AS order_note_email_mode,
+  COALESCE(quiet_hours_enabled, FALSE) AS quiet_hours_enabled,
+  COALESCE(quiet_hours_start, 22) AS quiet_hours_start,
+  COALESCE(quiet_hours_end, 8) AS quiet_hours_end,
+  COALESCE(quiet_hours_timezone, 'UTC') AS quiet_hours_timezone,
   image, active, created_at, updated_at
 `
 
@@ -109,8 +139,10 @@ export async function createUser(input: {
       await client.query(
         `INSERT INTO accounts (
            id, email, display_name, password_hash, role, email_verified,
-           notify_order_notes, order_note_email_mode, image, active, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, 'DIGEST', NULL, TRUE, $7, $7)`,
+           notify_order_notes, order_note_email_mode,
+           quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone,
+           image, active, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, 'DIGEST', FALSE, 22, 8, 'UTC', NULL, TRUE, $7, $7)`,
         [
           id,
           input.email.trim(),
@@ -152,6 +184,10 @@ export async function updateUser(
     emailVerified?: boolean
     notifyOrderNotes?: boolean
     orderNoteEmailMode?: OrderNoteEmailMode
+    quietHoursEnabled?: boolean
+    quietHoursStart?: number
+    quietHoursEnd?: number
+    quietHoursTimezone?: string
   }
 ): Promise<DbUser | null> {
   const existing = await findUserById(id)
@@ -169,6 +205,22 @@ export async function updateUser(
     patch.orderNoteEmailMode === undefined
       ? existing.orderNoteEmailMode
       : normalizeOrderNoteEmailMode(patch.orderNoteEmailMode)
+  const quietHoursEnabled =
+    patch.quietHoursEnabled === undefined
+      ? existing.quietHoursEnabled
+      : Boolean(patch.quietHoursEnabled)
+  const quietHoursStart =
+    patch.quietHoursStart === undefined
+      ? existing.quietHoursStart
+      : clampHour(patch.quietHoursStart, existing.quietHoursStart)
+  const quietHoursEnd =
+    patch.quietHoursEnd === undefined
+      ? existing.quietHoursEnd
+      : clampHour(patch.quietHoursEnd, existing.quietHoursEnd)
+  const quietHoursTimezone =
+    patch.quietHoursTimezone === undefined
+      ? existing.quietHoursTimezone
+      : normalizeTimezone(patch.quietHoursTimezone)
   const now = new Date()
 
   await withClient(async (client) => {
@@ -177,9 +229,24 @@ export async function updateUser(
       await client.query(
         `UPDATE accounts
          SET display_name = $2, role = $3, email_verified = $4,
-             notify_order_notes = $5, order_note_email_mode = $6, updated_at = $7
+             notify_order_notes = $5, order_note_email_mode = $6,
+             quiet_hours_enabled = $7, quiet_hours_start = $8,
+             quiet_hours_end = $9, quiet_hours_timezone = $10,
+             updated_at = $11
          WHERE id = $1`,
-        [id, name, role, emailVerified, notifyOrderNotes, orderNoteEmailMode, now]
+        [
+          id,
+          name,
+          role,
+          emailVerified,
+          notifyOrderNotes,
+          orderNoteEmailMode,
+          quietHoursEnabled,
+          quietHoursStart,
+          quietHoursEnd,
+          quietHoursTimezone,
+          now,
+        ]
       )
 
       if (role === 'SELLER' || role === 'ADMIN') {
@@ -201,23 +268,24 @@ export async function updateUser(
   return findUserById(id)
 }
 
-export async function updateNotifyOrderNotes(
-  id: string,
-  notifyOrderNotes: boolean
-): Promise<DbUser | null> {
-  return updateUser(id, { notifyOrderNotes })
-}
-
 export async function updateOrderNoteNotificationPreferences(
   id: string,
   prefs: {
     notifyOrderNotes: boolean
     orderNoteEmailMode: OrderNoteEmailMode
+    quietHoursEnabled: boolean
+    quietHoursStart: number
+    quietHoursEnd: number
+    quietHoursTimezone: string
   }
 ): Promise<DbUser | null> {
   return updateUser(id, {
     notifyOrderNotes: prefs.notifyOrderNotes,
     orderNoteEmailMode: prefs.orderNoteEmailMode,
+    quietHoursEnabled: prefs.quietHoursEnabled,
+    quietHoursStart: prefs.quietHoursStart,
+    quietHoursEnd: prefs.quietHoursEnd,
+    quietHoursTimezone: prefs.quietHoursTimezone,
   })
 }
 
