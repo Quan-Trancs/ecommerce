@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.52](./VERSION.md) — product compare. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.53](./VERSION.md) — seller CSV import. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

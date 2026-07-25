@@ -6,6 +6,7 @@ import { listLowStockProductsForSeller } from '@/lib/notify/low-stock'
 import SellerProductPublishToggle from './seller-product-publish-toggle'
 import SellerProductStockPriceForm from './seller-product-stock-price-form'
 import SellerProductImageForm from './seller-product-image-form'
+import SellerProductCsvImport from './seller-product-csv-import'
 
 export const metadata = { title: 'Seller products' }
 
@@ -43,6 +44,8 @@ export default async function SellerProductsPage() {
           New product
         </Link>
       </div>
+
+      <SellerProductCsvImport />
 
       {lowStock.length > 0 ? (
         <div className='rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm'>

@@ -73,27 +73,35 @@ export async function listSellerProducts(): Promise<CatalogProduct[]> {
 export type SellerProductInput = {
   name: string
   price: number
+  listPrice?: number
   stockQuantity?: number
   description?: string
   imageUrl?: string
   isPublished?: boolean
+  categoryIds?: string[]
+  tags?: string[]
 }
 
 export async function createSellerProduct(input: SellerProductInput) {
   try {
     const subject = await requireSellerSubject()
     const images = input.imageUrl?.trim() ? [input.imageUrl.trim()] : []
+    const tags = Array.from(
+      new Set(['seller-listing', ...(input.tags || []).map((t) => t.trim()).filter(Boolean)])
+    )
     const product = await sellerFetch<CatalogProduct>('/v1/seller/products', subject, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: input.name.trim(),
         price: input.price,
+        listPrice: input.listPrice,
         stockQuantity: input.stockQuantity ?? 0,
         description: input.description || '',
         images,
         isPublished: input.isPublished ?? true,
-        tags: ['seller-listing'],
+        categoryIds: input.categoryIds || [],
+        tags,
       }),
     })
     revalidatePath('/seller/products')
@@ -238,5 +246,175 @@ export async function markSellerOrderShipped(orderId: string) {
     return { success: true as const, order }
   } catch (error) {
     return { success: false as const, message: formatError(error) }
+  }
+}
+
+function flattenCategories(
+  categories: import('@/lib/catalog/types').CatalogCategory[]
+): import('@/lib/catalog/types').CatalogCategory[] {
+  const out: import('@/lib/catalog/types').CatalogCategory[] = []
+  for (const category of categories) {
+    out.push(category)
+    if (category.children?.length) {
+      out.push(...flattenCategories(category.children))
+    }
+  }
+  return out
+}
+
+function resolveCategoryId(
+  raw: string | undefined,
+  categories: import('@/lib/catalog/types').CatalogCategory[]
+): string | undefined {
+  if (!raw?.trim()) return undefined
+  const needle = raw.trim().toLowerCase()
+  const match = categories.find(
+    (c) =>
+      c.id.toLowerCase() === needle ||
+      c.slug.toLowerCase() === needle ||
+      c.name.toLowerCase() === needle
+  )
+  return match?.id
+}
+
+export type SellerCsvImportRowResult = {
+  rowNumber: number
+  name: string
+  ok: boolean
+  message: string
+  productId?: string
+}
+
+export async function importSellerProductsCsv(
+  csvText: string,
+  options?: { dryRun?: boolean }
+): Promise<{
+  success: boolean
+  message: string
+  dryRun: boolean
+  parseErrors: { rowNumber: number; message: string }[]
+  results: SellerCsvImportRowResult[]
+  created: number
+  failed: number
+}> {
+  const dryRun = Boolean(options?.dryRun)
+  try {
+    await requireSellerSubject()
+    const { parseSellerProductCsv } = await import(
+      '@/lib/csv/seller-product-import'
+    )
+    const { fetchCategories } = await import('@/lib/catalog/client')
+
+    const parsed = parseSellerProductCsv(csvText, { maxRows: 100 })
+    if (parsed.rows.length === 0 && parsed.errors.length > 0) {
+      return {
+        success: false,
+        message: parsed.errors[0]?.message || 'Invalid CSV',
+        dryRun,
+        parseErrors: parsed.errors,
+        results: [],
+        created: 0,
+        failed: parsed.errors.length,
+      }
+    }
+
+    const categories = flattenCategories(await fetchCategories())
+    const results: SellerCsvImportRowResult[] = []
+    let created = 0
+    let failed = 0
+
+    for (const row of parsed.rows) {
+      const categoryId = resolveCategoryId(row.category, categories)
+      if (row.category && !categoryId) {
+        failed++
+        results.push({
+          rowNumber: row.rowNumber,
+          name: row.name,
+          ok: false,
+          message: `Unknown category: ${row.category}`,
+        })
+        continue
+      }
+
+      if (dryRun) {
+        results.push({
+          rowNumber: row.rowNumber,
+          name: row.name,
+          ok: true,
+          message: categoryId
+            ? `Ready (category ${categoryId})`
+            : 'Ready',
+        })
+        continue
+      }
+
+      const createdProduct = await createSellerProduct({
+        name: row.name,
+        price: row.price,
+        listPrice: row.listPrice,
+        stockQuantity: row.stockQuantity,
+        description: row.description,
+        imageUrl: row.imageUrl,
+        isPublished: row.isPublished,
+        categoryIds: categoryId ? [categoryId] : undefined,
+        tags: row.tags,
+      })
+
+      if (!createdProduct.success) {
+        failed++
+        results.push({
+          rowNumber: row.rowNumber,
+          name: row.name,
+          ok: false,
+          message: createdProduct.message,
+        })
+        continue
+      }
+
+      created++
+      results.push({
+        rowNumber: row.rowNumber,
+        name: row.name,
+        ok: true,
+        message: 'Created',
+        productId: createdProduct.product.id,
+      })
+    }
+
+    // Surface parse errors that skipped rows
+    for (const err of parsed.errors) {
+      if (err.rowNumber === 0) continue
+      failed++
+      results.push({
+        rowNumber: err.rowNumber,
+        name: '',
+        ok: false,
+        message: err.message,
+      })
+    }
+
+    const headerErrors = parsed.errors.filter((e) => e.rowNumber === 0)
+    const ok = failed === 0 && headerErrors.length === 0
+    return {
+      success: ok || created > 0,
+      message: dryRun
+        ? `Validated ${parsed.rows.length} row(s)`
+        : `Created ${created}, failed ${failed}`,
+      dryRun,
+      parseErrors: headerErrors,
+      results: results.sort((a, b) => a.rowNumber - b.rowNumber),
+      created,
+      failed,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error),
+      dryRun,
+      parseErrors: [],
+      results: [],
+      created: 0,
+      failed: 0,
+    }
   }
 }

@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.53 — 2026-07-25
+
+Seller product CSV import.
+
+### Frontend
+- `/seller/products` Import CSV: template, dry-run, commit (max 100 rows)
+- Columns: name, price, listPrice, stock, category, description, imageUrl, tags, published
+- Category resolved by id / slug / name via catalog API
+- Reuses `POST /v1/seller/products` (extended create payload: listPrice, categoryIds, tags)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.53` |
+| Store API | `store-backend/` | `1.3.53` (`store-api`) |
+
+---
+
 ## v1.3.52 — 2026-07-25
 
 Buyer product compare (side-by-side, max 4).
