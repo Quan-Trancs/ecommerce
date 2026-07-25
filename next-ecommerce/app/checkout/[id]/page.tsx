@@ -4,6 +4,7 @@ import React from 'react'
 import { auth } from '@/auth'
 import { getOrderById } from '@/lib/actions/order.actions'
 import PaymentForm from './payment-form'
+import { hasAdminAccess } from '@/lib/auth/roles'
 //import Stripe from 'stripe'
 
 export const metadata = {
@@ -39,7 +40,7 @@ const CheckoutPaymentPage = async (props: {
       order={order}
       paypalClientId={process.env.PAYPAL_CLIENT_ID || 'sb'}
       clientSecret={''}
-      isAdmin={session?.user?.role === 'Admin' || false}
+      isAdmin={hasAdminAccess(session?.user?.role)}
     />
   )
 }

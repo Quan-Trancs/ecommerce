@@ -18,20 +18,23 @@ export async function SignOut() {
 
 export async function registerUser(UserSignUp: IUserSignUp) {
   try {
-    // Sanitize user input before validation
     const sanitizedData = {
       name: sanitizeInput(UserSignUp.name),
       email: sanitizeEmail(UserSignUp.email),
-      password: UserSignUp.password, // Don't sanitize password
-      confirmPassword: UserSignUp.confirmPassword, // Don't sanitize password
+      password: UserSignUp.password,
+      confirmPassword: UserSignUp.confirmPassword,
+      role: UserSignUp.role === 'SELLER' ? 'SELLER' : 'BUYER',
     }
 
     const user = await UserSignUpSchema.parseAsync(sanitizedData)
 
     await connectToDatabase()
     await User.create({
-      ...user,
+      name: user.name,
+      email: user.email,
       password: await bcrypt.hash(user.password, 5),
+      role: user.role,
+      emailVerified: false,
     })
 
     return { success: true, message: 'User registered successfully' }

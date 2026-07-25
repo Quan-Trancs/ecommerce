@@ -16,7 +16,8 @@ import java.util.Set;
         @Index(name = "idx_product_sku", columnList = "sku"),
         @Index(name = "idx_product_price", columnList = "price"),
         @Index(name = "idx_product_published", columnList = "is_published"),
-        @Index(name = "idx_product_brand", columnList = "brand_id")
+        @Index(name = "idx_product_brand", columnList = "brand_id"),
+        @Index(name = "idx_product_seller", columnList = "seller_account_id")
 })
 @Data
 @NoArgsConstructor
@@ -103,6 +104,10 @@ public class ProductEntity {
     @Column(name = "is_published", nullable = false)
     @Builder.Default
     private Boolean isPublished = true;
+
+    /** Owning seller account id (null = platform/catalog-owned). */
+    @Column(name = "seller_account_id", length = 100)
+    private String sellerAccountId;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

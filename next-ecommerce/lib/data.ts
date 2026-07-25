@@ -1,5 +1,6 @@
 import { IUserInput } from '@/types'
 import bcrypt from 'bcryptjs'
+import { ROLES } from '@/lib/auth/roles'
 
 const generateSecurePassword = () => {
   const chars =
@@ -11,6 +12,16 @@ const generateSecurePassword = () => {
   return password
 }
 
+const defaultAddress = {
+  fullName: 'Demo User',
+  street: '100 Market St',
+  city: 'Demo City',
+  province: 'CA',
+  country: 'USA',
+  postalCode: '94105',
+  phoneNumber: '555-0100',
+}
+
 const users: IUserInput[] = [
   {
     name: 'Admin User',
@@ -19,34 +30,27 @@ const users: IUserInput[] = [
       process.env.ADMIN_PASSWORD || generateSecurePassword(),
       5
     ),
-    role: 'Admin',
-    address: {
-      fullName: 'Admin User',
-      street: '123 Admin St',
-      city: 'Admin City',
-      province: 'AD',
-      country: 'USA',
-      postalCode: '12345',
-      phoneNumber: '123-456-7890',
-    },
+    role: ROLES.ADMIN,
+    address: { ...defaultAddress, fullName: 'Admin User' },
     paymentMethod: 'Stripe',
     emailVerified: false,
   },
   {
-    name: 'Test User',
-    email: 'test@example.com',
-    password: bcrypt.hashSync('TestPassword123!', 5),
-    role: 'User',
-    address: {
-      fullName: 'Test User',
-      street: '456 Test St',
-      city: 'Test City',
-      province: 'TS',
-      country: 'USA',
-      postalCode: '67890',
-      phoneNumber: '234-567-8901',
-    },
+    name: 'Buyer Demo',
+    email: 'buyer@example.com',
+    password: bcrypt.hashSync('BuyerPass123!', 5),
+    role: ROLES.BUYER,
+    address: { ...defaultAddress, fullName: 'Buyer Demo' },
     paymentMethod: 'PayPal',
+    emailVerified: false,
+  },
+  {
+    name: 'Seller Demo',
+    email: 'seller@example.com',
+    password: bcrypt.hashSync('SellerPass123!', 5),
+    role: ROLES.SELLER,
+    address: { ...defaultAddress, fullName: 'Seller Demo' },
+    paymentMethod: 'Stripe',
     emailVerified: false,
   },
 ]

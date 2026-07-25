@@ -12,6 +12,7 @@ import quantran.api.entity.ProductEntity;
 import quantran.api.entity.ProductVariantEntity;
 import quantran.api.exception.BusinessLogicException;
 import quantran.api.exception.ResourceNotFoundException;
+import quantran.api.exception.UnauthorizedException;
 import quantran.api.repository.OrderRepository;
 import quantran.api.repository.ProductRepository;
 
@@ -141,6 +142,38 @@ public class OrderService {
         OrderEntity order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
         return toDto(order);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> listByUser(String userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponseDto getByIdForUser(String id, String userId, boolean admin) {
+        OrderEntity order = orderRepository.findDetailedById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+        assertOwnerOrAdmin(order, userId, admin);
+        return toDto(order);
+    }
+
+    @Transactional
+    public OrderResponseDto markPaidForUser(String id, String userId, boolean admin, PayOrderRequestDto payment) {
+        OrderEntity order = orderRepository.findDetailedById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+        assertOwnerOrAdmin(order, userId, admin);
+        return markPaid(id, payment);
+    }
+
+    private void assertOwnerOrAdmin(OrderEntity order, String userId, boolean admin) {
+        if (admin) {
+            return;
+        }
+        if (order.getUserId() == null || !order.getUserId().equals(userId)) {
+            throw new UnauthorizedException("Not allowed to access this order");
+        }
     }
 
     @Transactional

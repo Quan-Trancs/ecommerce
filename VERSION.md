@@ -1,5 +1,23 @@
 # Version History
 
+## v1.2.0 — 2026-07-24
+
+Role-based marketplace structure: **BUYER / SELLER / ADMIN** across storefront and store API.
+
+### Structure
+- See [ROLES.md](./ROLES.md) for role matrix, **architecture diagrams** (overview, auth sequence, order flow, ER), and auth bridge
+- **FE** — `lib/auth/roles`, guarded `/account`, `/seller/*`, `/admin/*`; signup role choice; demo seeds
+- **BE** — `accounts` + `seller_profiles`, JWT role claim, `/v1/accounts`, `/v1/seller/*`, `products.seller_account_id` (Flyway V4)
+- **Orders** — Bearer JWT required; `GET /v1/orders/me`; FE mints tokens via `lib/auth/store-token.ts`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.2.0` |
+| Store API | `store-backend/` | `1.2.0` (`store-api`) |
+
+---
+
 ## v1.1.1 — 2026-07-24
 
 Dead-code cleanup: remove unused bookstore leftovers, stub pages/links, and unused catalog seed/model paths.

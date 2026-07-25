@@ -12,6 +12,12 @@ import {
 import { ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import {
+  hasAdminAccess,
+  hasSellerAccess,
+  homePathForRole,
+  roleLabel,
+} from '@/lib/auth/roles'
 
 export default async function UserButton() {
   const session = await auth()
@@ -45,6 +51,9 @@ export default async function UserButton() {
                 <p className='text-sm leading-none text-muted-foreground'>
                   {session.user.email}
                 </p>
+                <p className='pt-1 text-[11px] uppercase tracking-wide text-primary'>
+                  {roleLabel(session.user.role)}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuGroup>
@@ -53,6 +62,19 @@ export default async function UserButton() {
               </Link>
               <Link className='w-full' href='/account/orders'>
                 <DropdownMenuItem>Your orders</DropdownMenuItem>
+              </Link>
+              {hasSellerAccess(session.user.role) && (
+                <Link className='w-full' href='/seller'>
+                  <DropdownMenuItem>Seller dashboard</DropdownMenuItem>
+                </Link>
+              )}
+              {hasAdminAccess(session.user.role) && (
+                <Link className='w-full' href='/admin'>
+                  <DropdownMenuItem>Admin console</DropdownMenuItem>
+                </Link>
+              )}
+              <Link className='w-full' href={homePathForRole(session.user.role)}>
+                <DropdownMenuItem>Role home</DropdownMenuItem>
               </Link>
             </DropdownMenuGroup>
             <DropdownMenuItem className='pb-0 mb-1'>

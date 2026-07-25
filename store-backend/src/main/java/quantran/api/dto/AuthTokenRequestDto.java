@@ -9,4 +9,7 @@ import lombok.*;
 public class AuthTokenRequestDto {
     private String userId;
     private String email;
+    private String displayName;
+    /** BUYER | SELLER | ADMIN (legacy USER/Admin accepted). */
+    private String role;
 }

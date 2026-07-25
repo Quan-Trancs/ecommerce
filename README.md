@@ -1,13 +1,13 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.1.0](./VERSION.md) — see release notes and migration details there.
+**Version:** [v1.2.0](./VERSION.md) — role-based buyer / seller / admin marketplace scaffold. See [ROLES.md](./ROLES.md) for diagrams and the role matrix.
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
 | Package | Path | Stack | Role |
 |---------|------|--------|------|
-| **Storefront** | [`next-ecommerce/`](./next-ecommerce) | Next.js | Shop UI with category tree + faceted filters |
-| **Store API** | [`store-backend/`](./store-backend) | Spring Boot, PostgreSQL | Products, categories, brands, attributes, faceted search |
+| **Storefront** | [`next-ecommerce/`](./next-ecommerce) | Next.js | Shop UI + buyer/seller/admin workspaces |
+| **Store API** | [`store-backend/`](./store-backend) | Spring Boot, PostgreSQL | Catalog, orders, accounts & seller APIs |
 
 ## Catalog strategy (big-store style)
 

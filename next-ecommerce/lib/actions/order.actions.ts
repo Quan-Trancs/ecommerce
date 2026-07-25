@@ -12,11 +12,13 @@ import { sendPurchaseReceipt } from '@/emails'
 import { revalidatePath } from 'next/cache'
 import {
   createStoreOrder,
+  fetchMyStoreOrders,
   fetchProductsByIds,
   fetchStoreOrder,
   payStoreOrder,
   type StoreOrder,
 } from '@/lib/catalog/client'
+import type { StoreTokenSubject } from '@/lib/auth/store-token'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -91,12 +93,16 @@ function storeOrderToClient(order: StoreOrder): IOrder {
 export const createOrder = async (clientSideCart: Cart) => {
   try {
     const session = await auth()
-    if (!session) throw new Error('User not authenticated')
+    if (!session?.user?.id) throw new Error('User not authenticated')
 
-    const createOrder = await createOrderFromCart(
-      clientSideCart,
-      session.user.id!
-    )
+    const subject: StoreTokenSubject = {
+      userId: session.user.id,
+      email: session.user.email,
+      displayName: session.user.name,
+      role: session.user.role,
+    }
+
+    const createOrder = await createOrderFromCart(clientSideCart, subject)
 
     return {
       success: true,
@@ -110,8 +116,9 @@ export const createOrder = async (clientSideCart: Cart) => {
 
 export const createOrderFromCart = async (
   clientSideCart: Cart,
-  userId: string
+  subject: StoreTokenSubject
 ) => {
+  const userId = subject.userId
   const priced = await calculateDeliveryDateAndPrice({
     items: clientSideCart.items,
     shippingAddress: clientSideCart.shippingAddress,
@@ -170,7 +177,7 @@ export const createOrderFromCart = async (
           size: item.size,
         })),
       },
-      userId
+      subject
     )
     return storeOrderToClient(storeOrder)
   } catch (error) {
@@ -192,8 +199,26 @@ export const createOrderFromCart = async (
   return await Order.create(order)
 }
 
+function subjectFromSession(session: {
+  user: {
+    id?: string | null
+    email?: string | null
+    name?: string | null
+    role?: string | null
+  }
+}): StoreTokenSubject {
+  return {
+    userId: session.user.id!,
+    email: session.user.email,
+    displayName: session.user.name,
+    role: session.user.role,
+  }
+}
+
 export async function getOrderById(orderId: string): Promise<IOrder> {
-  const storeOrder = await fetchStoreOrder(orderId)
+  const session = await auth()
+  const subject = session?.user?.id ? subjectFromSession(session) : undefined
+  const storeOrder = await fetchStoreOrder(orderId, subject)
   if (storeOrder) {
     return JSON.parse(JSON.stringify(storeOrderToClient(storeOrder)))
   }
@@ -208,6 +233,14 @@ export async function getMyOrders(): Promise<IOrder[]> {
   const session = await auth()
   if (!session?.user?.id) throw new Error('User not authenticated')
 
+  const subject = subjectFromSession(session)
+  const storeOrders = await fetchMyStoreOrders(subject)
+  if (storeOrders.length) {
+    return JSON.parse(
+      JSON.stringify(storeOrders.map((order) => storeOrderToClient(order)))
+    )
+  }
+
   await connectToDatabase()
   const orders = await Order.find({ user: session.user.id })
     .sort({ createdAt: -1 })
@@ -217,10 +250,14 @@ export async function getMyOrders(): Promise<IOrder[]> {
 
 export async function createPayPalOrder(orderId: string) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error('User not authenticated')
+    const subject = subjectFromSession(session)
+
     const order = await getOrderById(orderId)
     const paypalOrder = await paypal.createOrder(order.totalPrice)
 
-    const storeOrder = await fetchStoreOrder(orderId)
+    const storeOrder = await fetchStoreOrder(orderId, subject)
     if (storeOrder) {
       // Payment id stored when capture completes via pay endpoint
       return {
@@ -255,21 +292,29 @@ export async function approvePayPalOrder(
   data: { orderID: string }
 ) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error('User not authenticated')
+    const subject = subjectFromSession(session)
+
     const captureData = await paypal.capturePayment(data.orderID)
     if (!captureData || captureData.status !== 'COMPLETED') {
       throw new Error('Error in paypal payment')
     }
 
-    const storeOrder = await fetchStoreOrder(orderId)
+    const storeOrder = await fetchStoreOrder(orderId, subject)
     if (storeOrder) {
-      await payStoreOrder(orderId, {
-        id: captureData.id,
-        status: captureData.status,
-        emailAddress: captureData.payer?.email_address,
-        pricePaid:
-          captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount
-            ?.value,
-      })
+      await payStoreOrder(
+        orderId,
+        {
+          id: captureData.id,
+          status: captureData.status,
+          emailAddress: captureData.payer?.email_address,
+          pricePaid:
+            captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount
+              ?.value,
+        },
+        subject
+      )
       revalidatePath(`/account/orders/${orderId}`)
       return {
         success: true,

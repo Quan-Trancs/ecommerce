@@ -27,15 +27,17 @@ const signUpDefaultValues =
   process.env.NODE_ENV === 'development'
     ? {
         name: 'John Doe',
-        email: 'admin@example.com',
-        password: 'changeme',
-        confirmPassword: 'changeme',
+        email: 'buyer@example.com',
+        password: 'BuyerPass123!',
+        confirmPassword: 'BuyerPass123!',
+        role: 'BUYER' as const,
       }
     : {
         name: '',
         email: '',
         password: '',
         confirmPassword: '',
+        role: 'BUYER' as const,
       }
 
 export default function SignUpForm() {
@@ -62,7 +64,7 @@ export default function SignUpForm() {
         password: data.password,
       })
 
-      redirect(callbackUrl)
+      redirect(data.role === 'SELLER' ? '/seller' : callbackUrl)
     } catch (error) {
       if (isRedirectError(error)) {
         throw error
@@ -145,6 +147,25 @@ export default function SignUpForm() {
                     {...field}
                     className='border-1 border-gray-500'
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name='role'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>I want to</FormLabel>
+                <FormControl>
+                  <select
+                    {...field}
+                    className='flex h-10 w-full rounded-md border border-gray-500 bg-background px-3 py-2 text-sm'
+                  >
+                    <option value='BUYER'>Shop as a buyer</option>
+                    <option value='SELLER'>Sell products</option>
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

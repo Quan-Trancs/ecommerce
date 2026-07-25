@@ -39,4 +39,6 @@ public interface ProductRepository extends JpaRepository<ProductEntity, String> 
             "LEFT JOIN FETCH p.variants " +
             "WHERE p.id IN :ids")
     List<ProductEntity> fetchVariantsForIds(@Param("ids") List<String> ids);
+
+    List<ProductEntity> findBySellerAccountId(String sellerAccountId);
 }

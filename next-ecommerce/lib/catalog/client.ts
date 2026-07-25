@@ -5,6 +5,10 @@ import type {
   ProductSearchParams,
   ProductSearchResult,
 } from './types'
+import {
+  storeAuthHeaders,
+  type StoreTokenSubject,
+} from '@/lib/auth/store-token'
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -199,23 +203,48 @@ export type StoreOrder = {
 
 export async function createStoreOrder(
   payload: StoreOrderPayload,
-  userId: string
+  subject: StoreTokenSubject
 ): Promise<StoreOrder> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) {
+    throw new Error('Unable to mint store API token for order create')
+  }
   return catalogFetch<StoreOrder>('/v1/orders', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId,
+      ...authHeaders,
     },
     body: JSON.stringify(payload),
   })
 }
 
-export async function fetchStoreOrder(orderId: string): Promise<StoreOrder | null> {
+export async function fetchStoreOrder(
+  orderId: string,
+  subject?: StoreTokenSubject
+): Promise<StoreOrder | null> {
   try {
-    return await catalogFetch<StoreOrder>(`/v1/orders/${encodeURIComponent(orderId)}`)
+    const authHeaders = subject ? await storeAuthHeaders(subject) : {}
+    return await catalogFetch<StoreOrder>(
+      `/v1/orders/${encodeURIComponent(orderId)}`,
+      { headers: authHeaders }
+    )
   } catch {
     return null
+  }
+}
+
+export async function fetchMyStoreOrders(
+  subject: StoreTokenSubject
+): Promise<StoreOrder[]> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) return []
+  try {
+    return await catalogFetch<StoreOrder[]>('/v1/orders/me', {
+      headers: authHeaders,
+    })
+  } catch {
+    return []
   }
 }
 
@@ -226,11 +255,19 @@ export async function payStoreOrder(
     status: string
     emailAddress?: string
     pricePaid?: string
-  }
+  },
+  subject: StoreTokenSubject
 ): Promise<StoreOrder> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) {
+    throw new Error('Unable to mint store API token for order pay')
+  }
   return catalogFetch<StoreOrder>(`/v1/orders/${encodeURIComponent(orderId)}/pay`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders,
+    },
     body: JSON.stringify(payment),
   })
 }

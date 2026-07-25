@@ -114,7 +114,7 @@ const UserPassword = z
   .regex(/^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/, {
     message: 'Password contains invalid characters'
   })
-const UserRole = z.string().min(1, { message: 'Role is required' })
+const UserRole = z.enum(['BUYER', 'SELLER', 'ADMIN'])
 
 export const UserInputSchema = z.object({
   name: UserName,
@@ -122,7 +122,7 @@ export const UserInputSchema = z.object({
   image: z.string().optional(),
   emailVerified: z.boolean().default(false),
   password: UserPassword,
-  role: UserRole,
+  role: UserRole.default('BUYER'),
   paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
   address: z.object({
     fullName: z.string().min(1, { message: 'Full name is required' }),
@@ -143,6 +143,7 @@ export const UserSignInSchema = z.object({
 export const UserSignUpSchema = UserSignInSchema.extend({
   name: UserName,
   confirmPassword: UserPassword,
+  role: z.enum(['BUYER', 'SELLER']),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],

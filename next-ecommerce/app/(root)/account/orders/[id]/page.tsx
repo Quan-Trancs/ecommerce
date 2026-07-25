@@ -6,6 +6,7 @@ import { getOrderById } from '@/lib/actions/order.actions'
 import OrderDetailsForm from '@/components/shared/order/order-details-form'
 import Link from 'next/link'
 import { formatId } from '@/lib/utils'
+import { hasAdminAccess } from '@/lib/auth/roles'
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>
@@ -43,7 +44,7 @@ export default async function OrderDetailsPage(props: {
       <h1 className='h1-bold py-4'>Order {formatId(order._id)}</h1>
       <OrderDetailsForm
         order={order}
-        isAdmin={session?.user?.role === 'Admin' || false}
+        isAdmin={hasAdminAccess(session?.user?.role)}
       />
     </>
   )

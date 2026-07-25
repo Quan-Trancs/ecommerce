@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import quantran.api.account.AccountEntity;
+import quantran.api.account.AccountService;
+import quantran.api.account.Role;
 import quantran.api.dto.AuthTokenRequestDto;
 import quantran.api.dto.AuthTokenResponseDto;
 import quantran.api.exception.BusinessLogicException;
@@ -16,6 +19,7 @@ import java.util.Arrays;
 /**
  * BFF-trusted token minting for the Next.js frontend.
  * Protected by X-Admin-Key, or allowed when running in a local/dev profile.
+ * Upserts the store account so role checks work on subsequent API calls.
  */
 @RestController
 @RequestMapping("/v1/auth")
@@ -23,6 +27,7 @@ import java.util.Arrays;
 public class AuthController {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final AccountService accountService;
     private final Environment environment;
 
     @Value("${app.admin.api-key:dev-admin-key}")
@@ -42,12 +47,16 @@ public class AuthController {
 
         String userId = request.getUserId().trim();
         String email = request.getEmail() == null ? "" : request.getEmail().trim();
-        String token = jwtTokenProvider.generateToken(userId, "USER");
+        Role role = Role.from(request.getRole());
+
+        AccountEntity account = accountService.upsert(userId, email, request.getDisplayName(), role);
+        String token = jwtTokenProvider.generateToken(account.getId(), account.getRole().name());
 
         return ResponseEntity.ok(AuthTokenResponseDto.builder()
                 .token(token)
-                .userId(userId)
-                .email(email)
+                .userId(account.getId())
+                .email(account.getEmail())
+                .role(account.getRole().name())
                 .tokenType("Bearer")
                 .build());
     }

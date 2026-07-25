@@ -6,12 +6,17 @@ import { connectToDatabase } from './lib/db'
 import User from './lib/db/models/user.model'
 import bcrypt from 'bcryptjs'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { normalizeRole, type Role } from './lib/auth/roles'
 
 declare module 'next-auth' {
   interface Session {
     user: {
-      role: string
+      role: Role
     } & DefaultSession['user']
+  }
+
+  interface User {
+    role?: Role
   }
 }
 
@@ -47,11 +52,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.password
           )
           if (isMatch) {
+            const role = normalizeRole(user.role)
+            if (user.role !== role) {
+              await User.findByIdAndUpdate(user.id, { role })
+            }
             return {
               id: user.id,
               name: user.name,
               email: user.email,
-              role: user.role,
+              role,
             }
           }
         }
@@ -67,11 +76,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           await connectToDatabase()
           await User.findByIdAndUpdate(user.id, {
             name: user.name || user.email?.split('@')[0],
-            role: 'user',
           })
         }
         token.name = user.name || user.email?.split('@')[0]
-        token.role = (user as { role: string }).role
+        token.role = normalizeRole((user as { role?: string }).role)
       }
 
       if (session?.user?.name && trigger === 'update') {
@@ -82,8 +90,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
     session: async ({ session, user, trigger, token }) => {
       session.user.id = token.sub as string
-      session.user.role = token.role as string
-      session.user.name = token.name
+      session.user.role = normalizeRole(token.role as string | undefined)
+      session.user.name = token.name as string | undefined
 
       if (trigger === 'update') {
         session.user.name = user.name

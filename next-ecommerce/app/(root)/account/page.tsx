@@ -1,43 +1,66 @@
-import { auth } from '@/auth'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { requireSession } from '@/lib/auth/require-role'
+import { hasAdminAccess, hasSellerAccess, roleLabel } from '@/lib/auth/roles'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const metadata = { title: 'Your Account' }
 
 export default async function AccountPage() {
-  const session = await auth()
-  if (!session?.user) redirect('/sign-in')
+  const session = await requireSession()
+  const role = session.user.role
+
+  const links = [
+    {
+      href: '/account/orders',
+      title: 'Your orders',
+      description: 'Track and view past purchases',
+    },
+    {
+      href: '/search',
+      title: 'Continue shopping',
+      description: 'Browse the catalog',
+    },
+    ...(hasSellerAccess(role)
+      ? [
+          {
+            href: '/seller',
+            title: 'Seller dashboard',
+            description: 'Manage listings and seller orders',
+          },
+        ]
+      : []),
+    ...(hasAdminAccess(role)
+      ? [
+          {
+            href: '/admin',
+            title: 'Admin console',
+            description: 'Platform users, catalog, and ops',
+          },
+        ]
+      : []),
+  ]
 
   return (
     <div className='page-shell px-4 py-8 md:px-6'>
-      <h1 className='mb-6 font-display text-3xl font-extrabold tracking-tight'>
+      <h1 className='mb-2 font-display text-3xl font-extrabold tracking-tight'>
         Your account
       </h1>
       <p className='mb-8 text-muted-foreground'>
-        Signed in as {session.user.name || session.user.email}
+        {session.user.name || session.user.email} · {roleLabel(role)}
       </p>
       <div className='grid gap-4 sm:grid-cols-2'>
-        <Link href='/account/orders'>
-          <Card className='transition hover:border-primary'>
-            <CardHeader>
-              <CardTitle>Your orders</CardTitle>
-            </CardHeader>
-            <CardContent className='text-sm text-muted-foreground'>
-              Track and view past orders
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href='/search'>
-          <Card className='transition hover:border-primary'>
-            <CardHeader>
-              <CardTitle>Continue shopping</CardTitle>
-            </CardHeader>
-            <CardContent className='text-sm text-muted-foreground'>
-              Browse the catalog
-            </CardContent>
-          </Card>
-        </Link>
+        {links.map((link) => (
+          <Link key={link.href} href={link.href}>
+            <Card className='h-full transition hover:border-primary'>
+              <CardHeader>
+                <CardTitle>{link.title}</CardTitle>
+              </CardHeader>
+              <CardContent className='text-sm text-muted-foreground'>
+                {link.description}
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   )

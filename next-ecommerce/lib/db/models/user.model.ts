@@ -14,7 +14,7 @@ const UserSchema = new Schema<IUser>(
     image: { type: String },
     emailVerified: { type: Boolean, default: false },
     password: { type: String },
-    role: { type: String, required: true, default: 'User' },
+    role: { type: String, required: true, default: 'BUYER', enum: ['BUYER', 'SELLER', 'ADMIN'] },
   },
   {
     timestamps: true,
