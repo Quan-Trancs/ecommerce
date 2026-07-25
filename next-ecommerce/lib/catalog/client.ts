@@ -274,6 +274,23 @@ export async function payStoreOrder(
   })
 }
 
+export async function cancelStoreOrder(
+  orderId: string,
+  subject: StoreTokenSubject
+): Promise<StoreOrder> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) {
+    throw new Error('Unable to mint store API token for order cancel')
+  }
+  return catalogFetch<StoreOrder>(
+    `/v1/orders/${encodeURIComponent(orderId)}/cancel`,
+    {
+      method: 'POST',
+      headers: authHeaders,
+    }
+  )
+}
+
 export type StoreCartItem = {
   clientId: string
   productId: string

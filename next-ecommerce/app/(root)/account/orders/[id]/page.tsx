@@ -6,7 +6,7 @@ import { getOrderById } from '@/lib/actions/order.actions'
 import OrderDetailsForm from '@/components/shared/order/order-details-form'
 import Link from 'next/link'
 import { formatId } from '@/lib/utils'
-import { hasAdminAccess } from '@/lib/auth/roles'
+import { hasAdminAccess, hasSupportAccess } from '@/lib/auth/roles'
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>
@@ -45,6 +45,7 @@ export default async function OrderDetailsPage(props: {
       <OrderDetailsForm
         order={order}
         isAdmin={hasAdminAccess(session?.user?.role)}
+        canCancelElevated={hasSupportAccess(session?.user?.role)}
       />
     </>
   )

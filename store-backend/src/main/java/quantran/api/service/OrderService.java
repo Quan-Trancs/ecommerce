@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -176,6 +177,75 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
         assertOwnerOrAdmin(order, userId, admin);
         return markPaid(id, payment);
+    }
+
+    /**
+     * Cancel an order and restock reserved inventory.
+     * Buyer: unpaid PENDING only.
+     * Support/Admin (elevate): unpaid or paid, but not SHIPPED — cancel-only, no payment refund.
+     */
+    @Transactional
+    public OrderResponseDto cancelForUser(String id, String userId, boolean elevate) {
+        OrderEntity order = orderRepository.findDetailedById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+        assertOwnerOrAdmin(order, userId, elevate);
+
+        if (order.getStatus() == OrderEntity.Status.CANCELLED) {
+            return toDto(order);
+        }
+        if (order.getStatus() == OrderEntity.Status.SHIPPED) {
+            throw new BusinessLogicException("Cannot cancel a shipped order");
+        }
+        boolean anyLineShipped = order.getItems() != null && order.getItems().stream()
+                .anyMatch(item -> Boolean.TRUE.equals(item.getIsShipped()));
+        if (anyLineShipped) {
+            throw new BusinessLogicException("Cannot cancel an order after any line has shipped");
+        }
+
+        if (!elevate) {
+            if (Boolean.TRUE.equals(order.getIsPaid()) || order.getStatus() != OrderEntity.Status.PENDING) {
+                throw new BusinessLogicException("Only unpaid pending orders can be cancelled");
+            }
+        }
+
+        restockOrderItems(order);
+        order.setStatus(OrderEntity.Status.CANCELLED);
+        return toDto(orderRepository.save(order));
+    }
+
+    private void restockOrderItems(OrderEntity order) {
+        if (order.getItems() == null || order.getItems().isEmpty()) {
+            return;
+        }
+        List<String> productIds = order.getItems().stream()
+                .map(OrderItemEntity::getProductId)
+                .filter(id -> id != null && !id.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        if (productIds.isEmpty()) {
+            return;
+        }
+
+        Map<String, ProductEntity> products = productRepository.fetchVariantsForIds(productIds).stream()
+                .collect(Collectors.toMap(ProductEntity::getId, p -> p, (a, b) -> a));
+
+        for (OrderItemEntity item : order.getItems()) {
+            if (item.getProductId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
+                continue;
+            }
+            ProductEntity product = products.get(item.getProductId());
+            if (product == null) {
+                continue;
+            }
+            ProductVariantEntity variant = findMatchingVariant(product, item.getColor(), item.getSize());
+            if (variant != null) {
+                int current = variant.getStockQuantity() == null ? 0 : variant.getStockQuantity();
+                variant.setStockQuantity(current + item.getQuantity());
+            } else {
+                int current = product.getStockQuantity() == null ? 0 : product.getStockQuantity();
+                product.setStockQuantity(current + item.getQuantity());
+            }
+        }
     }
 
     private void assertOwnerOrAdmin(OrderEntity order, String userId, boolean admin) {

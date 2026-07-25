@@ -8,6 +8,7 @@ import type { IOrder } from '@/lib/types/order'
 import { paypal } from '../paypal'
 import { revalidatePath } from 'next/cache'
 import {
+  cancelStoreOrder,
   createStoreOrder,
   fetchMyStoreOrders,
   fetchProductsByIds,
@@ -50,6 +51,7 @@ function storeOrderToClient(order: StoreOrder): IOrder {
   return {
     _id: order.id,
     user: order.userId,
+    status: order.status,
     items: (order.items || []).map((item, index) => ({
       product: item.productId,
       clientId: `${item.productId}-${index}`,
@@ -85,6 +87,7 @@ function storeOrderToClient(order: StoreOrder): IOrder {
       String(order.status || '').toUpperCase() === 'SHIPPED' ||
       ((order.items || []).length > 0 &&
         (order.items || []).every((item) => Boolean(item.isShipped))),
+    hasShippedLines: (order.items || []).some((item) => Boolean(item.isShipped)),
     createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
     updatedAt: new Date(),
   }
@@ -273,6 +276,26 @@ export async function approvePayPalOrder(
     }
   } catch (err) {
     return { success: false, message: formatError(err) }
+  }
+}
+
+export async function cancelOrder(orderId: string) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error('User not authenticated')
+    const subject = subjectFromSession(session)
+
+    await cancelStoreOrder(orderId, subject)
+    revalidatePath(`/account/orders/${orderId}`)
+    revalidatePath('/account/orders')
+    revalidatePath('/seller/orders')
+    revalidatePath('/support')
+    return {
+      success: true as const,
+      message: 'Order cancelled and stock restored',
+    }
+  } catch (err) {
+    return { success: false as const, message: formatError(err) }
   }
 }
 

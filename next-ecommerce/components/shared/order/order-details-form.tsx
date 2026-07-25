@@ -17,17 +17,16 @@ import { IOrder } from '@/lib/types/order'
 import { cn, formatDateTime } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import ProductPrice from '../product/product-price'
-
-//TODO: Add deliver button
-//import ActionButton from '../action-button'
-//import { deliverOrder, updateOrderToPaid } from '@/lib/actions/order.actions'
+import CancelOrderButton from './cancel-order-button'
 
 export default function OrderDetailsForm({
   order,
-  //isAdmin,
+  canCancelElevated = false,
 }: {
   order: IOrder
   isAdmin: boolean
+  /** Support/admin may cancel paid (non-shipped) orders without refund. */
+  canCancelElevated?: boolean
 }) {
   const {
     shippingAddress,
@@ -42,7 +41,20 @@ export default function OrderDetailsForm({
     isDelivered,
     deliveredAt,
     expectedDeliveryDate,
+    status,
   } = order
+
+  const statusUpper = (status || '').toUpperCase()
+  const isCancelled = statusUpper === 'CANCELLED'
+  const isShipped = statusUpper === 'SHIPPED' || isDelivered
+  const hasShippedLines = Boolean(order.hasShippedLines) || isShipped
+  const buyerCanCancel =
+    !isCancelled &&
+    !hasShippedLines &&
+    !isPaid &&
+    statusUpper === 'PENDING'
+  const staffCanCancel =
+    canCancelElevated && !isCancelled && !hasShippedLines
 
   return (
     <div className='grid md:grid-cols-3 md:gap-5'>
@@ -59,7 +71,9 @@ export default function OrderDetailsForm({
               {shippingAddress.country}{' '}
             </p>
 
-            {isDelivered ? (
+            {isCancelled ? (
+              <Badge variant='destructive'>Cancelled</Badge>
+            ) : isDelivered ? (
               <Badge>
                 Delivered at {formatDateTime(deliveredAt!).dateTime}
               </Badge>
@@ -84,6 +98,11 @@ export default function OrderDetailsForm({
             ) : (
               <Badge variant='destructive'>Not paid</Badge>
             )}
+            {status ? (
+              <p className='pt-2 text-sm text-muted-foreground'>
+                Status: {status}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
         <Card>
@@ -158,28 +177,33 @@ export default function OrderDetailsForm({
               </div>
             </div>
 
-            {!isPaid && ['Stripe', 'PayPal'].includes(paymentMethod) && (
-              <Link
-                className={cn(buttonVariants(), 'w-full')}
-                href={`/checkout/${order._id}`}
-              >
-                Pay Order
-              </Link>
-            )}
-            {/*
-                {isAdmin && !isPaid && paymentMethod === 'Cash On Delivery' && (
-                <ActionButton
-                    caption='Mark as paid'
-                    action={() => updateOrderToPaid(order._id)}
+            {!isPaid &&
+              !isCancelled &&
+              ['Stripe', 'PayPal'].includes(paymentMethod) && (
+                <Link
+                  className={cn(buttonVariants(), 'w-full')}
+                  href={`/checkout/${order._id}`}
+                >
+                  Pay Order
+                </Link>
+              )}
+            {buyerCanCancel ? (
+              <CancelOrderButton orderId={order._id} />
+            ) : null}
+            {staffCanCancel && !buyerCanCancel ? (
+              <div className='space-y-2'>
+                <CancelOrderButton
+                  orderId={order._id}
+                  label={isPaid ? 'Cancel (no refund)' : 'Cancel order'}
                 />
-                )}
-                {isAdmin && isPaid && !isDelivered && (
-                <ActionButton
-                    caption='Mark as delivered'
-                    action={() => deliverOrder(order._id)}
-                />
-                )}
-            */}
+                {isPaid ? (
+                  <p className='text-xs text-muted-foreground'>
+                    Cancels fulfillment and restores stock. Does not refund
+                    payment processors.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>

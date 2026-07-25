@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.6 — 2026-07-25
+
+Buyer (and support) order cancel with inventory restock. No payment-processor refund.
+
+### Backend
+- `POST /v1/orders/{id}/cancel` — buyer: unpaid `PENDING` only; SUPPORT/ADMIN: unpaid or paid, not shipped
+- Blocks cancel when any line is already shipped; restores variant/product stock
+
+### Frontend
+- Cancel on order detail for buyers (unpaid pending) and support/admin (no refund warning when paid)
+- Order `status` / `hasShippedLines` on client order model
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.6` |
+| Store API | `store-backend/` | `1.3.6` (`store-api`) |
+
+---
+
 ## v1.3.5 — 2026-07-25
 
 Per-seller line fulfillment: sellers ship only their order lines; order becomes SHIPPED when all lines are shipped.

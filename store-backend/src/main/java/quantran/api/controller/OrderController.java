@@ -71,6 +71,16 @@ public class OrderController {
         return ResponseEntity.ok(orderService.markPaidForUser(id, userId, admin, payment));
     }
 
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<OrderResponseDto> cancel(
+            HttpServletRequest request,
+            @PathVariable String id
+    ) {
+        String userId = requireUserId(request);
+        boolean elevate = canAssist(request);
+        return ResponseEntity.ok(orderService.cancelForUser(id, userId, elevate));
+    }
+
     private String requireUserId(HttpServletRequest request) {
         return jwtAuthSupport.resolveUserId(request)
                 .orElseThrow(() -> new UnauthorizedException("Bearer token required"));
