@@ -44,13 +44,35 @@ export type SupportOrderRow = {
   itemsCount: number
 }
 
-export async function listSupportRecentOrders(): Promise<SupportOrderRow[]> {
+function mapSupportOrders(
+  orders: Array<{
+    id: string
+    userId: string
+    status?: string
+    isPaid?: boolean
+    totalPrice: number
+    createdAt?: string
+    items?: unknown[]
+  }>
+): SupportOrderRow[] {
+  return orders.map((o) => ({
+    id: o.id,
+    userId: o.userId,
+    status: o.status,
+    isPaid: o.isPaid,
+    totalPrice: Number(o.totalPrice),
+    createdAt: o.createdAt,
+    itemsCount: o.items?.length ?? 0,
+  }))
+}
+
+async function supportFetch(path: string): Promise<SupportOrderRow[]> {
   const subject = await requireSupportSubject()
   const authHeaders = await storeAuthHeaders(subject)
   if (!authHeaders.Authorization) {
     throw new Error('Unable to mint store API token')
   }
-  const res = await fetch(`${getStoreApiUrl()}/v1/orders/assist/recent?limit=40`, {
+  const res = await fetch(`${getStoreApiUrl()}${path}`, {
     headers: { Accept: 'application/json', ...authHeaders },
     cache: 'no-store',
   })
@@ -67,15 +89,21 @@ export async function listSupportRecentOrders(): Promise<SupportOrderRow[]> {
     createdAt?: string
     items?: unknown[]
   }>
-  return orders.map((o) => ({
-    id: o.id,
-    userId: o.userId,
-    status: o.status,
-    isPaid: o.isPaid,
-    totalPrice: Number(o.totalPrice),
-    createdAt: o.createdAt,
-    itemsCount: o.items?.length ?? 0,
-  }))
+  return mapSupportOrders(orders)
+}
+
+export async function listSupportRecentOrders(): Promise<SupportOrderRow[]> {
+  return supportFetch('/v1/orders/assist/recent?limit=40')
+}
+
+export async function listSupportOrdersByEmail(
+  email: string
+): Promise<SupportOrderRow[]> {
+  const trimmed = email.trim()
+  if (!trimmed) throw new Error('Email required')
+  return supportFetch(
+    `/v1/orders/assist/by-email?email=${encodeURIComponent(trimmed)}`
+  )
 }
 
 export async function lookupSupportOrder(

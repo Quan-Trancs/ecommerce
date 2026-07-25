@@ -1,17 +1,27 @@
 import Link from 'next/link'
-import { listSupportRecentOrders } from '@/lib/actions/support.actions'
+import {
+  listSupportOrdersByEmail,
+  listSupportRecentOrders,
+} from '@/lib/actions/support.actions'
 import { formatDateTime, formatId } from '@/lib/utils'
 import ProductPrice from '@/components/shared/product/product-price'
 import SupportOrderLookup from './support-order-lookup'
 
 export const metadata = { title: 'Support orders' }
 
-export default async function SupportHomePage() {
+export default async function SupportHomePage(props: {
+  searchParams: Promise<{ email?: string }>
+}) {
+  const searchParams = await props.searchParams
+  const emailQuery = (searchParams.email || '').trim()
+
   let orders: Awaited<ReturnType<typeof listSupportRecentOrders>> = []
   let error: string | null = null
 
   try {
-    orders = await listSupportRecentOrders()
+    orders = emailQuery
+      ? await listSupportOrdersByEmail(emailQuery)
+      : await listSupportRecentOrders()
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load orders'
   }
@@ -21,12 +31,22 @@ export default async function SupportHomePage() {
       <div>
         <h2 className='text-xl font-semibold'>Order assist</h2>
         <p className='text-sm text-muted-foreground'>
-          Look up any order by id, or browse recent store orders. Support cannot
-          change roles or catalog — ask an admin for that.
+          Look up by order id or buyer email, or browse recent store orders.
+          Support cannot change roles or catalog — ask an admin for that.
         </p>
       </div>
 
-      <SupportOrderLookup />
+      <SupportOrderLookup initialEmail={emailQuery} />
+
+      {emailQuery ? (
+        <p className='text-sm text-muted-foreground'>
+          Showing orders for <span className='font-medium text-foreground'>{emailQuery}</span>
+          {' · '}
+          <Link href='/support' className='text-primary hover:underline'>
+            Recent orders
+          </Link>
+        </p>
+      ) : null}
 
       {error ? (
         <div className='rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive'>
@@ -34,7 +54,9 @@ export default async function SupportHomePage() {
         </div>
       ) : orders.length === 0 ? (
         <div className='rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground'>
-          No recent orders.
+          {emailQuery
+            ? 'No account or orders found for that email.'
+            : 'No recent orders.'}
         </div>
       ) : (
         <div className='overflow-x-auto rounded-lg border'>

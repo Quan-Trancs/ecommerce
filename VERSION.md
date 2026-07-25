@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.7 — 2026-07-25
+
+Support desk: find orders by buyer account email.
+
+### Backend
+- `GET /v1/orders/assist/by-email?email=` (SUPPORT/ADMIN) — resolve `accounts` by email, list that user's orders
+
+### Frontend
+- `/support` email search (`?email=`) alongside order-id lookup and recent list
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.7` |
+| Store API | `store-backend/` | `1.3.7` (`store-api`) |
+
+---
+
 ## v1.3.6 — 2026-07-25
 
 Buyer (and support) order cancel with inventory restock. No payment-processor refund.

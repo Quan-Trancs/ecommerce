@@ -50,6 +50,16 @@ public class OrderController {
         return ResponseEntity.ok(orderService.listRecent(capped));
     }
 
+    /** Orders for a buyer account email (SUPPORT / ADMIN). */
+    @GetMapping("/assist/by-email")
+    public ResponseEntity<List<OrderResponseDto>> listByEmailForAssist(
+            HttpServletRequest request,
+            @RequestParam String email
+    ) {
+        requireAssist(request);
+        return ResponseEntity.ok(orderService.listByBuyerEmail(email));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponseDto> getById(
             HttpServletRequest request,

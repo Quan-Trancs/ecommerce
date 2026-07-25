@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.6](./VERSION.md) — order cancel + restock. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.7](./VERSION.md) — support email order search. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

@@ -12,6 +12,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, String> {
 
     List<OrderEntity> findByUserIdOrderByCreatedAtDesc(String userId);
 
+    @Query("SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.userId = :userId ORDER BY o.createdAt DESC")
+    List<OrderEntity> findDetailedByUserIdOrderByCreatedAtDesc(@Param("userId") String userId);
+
     @Query("SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.id = :id")
     Optional<OrderEntity> findDetailedById(@Param("id") String id);
 

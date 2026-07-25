@@ -3,6 +3,8 @@ package quantran.api.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import quantran.api.account.AccountEntity;
+import quantran.api.account.AccountRepository;
 import quantran.api.dto.CreateOrderRequestDto;
 import quantran.api.dto.OrderResponseDto;
 import quantran.api.dto.PayOrderRequestDto;
@@ -34,6 +36,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final AccountRepository accountRepository;
 
     @Transactional
     public OrderResponseDto createOrder(String userId, CreateOrderRequestDto request) {
@@ -159,6 +162,26 @@ public class OrderService {
         return orderRepository.findRecentDetailed(
                         org.springframework.data.domain.PageRequest.of(0, Math.max(1, limit))
                 ).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Support/admin: orders for the account matching buyer email (case-insensitive).
+     * Empty list when no account or no orders.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> listByBuyerEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new BusinessLogicException("email is required");
+        }
+        String normalized = email.trim();
+        AccountEntity account = accountRepository.findByEmailIgnoreCase(normalized)
+                .orElse(null);
+        if (account == null) {
+            return java.util.Collections.emptyList();
+        }
+        return orderRepository.findDetailedByUserIdOrderByCreatedAtDesc(account.getId()).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
