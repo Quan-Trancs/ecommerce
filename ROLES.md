@@ -349,3 +349,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller payout CSV export~~ (v1.3.56)
 - ~~Newsletter / marketing email signup~~ (v1.3.57)
 - ~~Abandoned-cart email reminders~~ (v1.3.58)
+- ~~Product Q&A on PDP~~ (v1.3.59)
