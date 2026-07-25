@@ -1,5 +1,24 @@
 # Version History
 
+## v1.3.41 — 2026-07-25
+
+Support ticket assignment (claim / release / reassign).
+
+### Backend
+- Flyway `V23__support_ticket_assignments.sql` — per-order assignee
+
+### Frontend
+- `/support/tickets` — Mine / Unassigned filters; Claim, Take over, Release, staff dropdown
+- Assign / unassign written to staff audit log
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.41` |
+| Store API | `store-backend/` | `1.3.41` (`store-api`) |
+
+---
+
 ## v1.3.40 — 2026-07-25
 
 Staff audit log for support/admin actions.

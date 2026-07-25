@@ -331,3 +331,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Partial line-item refunds (support/admin)~~ (v1.3.38)
 - ~~Support ticket queue UI (order-note threads)~~ (v1.3.39)
 - ~~Staff audit log for support/admin actions~~ (v1.3.40)
+- ~~Support ticket assignment (claim / reassign)~~ (v1.3.41)

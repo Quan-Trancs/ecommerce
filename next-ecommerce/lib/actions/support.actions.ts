@@ -1,6 +1,7 @@
 'use server'
 
 import { auth } from '@/auth'
+import { revalidatePath } from 'next/cache'
 import {
   storeAuthHeaders,
   type StoreTokenSubject,
@@ -14,8 +15,15 @@ import {
   type SupportTicketFilters,
   type SupportTicketRow,
 } from '@/lib/db/support-tickets'
+import {
+  clearTicketAssignment,
+  listSupportStaff,
+  upsertTicketAssignment,
+  type SupportStaffOption,
+} from '@/lib/db/support-ticket-assignments'
+import { logStaffAction } from '@/lib/audit/log-staff-action'
 
-export type { SupportTicketRow }
+export type { SupportTicketRow, SupportStaffOption }
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -27,14 +35,20 @@ function getStoreApiUrl() {
   )
 }
 
-async function requireSupportSubject(): Promise<StoreTokenSubject> {
+async function requireSupportSession() {
   const session = await auth()
-  if (!session?.user?.id) throw new Error('User not authenticated')
+  const userId = session?.user?.id
+  if (!session?.user || !userId) throw new Error('User not authenticated')
   if (!hasSupportAccess(session.user.role)) {
     throw new Error('Support role required')
   }
+  return { session, userId }
+}
+
+async function requireSupportSubject(): Promise<StoreTokenSubject> {
+  const { session, userId } = await requireSupportSession()
   return {
-    userId: session.user.id,
+    userId,
     email: session.user.email,
     displayName: session.user.name,
     role: session.user.role,
@@ -133,7 +147,92 @@ export async function lookupSupportOrder(
 export async function getSupportTicketQueue(
   filters?: SupportTicketFilters
 ): Promise<SupportTicketRow[]> {
-  await requireSupportSubject()
-  const rows = await listSupportTickets(filters)
+  const { userId } = await requireSupportSession()
+  const rows = await listSupportTickets({
+    ...filters,
+    currentUserId: userId,
+  })
   return JSON.parse(JSON.stringify(rows))
+}
+
+export async function getSupportStaffOptions(): Promise<SupportStaffOption[]> {
+  await requireSupportSession()
+  const rows = await listSupportStaff()
+  return JSON.parse(JSON.stringify(rows))
+}
+
+export async function assignSupportTicket(input: {
+  orderId: string
+  assigneeId?: string | null
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const { session, userId } = await requireSupportSession()
+    const orderId = input.orderId.trim()
+    if (!orderId) return { success: false, message: 'Order id required' }
+    const assigneeId = (input.assigneeId || userId).trim()
+    if (!assigneeId) return { success: false, message: 'Assignee required' }
+
+    const staff = await listSupportStaff()
+    const target = staff.find((s) => s.id === assigneeId)
+    if (!target) {
+      return { success: false, message: 'Assignee must be support or admin' }
+    }
+
+    await upsertTicketAssignment({
+      orderId,
+      assigneeId,
+      assignedBy: userId,
+    })
+
+    await logStaffAction({
+      actorId: userId,
+      actorRole: session.user.role,
+      action: 'TICKET_ASSIGN',
+      entityType: 'order',
+      entityId: orderId,
+      summary:
+        assigneeId === userId
+          ? `Claimed ticket for order ${orderId}`
+          : `Assigned ticket for order ${orderId} to ${target.email}`,
+      metadata: { assigneeId, assigneeEmail: target.email },
+    })
+
+    revalidatePath('/support/tickets')
+    revalidatePath(`/account/orders/${orderId}`)
+    revalidatePath('/admin/audit')
+    return {
+      success: true,
+      message:
+        assigneeId === userId
+          ? 'Ticket claimed'
+          : `Assigned to ${target.name}`,
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function unassignSupportTicket(
+  orderId: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const { session, userId } = await requireSupportSession()
+    const id = orderId.trim()
+    if (!id) return { success: false, message: 'Order id required' }
+    await clearTicketAssignment(id)
+    await logStaffAction({
+      actorId: userId,
+      actorRole: session.user.role,
+      action: 'TICKET_UNASSIGN',
+      entityType: 'order',
+      entityId: id,
+      summary: `Released ticket for order ${id}`,
+    })
+    revalidatePath('/support/tickets')
+    revalidatePath(`/account/orders/${id}`)
+    revalidatePath('/admin/audit')
+    return { success: true, message: 'Ticket released' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
 }

@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.40](./VERSION.md) — staff audit log. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.41](./VERSION.md) — support ticket assignment. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
