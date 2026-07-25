@@ -30,6 +30,7 @@ export default function OrderDetailsForm({
   notes = [],
   inAppMuted = false,
   coupon,
+  giftCard,
   returns = [],
   reservedByItemId = {},
   isBuyer = false,
@@ -41,6 +42,7 @@ export default function OrderDetailsForm({
   notes?: OrderNote[]
   inAppMuted?: boolean
   coupon?: { code: string; discountAmount: number } | null
+  giftCard?: { code: string; amount: number } | null
   returns?: OrderReturnRequest[]
   reservedByItemId?: Record<string, number>
   isBuyer?: boolean
@@ -215,6 +217,14 @@ export default function OrderDetailsForm({
                 <div>Promo ({coupon.code})</div>
                 <div>
                   -<ProductPrice price={coupon.discountAmount} plain />
+                </div>
+              </div>
+            ) : null}
+            {giftCard && giftCard.amount > 0 ? (
+              <div className='flex justify-between text-emerald-700'>
+                <div>Gift card ({giftCard.code})</div>
+                <div>
+                  -<ProductPrice price={giftCard.amount} plain />
                 </div>
               </div>
             ) : null}

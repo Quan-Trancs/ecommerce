@@ -93,6 +93,8 @@ export const CartSchema = z.object({
   totalPrice: z.number(),
   discountPrice: z.number().optional(),
   couponCode: z.string().optional(),
+  giftCardCode: z.string().optional(),
+  giftCardAmount: z.number().optional(),
   paymentMethod: z.string().optional(),
   shippingAddress: z.optional(ShippingAddressSchema),
   deliveryDateIndex: z.number().optional(),

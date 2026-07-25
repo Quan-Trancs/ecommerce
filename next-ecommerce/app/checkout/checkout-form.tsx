@@ -78,6 +78,8 @@ const CheckoutForm = () => {
       totalPrice,
       discountPrice = 0,
       couponCode,
+      giftCardAmount = 0,
+      giftCardCode,
       shippingAddress,
       deliveryDateIndex,
       paymentMethod = DEFAULT_PAYMENT_METHOD,
@@ -89,11 +91,15 @@ const CheckoutForm = () => {
     setDeliveryDateIndex,
     applyCoupon,
     removeCoupon,
+    applyGiftCard,
+    removeGiftCard,
     clearCart,
   } = useCartStore()
   const isMounted = useIsMounted()
   const [promoInput, setPromoInput] = useState('')
   const [promoPending, setPromoPending] = useState(false)
+  const [giftInput, setGiftInput] = useState('')
+  const [giftPending, setGiftPending] = useState(false)
 
   const shippingAddressForm = useForm<ShippingAddress>({
     resolver: zodResolver(ShippingAddressSchema),
@@ -219,6 +225,16 @@ const CheckoutForm = () => {
                 </span>
               </div>
             ) : null}
+            {giftCardAmount > 0 ? (
+              <div className='flex justify-between text-emerald-700'>
+                <span>
+                  Gift card{giftCardCode ? ` (${giftCardCode})` : ''}:
+                </span>
+                <span>
+                  -<ProductPrice price={giftCardAmount} plain />
+                </span>
+              </div>
+            ) : null}
             <div className='flex justify-between'>
               <span>Shipping & Handling:</span>
               <span>
@@ -302,6 +318,83 @@ const CheckoutForm = () => {
                         )
                       } finally {
                         setPromoPending(false)
+                      }
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className='space-y-2 border-t pt-3'>
+              <Label htmlFor='gift-code' className='text-xs font-medium'>
+                Gift card
+              </Label>
+              {giftCardCode ? (
+                <div className='flex items-center justify-between gap-2'>
+                  <span className='font-medium'>
+                    {giftCardCode}
+                    {giftCardAmount > 0 ? (
+                      <span className='ml-2 text-muted-foreground'>
+                        (−
+                        <ProductPrice price={giftCardAmount} plain />)
+                      </span>
+                    ) : null}
+                  </span>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    disabled={giftPending}
+                    onClick={async () => {
+                      setGiftPending(true)
+                      try {
+                        await removeGiftCard()
+                        setGiftInput('')
+                        toast.success('Gift card removed')
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : 'Could not remove gift card'
+                        )
+                      } finally {
+                        setGiftPending(false)
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className='flex gap-2'>
+                  <Input
+                    id='gift-code'
+                    value={giftInput}
+                    onChange={(e) => setGiftInput(e.target.value)}
+                    placeholder='GIFT25'
+                    className='h-9'
+                    disabled={giftPending || items.length === 0}
+                  />
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    disabled={giftPending || !giftInput.trim()}
+                    onClick={async () => {
+                      setGiftPending(true)
+                      try {
+                        const applied = await applyGiftCard(giftInput)
+                        toast.success(`Applied ${applied}`)
+                        setGiftInput('')
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : 'Invalid gift card'
+                        )
+                      } finally {
+                        setGiftPending(false)
                       }
                     }}
                   >

@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.49 — 2026-07-25
+
+Checkout gift cards / store credit.
+
+### Backend
+- Flyway `V27__gift_cards.sql` — gift cards + redemptions; seed `GIFT25` ($25)
+
+### Frontend
+- Checkout: apply gift card after tax & shipping (stacks with promo)
+- Fully covered orders auto-mark paid via gift card
+- `/admin/gift-cards` create / activate; order details show gift card line
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.49` |
+| Store API | `store-backend/` | `1.3.49` (`store-api`) |
+
+---
+
 ## v1.3.48 — 2026-07-25
 
 Email + in-app notifications for return requests.

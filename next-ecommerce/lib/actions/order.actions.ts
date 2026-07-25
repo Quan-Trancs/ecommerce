@@ -32,6 +32,11 @@ import {
   getRedemptionForOrder,
   recordCouponRedemption,
 } from '@/lib/db/coupons'
+import {
+  assertGiftCardApplicable,
+  getGiftCardRedemptionForOrder,
+  redeemGiftCardForOrder,
+} from '@/lib/db/gift-cards'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 import { recordOrderRefund, listOrderRefunds } from '@/lib/db/order-refunds'
 import { logStaffAction } from '@/lib/audit/log-staff-action'
@@ -147,6 +152,7 @@ export const createOrderFromCart = async (
     shippingAddress: clientSideCart.shippingAddress,
     deliveryDateIndex: clientSideCart.deliveryDateIndex,
     couponCode: clientSideCart.couponCode,
+    giftCardCode: clientSideCart.giftCardCode,
     accountId: subject.userId,
   })
   if (
@@ -154,6 +160,12 @@ export const createOrderFromCart = async (
     (!priced.couponCode || (priced.discountPrice || 0) <= 0)
   ) {
     throw new Error(priced.couponMessage || 'Promo code is no longer valid')
+  }
+  if (
+    clientSideCart.giftCardCode &&
+    (!priced.giftCardCode || (priced.giftCardAmount || 0) <= 0)
+  ) {
+    throw new Error(priced.giftCardMessage || 'Gift card is no longer valid')
   }
   const cart = {
     ...clientSideCart,
@@ -183,7 +195,10 @@ export const createOrderFromCart = async (
 
   const storeOrder = await createStoreOrder(
     {
-      paymentMethod: cart.paymentMethod || 'PayPal',
+      paymentMethod:
+        (cart.giftCardAmount || 0) > 0 && (cart.totalPrice || 0) <= 0
+          ? 'Gift Card'
+          : cart.paymentMethod || 'PayPal',
       itemsPrice: cart.itemsPrice!,
       shippingPrice: cart.shippingPrice ?? 0,
       taxPrice: cart.taxPrice ?? 0,
@@ -222,10 +237,37 @@ export const createOrderFromCart = async (
     }
   }
 
+  if (cart.giftCardCode && (cart.giftCardAmount || 0) > 0) {
+    await redeemGiftCardForOrder({
+      code: cart.giftCardCode,
+      orderId: storeOrder.id,
+      accountId: subject.userId,
+      amount: cart.giftCardAmount || 0,
+    })
+    if ((cart.totalPrice || 0) <= 0) {
+      await payStoreOrder(
+        storeOrder.id,
+        {
+          id: `giftcard-${storeOrder.id}`,
+          status: 'COMPLETED',
+          emailAddress: subject.email || undefined,
+          pricePaid: '0.00',
+          paymentMethod: 'Gift Card',
+        },
+        subject
+      )
+      await notifyOrderPaid(storeOrder.id)
+    }
+  }
+
   // Stock was decremented by Spring on create — alert sellers if now low.
   await checkAndNotifyLowStock(productIds)
 
-  return storeOrderToClient(storeOrder)
+  return storeOrderToClient(
+    (cart.totalPrice || 0) <= 0 && (cart.giftCardAmount || 0) > 0
+      ? (await fetchStoreOrder(storeOrder.id, subject)) || storeOrder
+      : storeOrder
+  )
 }
 
 function subjectFromSession(session: {
@@ -772,12 +814,14 @@ export const calculateDeliveryDateAndPrice = async ({
   shippingAddress,
   deliveryDateIndex,
   couponCode,
+  giftCardCode,
   accountId,
 }: {
   deliveryDateIndex?: number
   items: OrderItem[]
   shippingAddress?: ShippingAddress
   couponCode?: string | null
+  giftCardCode?: string | null
   accountId?: string | null
 }) => {
   const itemsPrice = roundToTwoDecimals(
@@ -826,10 +870,31 @@ export const calculateDeliveryDateAndPrice = async ({
 
   const taxable = roundToTwoDecimals(Math.max(0, itemsPrice - discountPrice))
   const taxPrice = roundToTwoDecimals(taxable * 0.15)
-  const totalPrice = roundToTwoDecimals(
+  const grossTotal = roundToTwoDecimals(
     taxable +
       (shippingPrice ? roundToTwoDecimals(shippingPrice) : 0) +
       (taxPrice ? roundToTwoDecimals(taxPrice) : 0)
+  )
+
+  let giftCardAmount = 0
+  let appliedGiftCardCode: string | undefined
+  let giftCardMessage: string | undefined
+  const requestedGift = giftCardCode?.trim()
+  if (requestedGift) {
+    const check = await assertGiftCardApplicable({
+      code: requestedGift,
+      orderTotal: grossTotal,
+    })
+    if (!check.ok) {
+      giftCardMessage = check.message
+    } else {
+      giftCardAmount = check.applyAmount
+      appliedGiftCardCode = check.card.code
+    }
+  }
+
+  const totalPrice = roundToTwoDecimals(
+    Math.max(0, grossTotal - giftCardAmount)
   )
 
   return {
@@ -845,11 +910,18 @@ export const calculateDeliveryDateAndPrice = async ({
     discountPrice,
     couponCode: appliedCouponCode,
     couponMessage,
+    giftCardAmount,
+    giftCardCode: appliedGiftCardCode,
+    giftCardMessage,
   }
 }
 
 export async function getOrderCoupon(orderId: string) {
   return getRedemptionForOrder(orderId)
+}
+
+export async function getOrderGiftCard(orderId: string) {
+  return getGiftCardRedemptionForOrder(orderId)
 }
 
 export type OrderNote = {

@@ -16,6 +16,8 @@ const initialState: Cart = {
   totalPrice: 0,
   discountPrice: 0,
   couponCode: undefined,
+  giftCardCode: undefined,
+  giftCardAmount: 0,
   paymentMethod: undefined,
   shippingAddress: undefined,
   deliveryDateIndex: undefined,
@@ -32,6 +34,8 @@ interface CartState {
   setDeliveryDateIndex: (index: number) => Promise<void>
   applyCoupon: (code: string) => Promise<string>
   removeCoupon: () => Promise<void>
+  applyGiftCard: (code: string) => Promise<string>
+  removeGiftCard: () => Promise<void>
   clearCart: () => void
 }
 
@@ -66,18 +70,21 @@ async function priceCart(input: {
   shippingAddress?: ShippingAddress
   deliveryDateIndex?: number
   couponCode?: string
+  giftCardCode?: string
 }) {
   const calculated = await calculateDeliveryDateAndPrice({
     items: input.items,
     shippingAddress: input.shippingAddress,
     deliveryDateIndex: input.deliveryDateIndex,
     couponCode: input.couponCode,
+    giftCardCode: input.giftCardCode,
   })
   return {
     ...calculated,
-    // Drop invalid codes so the cart stays consistent.
     couponCode: calculated.couponCode,
     discountPrice: calculated.discountPrice || 0,
+    giftCardCode: calculated.giftCardCode,
+    giftCardAmount: calculated.giftCardAmount || 0,
   }
 }
 
@@ -95,8 +102,13 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress, couponCode, deliveryDateIndex } =
-            get().cart
+          const {
+            items,
+            shippingAddress,
+            couponCode,
+            giftCardCode,
+            deliveryDateIndex,
+          } = get().cart
           const existItem = items.find(
             (x) =>
               x.product === item.product &&
@@ -129,6 +141,7 @@ const useCartStore = create(
             shippingAddress,
             deliveryDateIndex,
             couponCode,
+            giftCardCode,
           })
 
           const nextCart = {
@@ -165,8 +178,13 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress, couponCode, deliveryDateIndex } =
-            get().cart
+          const {
+            items,
+            shippingAddress,
+            couponCode,
+            giftCardCode,
+            deliveryDateIndex,
+          } = get().cart
           const existItem = items.find(
             (x) =>
               x.product === item.product &&
@@ -196,6 +214,7 @@ const useCartStore = create(
             shippingAddress,
             deliveryDateIndex,
             couponCode,
+            giftCardCode,
           })
 
           const nextCart = {
@@ -223,8 +242,13 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress, couponCode, deliveryDateIndex } =
-            get().cart
+          const {
+            items,
+            shippingAddress,
+            couponCode,
+            giftCardCode,
+            deliveryDateIndex,
+          } = get().cart
           const updatedItems = items.filter(
             (x) =>
               x.product !== item.product ||
@@ -237,6 +261,7 @@ const useCartStore = create(
             shippingAddress,
             deliveryDateIndex,
             couponCode,
+            giftCardCode,
           })
 
           const nextCart = {
@@ -264,12 +289,14 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, couponCode, deliveryDateIndex } = get().cart
+          const { items, couponCode, giftCardCode, deliveryDateIndex } =
+            get().cart
           const calculatedPrices = await priceCart({
             items,
             shippingAddress,
             deliveryDateIndex,
             couponCode,
+            giftCardCode,
           })
 
           const nextCart = {
@@ -306,12 +333,14 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress, couponCode } = get().cart
+          const { items, shippingAddress, couponCode, giftCardCode } =
+            get().cart
           const calculatedPrices = await priceCart({
             items,
             shippingAddress,
             deliveryDateIndex: index,
             couponCode,
+            giftCardCode,
           })
 
           const nextCart = {
@@ -340,12 +369,14 @@ const useCartStore = create(
 
         set({ isUpdating: true })
         try {
-          const { items, shippingAddress, deliveryDateIndex } = get().cart
+          const { items, shippingAddress, deliveryDateIndex, giftCardCode } =
+            get().cart
           const calculatedPrices = await priceCart({
             items,
             shippingAddress,
             deliveryDateIndex,
             couponCode: trimmed,
+            giftCardCode,
           })
           if (!calculatedPrices.couponCode) {
             throw new Error(
@@ -371,17 +402,83 @@ const useCartStore = create(
         }
         set({ isUpdating: true })
         try {
-          const { items, shippingAddress, deliveryDateIndex } = get().cart
+          const { items, shippingAddress, deliveryDateIndex, giftCardCode } =
+            get().cart
           const calculatedPrices = await priceCart({
             items,
             shippingAddress,
             deliveryDateIndex,
+            giftCardCode,
           })
           const nextCart = {
             ...get().cart,
             ...calculatedPrices,
             couponCode: undefined,
             discountPrice: 0,
+          }
+          set({ cart: nextCart, isUpdating: false })
+          schedulePersist(nextCart)
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
+      },
+
+      applyGiftCard: async (code: string) => {
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
+        const trimmed = code.trim()
+        if (!trimmed) throw new Error('Enter a gift card code')
+
+        set({ isUpdating: true })
+        try {
+          const { items, shippingAddress, deliveryDateIndex, couponCode } =
+            get().cart
+          const calculatedPrices = await priceCart({
+            items,
+            shippingAddress,
+            deliveryDateIndex,
+            couponCode,
+            giftCardCode: trimmed,
+          })
+          if (!calculatedPrices.giftCardCode) {
+            throw new Error(
+              calculatedPrices.giftCardMessage || 'Invalid gift card'
+            )
+          }
+          const nextCart = {
+            ...get().cart,
+            ...calculatedPrices,
+          }
+          set({ cart: nextCart, isUpdating: false })
+          schedulePersist(nextCart)
+          return calculatedPrices.giftCardCode
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
+      },
+
+      removeGiftCard: async () => {
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
+        set({ isUpdating: true })
+        try {
+          const { items, shippingAddress, deliveryDateIndex, couponCode } =
+            get().cart
+          const calculatedPrices = await priceCart({
+            items,
+            shippingAddress,
+            deliveryDateIndex,
+            couponCode,
+          })
+          const nextCart = {
+            ...get().cart,
+            ...calculatedPrices,
+            giftCardCode: undefined,
+            giftCardAmount: 0,
           }
           set({ cart: nextCart, isUpdating: false })
           schedulePersist(nextCart)
@@ -402,6 +499,8 @@ const useCartStore = create(
           totalPrice: 0,
           discountPrice: 0,
           couponCode: undefined,
+          giftCardCode: undefined,
+          giftCardAmount: 0,
         }
         set({ cart: nextCart })
         void clearPersistedCart().catch((error) => {

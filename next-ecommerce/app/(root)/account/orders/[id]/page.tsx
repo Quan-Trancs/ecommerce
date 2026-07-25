@@ -6,6 +6,7 @@ import {
   getOrderById,
   getOrderNotes,
   getOrderCoupon,
+  getOrderGiftCard,
 } from '@/lib/actions/order.actions'
 import { getOrderInAppMuteState } from '@/lib/actions/notification.actions'
 import { getOrderReturnContext } from '@/lib/actions/return.actions'
@@ -42,6 +43,7 @@ export default async function OrderDetailsPage(props: {
     ? await getOrderInAppMuteState(id)
     : false
   const coupon = await getOrderCoupon(id)
+  const giftCard = await getOrderGiftCard(id)
   const returnContext = session?.user?.id
     ? await getOrderReturnContext(id)
     : { returns: [], reservedByItemId: {} }
@@ -83,6 +85,7 @@ export default async function OrderDetailsPage(props: {
         notes={notes}
         inAppMuted={inAppMuted}
         coupon={coupon}
+        giftCard={giftCard}
         returns={returnContext.returns}
         reservedByItemId={returnContext.reservedByItemId}
         isBuyer={isBuyer}
