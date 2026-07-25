@@ -92,8 +92,11 @@ async function supportFetch(path: string): Promise<SupportOrderRow[]> {
   return mapSupportOrders(orders)
 }
 
-export async function listSupportRecentOrders(): Promise<SupportOrderRow[]> {
-  return supportFetch('/v1/orders/assist/recent?limit=40')
+export async function listSupportRecentOrders(
+  limit = 40
+): Promise<SupportOrderRow[]> {
+  const capped = Math.max(1, Math.min(limit, 100))
+  return supportFetch(`/v1/orders/assist/recent?limit=${capped}`)
 }
 
 export async function listSupportOrdersByEmail(

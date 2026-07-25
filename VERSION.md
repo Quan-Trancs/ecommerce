@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.9 — 2026-07-25
+
+Admin platform order overview with email and status filters.
+
+### Frontend
+- `/admin/orders` — recent orders (limit 100), buyer email search, status chips
+- Shared `AssistOrderLookup` used by support and admin
+- Admin home + nav link to Orders
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.9` |
+| Store API | `store-backend/` | `1.3.9` (`store-api`) |
+
+---
+
 ## v1.3.8 — 2026-07-25
 
 PayPal refund on support/admin paid cancel; capture id stored at pay time.

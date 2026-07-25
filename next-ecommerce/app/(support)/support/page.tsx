@@ -5,7 +5,7 @@ import {
 } from '@/lib/actions/support.actions'
 import { formatDateTime, formatId } from '@/lib/utils'
 import ProductPrice from '@/components/shared/product/product-price'
-import SupportOrderLookup from './support-order-lookup'
+import AssistOrderLookup from '@/components/shared/order/assist-order-lookup'
 
 export const metadata = { title: 'Support orders' }
 
@@ -36,7 +36,7 @@ export default async function SupportHomePage(props: {
         </p>
       </div>
 
-      <SupportOrderLookup initialEmail={emailQuery} />
+      <AssistOrderLookup basePath='/support' initialEmail={emailQuery} />
 
       {emailQuery ? (
         <p className='text-sm text-muted-foreground'>

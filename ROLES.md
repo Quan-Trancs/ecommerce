@@ -239,7 +239,7 @@ next-ecommerce/
   app/(root)/account/     # Buyer hub + orders
   app/(seller)/seller/    # Seller overview, products, orders (shell)
   app/(support)/support/  # Support order lookup + recent orders
-  app/(admin)/admin/      # Admin overview, users, catalog (shell)
+  app/(admin)/admin/      # Admin overview, orders, users, catalog (shell)
   auth.config.ts          # Route guards for /account /seller /support /admin
 ```
 
@@ -298,6 +298,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Buyer order cancel / refund flow~~ (v1.3.6 — cancel + restock; no processor refund)
 - ~~Order search by email for support desk~~ (v1.3.7)
 - ~~PayPal / Stripe refund after paid cancel~~ (v1.3.8 — PayPal live; Stripe skipped until checkout enabled)
-- Admin order overview (platform-wide list beyond support assist)
+- ~~Admin order overview (platform-wide list beyond support assist)~~ (v1.3.9)
 - Buyer order list filters (status / date)
 - Enable Stripe checkout + PaymentIntent refunds

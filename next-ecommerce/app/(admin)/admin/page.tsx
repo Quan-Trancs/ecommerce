@@ -12,6 +12,17 @@ export default function AdminHomePage() {
       <ul className='grid gap-3 sm:grid-cols-2'>
         <li>
           <Link
+            href='/admin/orders'
+            className='block rounded-lg border p-4 transition hover:border-primary'
+          >
+            <h2 className='font-semibold'>Orders</h2>
+            <p className='text-sm text-muted-foreground'>
+              Platform-wide recent orders, email &amp; status filters
+            </p>
+          </Link>
+        </li>
+        <li>
+          <Link
             href='/admin/users'
             className='block rounded-lg border p-4 transition hover:border-primary'
           >
