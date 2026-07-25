@@ -1,13 +1,17 @@
 import { findUserById } from '@/lib/db/users'
 import {
+  fetchProductsByIds,
   fetchStoreOrderAsAdmin,
   type StoreOrder,
 } from '@/lib/catalog/client'
 import type { IOrder } from '@/lib/types/order'
 import {
+  sendOrderNoteEmail,
   sendOrderShippedEmail,
   sendPurchaseReceipt,
 } from '@/emails/index'
+import { SERVER_URL } from '@/lib/constants'
+import { roleLabel } from '@/lib/auth/roles'
 
 function storeOrderToEmailOrder(
   order: StoreOrder,
@@ -86,5 +90,86 @@ export async function notifyOrderShipped(orderId: string) {
     await sendOrderShippedEmail({ order })
   } catch (err) {
     console.error('notifyOrderShipped failed:', err)
+  }
+}
+
+/**
+ * Email the buyer and product-scoped sellers when a PUBLIC order note is posted.
+ * Skips the author. INTERNAL notes never notify.
+ */
+export async function notifyPublicOrderNote(input: {
+  orderId: string
+  authorUserId: string
+  authorRole: string
+  authorDisplayName?: string | null
+  body: string
+}) {
+  try {
+    const storeOrder = await fetchStoreOrderAsAdmin(input.orderId)
+    if (!storeOrder) return
+
+    const recipientIds = new Set<string>()
+    if (storeOrder.userId) {
+      recipientIds.add(storeOrder.userId)
+    }
+
+    const productIds = [
+      ...new Set(
+        (storeOrder.items || [])
+          .map((item) => item.productId)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ]
+    if (productIds.length) {
+      const products = await fetchProductsByIds(productIds)
+      for (const product of products) {
+        if (product.sellerAccountId) {
+          recipientIds.add(product.sellerAccountId)
+        }
+      }
+    }
+
+    recipientIds.delete(input.authorUserId)
+
+    const supportInbox = process.env.SUPPORT_ORDER_NOTES_EMAIL?.trim()
+    const emails = new Set<string>()
+    for (const userId of recipientIds) {
+      const account = await findUserById(userId)
+      if (account?.email) {
+        emails.add(account.email.trim().toLowerCase())
+      }
+    }
+    if (supportInbox) {
+      emails.add(supportInbox.toLowerCase())
+    }
+
+    const author = await findUserById(input.authorUserId)
+    if (author?.email) {
+      emails.delete(author.email.trim().toLowerCase())
+    }
+
+    if (!emails.size) return
+
+    const authorLabel =
+      input.authorDisplayName?.trim() ||
+      author?.name ||
+      author?.email ||
+      'Someone'
+    const orderUrl = `${SERVER_URL}/account/orders/${input.orderId}`
+
+    await Promise.all(
+      [...emails].map((to) =>
+        sendOrderNoteEmail({
+          to,
+          orderId: input.orderId,
+          authorLabel,
+          authorRoleLabel: roleLabel(input.authorRole),
+          body: input.body,
+          orderUrl,
+        })
+      )
+    )
+  } catch (err) {
+    console.error('notifyPublicOrderNote failed:', err)
   }
 }

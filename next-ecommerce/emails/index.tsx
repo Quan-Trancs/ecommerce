@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import PurchaseReceiptEmail from './purchase-receipt'
 import OrderShippedEmail from './order-shipped'
+import OrderNoteEmail from './order-note'
 import { SENDER_EMAIL, SENDER_NAME } from '@/lib/constants'
 import { IOrder } from '@/lib/types/order'
 
@@ -53,6 +54,41 @@ export const sendOrderShippedEmail = async ({ order }: { order: IOrder }) => {
     to,
     subject: 'Your order has shipped',
     react: <OrderShippedEmail order={order} />,
+  })
+  return { sent: true as const }
+}
+
+export const sendOrderNoteEmail = async (input: {
+  to: string
+  orderId: string
+  authorLabel: string
+  authorRoleLabel: string
+  body: string
+  orderUrl: string
+}) => {
+  const resend = getResend()
+  if (!resend) {
+    console.warn('Skipping order note email: RESEND_API_KEY missing')
+    return { sent: false as const }
+  }
+  const to = input.to.trim()
+  if (!to) {
+    return { sent: false as const }
+  }
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject: `New message on order ${input.orderId}`,
+    react: (
+      <OrderNoteEmail
+        orderId={input.orderId}
+        authorLabel={input.authorLabel}
+        authorRoleLabel={input.authorRoleLabel}
+        body={input.body}
+        orderUrl={input.orderUrl}
+      />
+    ),
   })
   return { sent: true as const }
 }

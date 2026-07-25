@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.22 — 2026-07-25
+
+Email parties when a public order note is posted.
+
+### Frontend
+- Resend email to buyer + product-scoped sellers (author excluded)
+- Optional `SUPPORT_ORDER_NOTES_EMAIL` CC inbox
+- INTERNAL notes never send email
+- Template: `emails/order-note.tsx`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.22` |
+| Store API | `store-backend/` | `1.3.22` (`store-api`) |
+
+---
+
 ## v1.3.21 — 2026-07-25
 
 Product image delete / replace cleanup in object storage.

@@ -22,7 +22,7 @@ import {
 import { hasSupportAccess } from '@/lib/auth/roles'
 import type { StoreTokenSubject } from '@/lib/auth/store-token'
 import { refundPaymentIntent, retrievePaymentIntent } from '@/lib/stripe'
-import { notifyOrderPaid } from '@/lib/email/order-notifications'
+import { notifyOrderPaid, notifyPublicOrderNote } from '@/lib/email/order-notifications'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -609,10 +609,21 @@ export async function addOrderNote(
       { visibility }
     )
     revalidatePath(`/account/orders/${orderId}`)
+    const clientNote = noteToClient(note)
+    if (visibility === 'PUBLIC') {
+      await notifyPublicOrderNote({
+        orderId,
+        authorUserId: session.user.id,
+        authorRole: session.user.role || note.authorRole || 'BUYER',
+        authorDisplayName:
+          note.authorDisplayName || session.user.name || session.user.email,
+        body: trimmed,
+      })
+    }
     return {
       success: true,
       message: visibility === 'INTERNAL' ? 'Internal note saved' : 'Message sent',
-      note: noteToClient(note),
+      note: clientNote,
     }
   } catch (err) {
     return { success: false, message: formatError(err) }

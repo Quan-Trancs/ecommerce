@@ -38,6 +38,7 @@ export type CatalogProduct = {
   numReviews?: number
   numSales?: number
   isPublished?: boolean
+  sellerAccountId?: string | null
   createdAt?: string
   updatedAt?: string
 }

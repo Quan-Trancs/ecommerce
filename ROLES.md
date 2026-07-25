@@ -312,4 +312,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Private staff-only order notes (internal visibility)~~ (v1.3.19)
 - ~~Seller participation in order notes (product-scoped)~~ (v1.3.20)
 - ~~Product image delete / replace cleanup in object storage~~ (v1.3.21)
-- Notify parties by email when a public order note is posted
+- ~~Notify parties by email when a public order note is posted~~ (v1.3.22)
+- Buyer/seller email preferences for order-note notifications
