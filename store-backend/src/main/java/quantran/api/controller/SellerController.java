@@ -11,6 +11,8 @@ import quantran.api.dto.AdminProductCreateRequestDto;
 import quantran.api.dto.AdminProductUpdateRequestDto;
 import quantran.api.dto.OrderResponseDto;
 import quantran.api.dto.ProductResponseDto;
+import quantran.api.dto.UpdateOrderStatusRequestDto;
+import quantran.api.exception.BusinessLogicException;
 import quantran.api.exception.UnauthorizedException;
 import quantran.api.repository.ProductRepository;
 import quantran.api.security.JwtAuthSupport;
@@ -77,6 +79,25 @@ public class SellerController {
                 .map(ProductEntity::getId)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(orderService.listContainingProducts(productIds));
+    }
+
+    @PatchMapping("/orders/{id}/status")
+    public ResponseEntity<OrderResponseDto> updateOrderStatus(
+            HttpServletRequest request,
+            @PathVariable String id,
+            @RequestBody UpdateOrderStatusRequestDto body
+    ) {
+        AccountEntity seller = requireSeller(request);
+        String target = body == null || body.getStatus() == null
+                ? ""
+                : body.getStatus().trim().toUpperCase();
+        if (!"SHIPPED".equals(target)) {
+            throw new BusinessLogicException("Sellers can only set status to SHIPPED");
+        }
+        List<String> productIds = productRepository.findBySellerAccountId(seller.getId()).stream()
+                .map(ProductEntity::getId)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(orderService.markShippedForSeller(id, productIds));
     }
 
     private AccountEntity requireSeller(HttpServletRequest request) {

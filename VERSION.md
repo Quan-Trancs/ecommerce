@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.3 — 2026-07-25
+
+Seller can mark paid orders as shipped.
+
+### Backend
+- `OrderEntity.Status` adds `SHIPPED`
+- `PATCH /v1/seller/orders/{id}/status` with `{ "status": "SHIPPED" }` (Bearer, paid only)
+
+### Frontend
+- `/seller/orders` — **Mark shipped** on paid orders
+- Buyer order view treats `SHIPPED` as delivered
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.3` |
+| Store API | `store-backend/` | `1.3.3` (`store-api`) |
+
+---
+
 ## v1.3.2 — 2026-07-25
 
 Cart polish: debounce server PUTs and revalidate line price/stock against the live catalog on hydrate.

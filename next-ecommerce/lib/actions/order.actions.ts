@@ -81,7 +81,7 @@ function storeOrderToClient(order: StoreOrder): IOrder {
     totalPrice: Number(order.totalPrice),
     isPaid: Boolean(order.isPaid),
     paidAt: order.paidAt ? new Date(order.paidAt) : undefined,
-    isDelivered: false,
+    isDelivered: String(order.status || '').toUpperCase() === 'SHIPPED',
     createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
     updatedAt: new Date(),
   }

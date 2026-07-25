@@ -255,7 +255,7 @@ store-backend/src/main/java/quantran/api/
   controller/
     AuthController.java      # mints JWT + upserts account (role claim)
     AccountController.java   # /v1/accounts/me, list, PATCH role (admin)
-    SellerController.java    # /v1/seller/me|products|orders (GET/POST/PATCH products)
+    SellerController.java    # /v1/seller/me|products|orders (GET/POST/PATCH products; PATCH order status)
     OrderController.java     # Bearer + owner checks; GET /me
     ProductAdminController   # platform catalog writes (X-Admin-Key)
   entity/ProductEntity.java  # seller_account_id ownership
@@ -281,5 +281,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Single Postgres DB (drop Mongo users + order fallback)~~ (v1.3.0)
 - ~~Cart server revalidation / persistent cart~~ (v1.3.1)
 - ~~Debounce cart PUT traffic / revalidate line prices against live catalog on hydrate~~ (v1.3.2)
+- ~~Seller order status updates (fulfill / ship) beyond list view~~ (v1.3.3)
 - Optional SUPPORT role if you need customer-service without full admin
-- Seller order status updates (fulfill / ship) beyond list view
+- Per-seller line fulfillment for multi-seller orders (order-level SHIPPED is v1)

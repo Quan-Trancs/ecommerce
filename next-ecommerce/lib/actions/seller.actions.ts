@@ -160,3 +160,23 @@ export async function listSellerOrders(): Promise<SellerOrder[]> {
     })),
   }))
 }
+
+export async function markSellerOrderShipped(orderId: string) {
+  try {
+    const subject = await requireSellerSubject()
+    const order = await sellerFetch<SellerOrder>(
+      `/v1/seller/orders/${encodeURIComponent(orderId)}/status`,
+      subject,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'SHIPPED' }),
+      }
+    )
+    revalidatePath('/seller/orders')
+    revalidatePath(`/account/orders/${orderId}`)
+    return { success: true as const, order }
+  } catch (error) {
+    return { success: false as const, message: formatError(error) }
+  }
+}

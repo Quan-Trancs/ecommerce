@@ -267,6 +267,40 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Seller ships a paid order that includes at least one of their products.
+     * Does not modify isPaid / payment fields.
+     */
+    @Transactional
+    public OrderResponseDto markShippedForSeller(String orderId, List<String> sellerProductIds) {
+        if (sellerProductIds == null || sellerProductIds.isEmpty()) {
+            throw new UnauthorizedException("No seller products — cannot ship");
+        }
+        Set<String> owned = new HashSet<>(sellerProductIds);
+        OrderEntity order = orderRepository.findDetailedById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        boolean ownsLine = order.getItems() != null && order.getItems().stream()
+                .anyMatch(item -> item.getProductId() != null && owned.contains(item.getProductId()));
+        if (!ownsLine) {
+            throw new UnauthorizedException("Order does not include your products");
+        }
+
+        if (order.getStatus() == OrderEntity.Status.SHIPPED) {
+            return toDtoFiltered(order, owned);
+        }
+        if (order.getStatus() == OrderEntity.Status.CANCELLED) {
+            throw new BusinessLogicException("Cannot ship a cancelled order");
+        }
+        if (!Boolean.TRUE.equals(order.getIsPaid()) && order.getStatus() != OrderEntity.Status.PAID) {
+            throw new BusinessLogicException("Order must be paid before shipping");
+        }
+
+        order.setStatus(OrderEntity.Status.SHIPPED);
+        OrderEntity saved = orderRepository.save(order);
+        return toDtoFiltered(saved, owned);
+    }
+
     private OrderResponseDto toDtoFiltered(OrderEntity order, Set<String> productIds) {
         OrderResponseDto dto = toDto(order);
         if (dto.getItems() != null) {

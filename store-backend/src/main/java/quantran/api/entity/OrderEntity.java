@@ -23,6 +23,7 @@ public class OrderEntity {
     public enum Status {
         PENDING,
         PAID,
+        SHIPPED,
         CANCELLED
     }
 

@@ -1,8 +1,15 @@
 import { listSellerOrders } from '@/lib/actions/seller.actions'
 import { formatDateTime, formatId } from '@/lib/utils'
 import ProductPrice from '@/components/shared/product/product-price'
+import SellerShipOrderButton from './seller-ship-order-button'
 
 export const metadata = { title: 'Seller orders' }
+
+function canShip(order: { status?: string; isPaid?: boolean }) {
+  const status = (order.status || '').toUpperCase()
+  if (status === 'SHIPPED' || status === 'CANCELLED') return false
+  return Boolean(order.isPaid) || status === 'PAID'
+}
 
 export default async function SellerOrdersPage() {
   let orders: Awaited<ReturnType<typeof listSellerOrders>> = []
@@ -19,7 +26,8 @@ export default async function SellerOrdersPage() {
       <div>
         <h2 className='text-xl font-semibold'>Seller orders</h2>
         <p className='text-sm text-muted-foreground'>
-          Orders that include your products ({orders.length})
+          Orders that include your products ({orders.length}). Mark paid orders
+          as shipped after you send them.
         </p>
       </div>
 
@@ -46,7 +54,12 @@ export default async function SellerOrdersPage() {
                     {order.status ? ` · ${order.status}` : ''}
                   </p>
                 </div>
-                <ProductPrice price={order.itemsPrice} plain />
+                <div className='flex items-center gap-3'>
+                  <ProductPrice price={order.itemsPrice} plain />
+                  {canShip(order) ? (
+                    <SellerShipOrderButton orderId={order.id} />
+                  ) : null}
+                </div>
               </div>
               <ul className='space-y-1 text-sm text-muted-foreground'>
                 {order.items.map((item, index) => (
