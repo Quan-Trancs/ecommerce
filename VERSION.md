@@ -1,5 +1,21 @@
 # Version History
 
+## v1.0.1 — 2026-07-24
+
+Patch release fixing storefront layout and category image bugs found after v1.0.0.
+
+### Fixes
+- **Product price alignment** — restored `forListing` conditional (`justify-center` on listings, `justify-start` on PDP/buy box). The previous ternary always applied `justify-start`.
+- **Home category images** — load a representative image via `searchCatalog({ category: slug })` (or `category.imageUrl`) instead of fragile substring matching / modulo fallback that could assign the wrong product image to a category.
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.0.1` |
+| Store API | `store-backend/` | `1.0.0` (`store-api`) |
+
+---
+
 ## v1.0.0 — 2026-07-24
 
 First commercial-store release of the ecommerce monorepo.
