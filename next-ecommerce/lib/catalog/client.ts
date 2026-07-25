@@ -8,6 +8,8 @@ import type {
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
+let lastCatalogSource: 'api' | 'fallback' = 'api'
+
 export function getCatalogApiUrl() {
   return (
     process.env.CATALOG_API_URL?.replace(/\/$/, '') ||
@@ -16,15 +18,49 @@ export function getCatalogApiUrl() {
   )
 }
 
-async function catalogFetch<T>(path: string): Promise<T> {
+export function getCatalogSource() {
+  return lastCatalogSource
+}
+
+export function isUsingCatalogFallback() {
+  return lastCatalogSource === 'fallback'
+}
+
+export async function checkCatalogHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${getCatalogApiUrl()}/v1/categories?view=flat`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout?.(2500),
+    })
+    if (response.ok) {
+      lastCatalogSource = 'api'
+      return true
+    }
+  } catch {
+    /* ignore */
+  }
+  lastCatalogSource = 'fallback'
+  return false
+}
+
+async function catalogFetch<T>(
+  path: string,
+  init?: RequestInit
+): Promise<T> {
   const url = `${getCatalogApiUrl()}${path.startsWith('/') ? path : `/${path}`}`
   const response = await fetch(url, {
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', ...(init?.headers || {}) },
     cache: 'no-store',
+    ...init,
   })
   if (!response.ok) {
-    throw new Error(`Catalog API ${response.status}: ${response.statusText} (${url})`)
+    throw new Error(
+      `Catalog API ${response.status}: ${response.statusText} (${url})`
+    )
   }
+  lastCatalogSource = 'api'
+  if (response.status === 204) return undefined as T
   return (await response.json()) as T
 }
 
@@ -39,6 +75,7 @@ function buildSearchQuery(params: ProductSearchParams): string {
   if (params.minPrice != null) query.set('minPrice', String(params.minPrice))
   if (params.maxPrice != null) query.set('maxPrice', String(params.maxPrice))
   if (params.price) query.set('price', params.price)
+  if (params.sort && params.sort !== 'featured') query.set('sort', params.sort)
   query.set('page', String(params.page ?? 0))
   query.set('size', String(params.size ?? 20))
   if (params.attributes) {
@@ -58,7 +95,26 @@ export async function searchProducts(
     )
   } catch (error) {
     console.warn('Catalog API unavailable, using fallback products:', error)
+    lastCatalogSource = 'fallback'
     return filterFallback(params)
+  }
+}
+
+export async function fetchProductsByIds(
+  ids: string[]
+): Promise<CatalogProduct[]> {
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))]
+  if (!unique.length) return []
+  try {
+    return await catalogFetch<CatalogProduct[]>(
+      `/v1/products/batch?ids=${unique.map(encodeURIComponent).join(',')}`
+    )
+  } catch (error) {
+    console.warn('Catalog batch unavailable, fetching individually:', error)
+    const products = await Promise.all(
+      unique.map((id) => fetchProductByIdOrSlug(id))
+    )
+    return products.filter((p): p is CatalogProduct => Boolean(p))
   }
 }
 
@@ -74,9 +130,11 @@ export async function fetchProductByIdOrSlug(
     if (!response.ok) {
       throw new Error(`Catalog API ${response.status}`)
     }
+    lastCatalogSource = 'api'
     return (await response.json()) as CatalogProduct
   } catch (error) {
     console.warn('Catalog API unavailable, using fallback product:', error)
+    lastCatalogSource = 'fallback'
     return (
       FALLBACK_SEARCH.data.find(
         (product) =>
@@ -92,6 +150,7 @@ export async function fetchCategories(): Promise<CatalogCategory[]> {
     return await catalogFetch<CatalogCategory[]>('/v1/categories?view=tree')
   } catch (error) {
     console.warn('Catalog API unavailable, using fallback categories:', error)
+    lastCatalogSource = 'fallback'
     return FALLBACK_CATEGORIES
   }
 }
@@ -100,6 +159,7 @@ export async function fetchFlatCategories(): Promise<CatalogCategory[]> {
   try {
     return await catalogFetch<CatalogCategory[]>('/v1/categories?view=flat')
   } catch {
+    lastCatalogSource = 'fallback'
     const flat: CatalogCategory[] = []
     const walk = (nodes: CatalogCategory[]) => {
       for (const node of nodes) {
@@ -110,6 +170,86 @@ export async function fetchFlatCategories(): Promise<CatalogCategory[]> {
     walk(FALLBACK_CATEGORIES)
     return flat
   }
+}
+
+export type StoreOrderPayload = {
+  paymentMethod: string
+  itemsPrice: number
+  shippingPrice: number
+  taxPrice: number
+  totalPrice: number
+  shipping: {
+    fullName: string
+    address: string
+    city: string
+    postalCode: string
+    country: string
+    phone?: string
+  }
+  items: {
+    productId: string
+    name: string
+    slug: string
+    image: string
+    price: number
+    quantity: number
+    color?: string
+    size?: string
+  }[]
+}
+
+export type StoreOrder = {
+  id: string
+  userId: string
+  status: string
+  paymentMethod: string
+  itemsPrice: number
+  shippingPrice: number
+  taxPrice: number
+  totalPrice: number
+  isPaid?: boolean
+  paidAt?: string
+  items: StoreOrderPayload['items']
+  shipping: StoreOrderPayload['shipping']
+  createdAt?: string
+}
+
+export async function createStoreOrder(
+  payload: StoreOrderPayload,
+  userId: string
+): Promise<StoreOrder> {
+  return catalogFetch<StoreOrder>('/v1/orders', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId,
+    },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchStoreOrder(orderId: string): Promise<StoreOrder | null> {
+  try {
+    return await catalogFetch<StoreOrder>(`/v1/orders/${encodeURIComponent(orderId)}`)
+  } catch {
+    return null
+  }
+}
+
+export async function payStoreOrder(
+  orderId: string,
+  payment: {
+    id: string
+    status: string
+    emailAddress?: string
+    pricePaid?: string
+  }
+): Promise<StoreOrder> {
+  return catalogFetch<StoreOrder>(`/v1/orders/${encodeURIComponent(orderId)}/pay`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payment),
+  })
 }
 
 function filterFallback(params: ProductSearchParams): ProductSearchResult {
@@ -155,6 +295,27 @@ function filterFallback(params: ProductSearchParams): ProductSearchResult {
         p.attributes?.[key]?.some((v) => wanted.includes(v.toLowerCase()))
       )
     }
+  }
+
+  switch (params.sort) {
+    case 'price-asc':
+      products.sort((a, b) => a.price - b.price)
+      break
+    case 'price-desc':
+      products.sort((a, b) => b.price - a.price)
+      break
+    case 'rating':
+      products.sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0))
+      break
+    case 'newest':
+      products.sort(
+        (a, b) =>
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime()
+      )
+      break
+    default:
+      break
   }
 
   const page = params.page ?? 0

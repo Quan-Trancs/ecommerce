@@ -300,6 +300,51 @@ public class CatalogDataSeeder implements CommandLineRunner {
                     .build());
         }
         product.setAttributes(values);
+
+        List<ProductVariantEntity> variants = buildVariants(product, attributeValues, price, listPrice);
+        product.setVariants(variants);
+
         productRepository.save(product);
+    }
+
+    private List<ProductVariantEntity> buildVariants(
+            ProductEntity product,
+            Map<String, String> attributeValues,
+            String price,
+            String listPrice
+    ) {
+        List<ProductVariantEntity> variants = new ArrayList<>();
+        String color = attributeValues.get("color");
+        String size = attributeValues.get("size");
+        if (color == null && size == null) {
+            return variants;
+        }
+
+        List<String> sizes = size != null
+                ? Arrays.asList("S", "M", "L", "XL")
+                : Collections.singletonList(null);
+        List<String> colors = color != null
+                ? Arrays.asList(color, "Black", "White")
+                : Collections.singletonList(null);
+
+        int stockBase = 12;
+        for (String c : colors) {
+            for (String s : sizes) {
+                if (c == null && s == null) continue;
+                String sku = product.getId()
+                        + (c != null ? "-" + c.substring(0, Math.min(3, c.length())).toUpperCase() : "")
+                        + (s != null ? "-" + s : "");
+                variants.add(ProductVariantEntity.builder()
+                        .product(product)
+                        .sku(sku)
+                        .color(c)
+                        .size(s)
+                        .price(new BigDecimal(price))
+                        .listPrice(new BigDecimal(listPrice))
+                        .stockQuantity(stockBase++)
+                        .build());
+            }
+        }
+        return variants;
     }
 }

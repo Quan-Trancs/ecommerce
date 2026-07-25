@@ -14,7 +14,7 @@ import java.util.*;
  * Commercial catalog API with Amazon-style faceted search.
  *
  * Example:
- * GET /v1/products?q=shoe&category=shoes&brand=nike&color=Black&size=10&minPrice=25&maxPrice=100
+ * GET /v1/products?q=shoe&category=shoes&brand=nike&color=Black&size=10&minPrice=25&maxPrice=100&sort=price-asc
  */
 @RestController
 @RequestMapping("/v1/products")
@@ -24,7 +24,7 @@ public class ProductController {
     private final ProductSearchService productSearchService;
 
     private static final Set<String> RESERVED_PARAMS = new HashSet<>(Arrays.asList(
-            "q", "category", "brand", "minPrice", "maxPrice", "tag", "tags", "page", "size"
+            "q", "category", "brand", "minPrice", "maxPrice", "tag", "tags", "page", "size", "sort", "ids"
     ));
 
     @GetMapping
@@ -36,6 +36,7 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) List<String> tag,
             @RequestParam(required = false) String price,
+            @RequestParam(defaultValue = "featured") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam Map<String, String> allParams
@@ -69,7 +70,6 @@ public class ProductController {
             }
         }
 
-        // Merge repeated brand/tag from Spring list params already handled.
         ProductSearchResponseDto response = productSearchService.search(
                 q,
                 category,
@@ -78,10 +78,31 @@ public class ProductController {
                 maxPrice,
                 tag,
                 attributeFilters,
+                sort,
                 page,
                 size
         );
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/batch")
+    public ResponseEntity<List<ProductResponseDto>> getProductsBatch(
+            @RequestParam(required = false) List<String> ids
+    ) {
+        List<String> resolved = new ArrayList<>();
+        if (ids != null) {
+            for (String id : ids) {
+                if (id == null) {
+                    continue;
+                }
+                for (String part : id.split(",")) {
+                    if (!part.trim().isEmpty()) {
+                        resolved.add(part.trim());
+                    }
+                }
+            }
+        }
+        return ResponseEntity.ok(productSearchService.findByIds(resolved));
     }
 
     @GetMapping("/{idOrSlug}")

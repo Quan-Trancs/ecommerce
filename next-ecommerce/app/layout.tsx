@@ -5,6 +5,7 @@ import './globals.css'
 import { APP_DESCRIPTION, APP_NAME, APP_SLOGAN } from '@/lib/constants'
 import ClientProviders from '@/components/shared/client-providers'
 import { ErrorBoundary } from '@/components/shared/error-boundary'
+import CatalogStatusBanner from '@/components/shared/catalog-status-banner'
 
 const outfit = Outfit({
   variable: '--font-outfit',
@@ -42,6 +43,7 @@ export default function RootLayout({
         className={`${outfit.variable} ${dmSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <ErrorBoundary>
+          <CatalogStatusBanner />
           <ClientProviders>{children}</ClientProviders>
         </ErrorBoundary>
       </body>

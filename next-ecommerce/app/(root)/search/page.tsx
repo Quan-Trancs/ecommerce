@@ -4,7 +4,7 @@ import {
 } from '@/components/shared/search/search-filters'
 import { searchCatalog, getCategoryTree } from '@/lib/actions/product.actions'
 import type { CatalogCategory } from '@/lib/catalog/types'
-import { sortProducts, toArray } from '@/lib/search/filter-utils'
+import { toArray } from '@/lib/search/filter-utils'
 import Link from 'next/link'
 
 export const metadata = {
@@ -98,11 +98,12 @@ export default async function SearchPage(props: {
       attributes,
       page,
       size: 24,
+      sort,
     }),
     getCategoryTree(),
   ])
 
-  const sortedProducts = sortProducts(products, sort)
+  const sortedProducts = products
 
   const heading = q
     ? `Results for “${q}”`

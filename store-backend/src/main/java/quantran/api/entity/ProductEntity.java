@@ -84,6 +84,10 @@ public class ProductEntity {
     @Builder.Default
     private List<ProductAttributeValueEntity> attributes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductVariantEntity> variants = new ArrayList<>();
+
     @Column(name = "avg_rating")
     @Builder.Default
     private Double avgRating = 0.0;

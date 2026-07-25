@@ -63,6 +63,21 @@ public final class ProductMapper {
             }
         }
         builder.attributes(attrs);
+
+        if (product.getVariants() != null) {
+            builder.variants(product.getVariants().stream()
+                    .map(v -> ProductResponseDto.VariantDto.builder()
+                            .id(v.getId())
+                            .sku(v.getSku())
+                            .color(v.getColor())
+                            .size(v.getSize())
+                            .price(v.getPrice())
+                            .listPrice(v.getListPrice())
+                            .stockQuantity(v.getStockQuantity())
+                            .build())
+                    .collect(Collectors.toList()));
+        }
+
         return builder.build();
     }
 }

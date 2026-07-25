@@ -23,7 +23,7 @@ public class CorsConfig implements WebMvcConfigurer {
     @Value("${app.cors.allowed-methods:GET,POST,PUT,DELETE,PATCH,OPTIONS}")
     private String allowedMethods;
 
-    @Value("${app.cors.allowed-headers:Authorization,Content-Type,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers}")
+    @Value("${app.cors.allowed-headers:Authorization,Content-Type,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,X-Admin-Key,X-User-Id}")
     private String allowedHeaders;
 
     @Value("${app.cors.exposed-headers:Authorization,Content-Disposition}")
@@ -42,6 +42,14 @@ public class CorsConfig implements WebMvcConfigurer {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         
         registry.addMapping("/api/**")
+                .allowedOrigins(origins.toArray(new String[0]))
+                .allowedMethods(allowedMethods.split(","))
+                .allowedHeaders(allowedHeaders.split(","))
+                .exposedHeaders(exposedHeaders.split(","))
+                .allowCredentials(allowCredentials)
+                .maxAge(maxAge);
+
+        registry.addMapping("/v1/**")
                 .allowedOrigins(origins.toArray(new String[0]))
                 .allowedMethods(allowedMethods.split(","))
                 .allowedHeaders(allowedHeaders.split(","))
@@ -77,6 +85,7 @@ public class CorsConfig implements WebMvcConfigurer {
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/v1/**", configuration);
         
         log.info("CORS configuration source created with {} allowed origins", origins.size());
         return source;

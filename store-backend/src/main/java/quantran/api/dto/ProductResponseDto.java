@@ -33,6 +33,8 @@ public class ProductResponseDto {
     /** attribute code -> display value(s) */
     @Builder.Default
     private Map<String, List<String>> attributes = new HashMap<>();
+    @Builder.Default
+    private List<VariantDto> variants = new ArrayList<>();
     private Double avgRating;
     private Integer numReviews;
     private Integer numSales;
@@ -58,5 +60,19 @@ public class ProductResponseDto {
         private String id;
         private String name;
         private String slug;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class VariantDto {
+        private Long id;
+        private String sku;
+        private String color;
+        private String size;
+        private BigDecimal price;
+        private BigDecimal listPrice;
+        private Integer stockQuantity;
     }
 }

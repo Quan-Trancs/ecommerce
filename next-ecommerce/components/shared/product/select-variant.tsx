@@ -13,16 +13,40 @@ export default function SelectVariant({
   size: string
   color: string
 }) {
-  const selectedColor = color || product.colors[0]
-  const selectedSize = size || product.sizes[0]
+  const variantColors = [
+    ...new Set(
+      (product.variants || [])
+        .map((v) => v.color)
+        .filter((c): c is string => Boolean(c))
+    ),
+  ]
+  const colors = variantColors.length ? variantColors : product.colors
+
+  const selectedColor = color || colors[0] || ''
+  const sizesForColor = [
+    ...new Set(
+      (product.variants || [])
+        .filter((v) => !selectedColor || v.color === selectedColor)
+        .map((v) => v.size)
+        .filter((s): s is string => Boolean(s))
+    ),
+  ]
+  const sizes = sizesForColor.length ? sizesForColor : product.sizes
+  const selectedSize = size || sizes[0] || ''
+
+  const selectedVariant = product.variants?.find(
+    (v) =>
+      (!selectedColor || v.color === selectedColor) &&
+      (!selectedSize || v.size === selectedSize)
+  )
 
   return (
     <div className='space-y-4'>
-      {product.colors.length > 0 && (
+      {colors.length > 0 && (
         <div className='space-y-2'>
           <p className='filter-section-title'>Color</p>
           <div className='flex flex-wrap gap-2.5'>
-            {product.colors.map((x: string) => {
+            {colors.map((x: string) => {
               const selected = selectedColor === x
               const swatch = x.startsWith('#') ? x : colorSwatch(x)
               const light = isLightSwatch(x) || x.toLowerCase() === '#ffffff'
@@ -63,12 +87,18 @@ export default function SelectVariant({
         </div>
       )}
 
-      {product.sizes.length > 0 && (
+      {sizes.length > 0 && (
         <div className='space-y-2'>
           <p className='filter-section-title'>Size</p>
           <div className='flex flex-wrap gap-1.5'>
-            {product.sizes.map((x: string) => {
+            {sizes.map((x: string) => {
               const selected = selectedSize === x
+              const variant = product.variants?.find(
+                (v) =>
+                  (!selectedColor || v.color === selectedColor) &&
+                  v.size === x
+              )
+              const out = variant && variant.stockQuantity <= 0
               return (
                 <Link
                   key={x}
@@ -78,7 +108,10 @@ export default function SelectVariant({
                     color: selectedColor,
                     size: x,
                   })}`}
-                  className='filter-size'
+                  className={cn(
+                    'filter-size',
+                    out && 'opacity-40 line-through'
+                  )}
                   data-selected={selected || undefined}
                 >
                   {x}
@@ -87,6 +120,14 @@ export default function SelectVariant({
             })}
           </div>
         </div>
+      )}
+
+      {selectedVariant && (
+        <p className='font-mono text-[11px] uppercase tracking-wider text-slate-500'>
+          SKU {selectedVariant.sku || selectedVariant.id} ·{' '}
+          {selectedVariant.stockQuantity} in stock · $
+          {selectedVariant.price.toFixed(2)}
+        </p>
       )}
     </div>
   )

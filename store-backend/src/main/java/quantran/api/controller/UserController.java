@@ -2,6 +2,7 @@ package quantran.api.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import quantran.api.service.UserService;
 @RequiredArgsConstructor
 @RequestMapping(UrlConstant.USERS)
 @Validated
+@Profile("bookstore")
 public class UserController {
     private final UserService userService;
 

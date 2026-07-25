@@ -1,4 +1,4 @@
-import { IProduct } from '@/lib/db/models/product.model'
+import type { StoreProduct, StoreProductVariant } from './store-product'
 import type { CatalogProduct } from './types'
 
 function roundMoney(value: number | undefined | null, fallback = 0): number {
@@ -7,7 +7,9 @@ function roundMoney(value: number | undefined | null, fallback = 0): number {
   return Math.round((amount + Number.EPSILON) * 100) / 100
 }
 
-export function catalogProductToIProduct(product: CatalogProduct): IProduct {
+export function catalogProductToStoreProduct(
+  product: CatalogProduct
+): StoreProduct {
   const listPrice = roundMoney(product.listPrice, roundMoney(product.price))
   const price = roundMoney(product.price, listPrice)
   const colors = product.attributes?.color || []
@@ -17,6 +19,18 @@ export function catalogProductToIProduct(product: CatalogProduct): IProduct {
     product.categories?.[0]?.slug ||
     'General'
 
+  const variants: StoreProductVariant[] | undefined = product.variants?.map(
+    (v) => ({
+      id: v.id,
+      sku: v.sku,
+      color: v.color,
+      size: v.size,
+      price: roundMoney(v.price, price),
+      listPrice: roundMoney(v.listPrice, listPrice),
+      stockQuantity: Math.max(0, v.stockQuantity ?? 0),
+    })
+  )
+
   return {
     _id: product.id,
     name: product.name,
@@ -25,7 +39,9 @@ export function catalogProductToIProduct(product: CatalogProduct): IProduct {
     images:
       product.images?.length
         ? product.images
-        : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800'],
+        : [
+            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800',
+          ],
     brand: product.brand?.name || 'Store Brand',
     description: product.description || product.name,
     isPublished: product.isPublished !== false,
@@ -46,11 +62,20 @@ export function catalogProductToIProduct(product: CatalogProduct): IProduct {
     ],
     reviews: [],
     numSales: product.numSales ?? 0,
+    variants,
     createdAt: product.createdAt ? new Date(product.createdAt) : new Date(),
     updatedAt: product.updatedAt ? new Date(product.updatedAt) : new Date(),
-  } as unknown as IProduct
+  }
 }
 
-export function catalogProductsToIProducts(products: CatalogProduct[]): IProduct[] {
-  return products.map(catalogProductToIProduct)
+/** @deprecated use catalogProductToStoreProduct */
+export const catalogProductToIProduct = catalogProductToStoreProduct
+
+export function catalogProductsToStoreProducts(
+  products: CatalogProduct[]
+): StoreProduct[] {
+  return products.map(catalogProductToStoreProduct)
 }
+
+/** @deprecated use catalogProductsToStoreProducts */
+export const catalogProductsToIProducts = catalogProductsToStoreProducts

@@ -25,6 +25,15 @@ export type CatalogProduct = {
   images?: string[]
   tags?: string[]
   attributes?: Record<string, string[]>
+  variants?: {
+    id: number | string
+    sku?: string
+    color?: string
+    size?: string
+    price: number
+    listPrice?: number
+    stockQuantity?: number
+  }[]
   avgRating?: number
   numReviews?: number
   numSales?: number
@@ -79,6 +88,7 @@ export type ProductSearchParams = {
   price?: string
   page?: number
   size?: number
+  sort?: string
   /** Dynamic attribute filters, e.g. { color: ['Black'], size: ['M'] } */
   attributes?: Record<string, string[]>
 }

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,7 +42,13 @@ public class JwtTokenProvider {
             log.warn("JWT secret key is too short. Recommended minimum length is 64 characters.");
         }
         
-        byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
+        byte[] keyBytes;
+        try {
+            keyBytes = Base64.getDecoder().decode(jwtSecret);
+        } catch (IllegalArgumentException ex) {
+            // Allow plain-text secrets in local/dev configs
+            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        }
         return new SecretKeySpec(keyBytes, SignatureAlgorithm.HS512.getJcaName());
     }
     

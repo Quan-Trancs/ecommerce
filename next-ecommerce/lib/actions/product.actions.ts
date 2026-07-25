@@ -5,14 +5,15 @@ import {
   fetchCategories,
   fetchFlatCategories,
   fetchProductByIdOrSlug,
+  fetchProductsByIds,
   searchProducts,
 } from '@/lib/catalog/client'
 import {
-  catalogProductToIProduct,
-  catalogProductsToIProducts,
+  catalogProductToStoreProduct,
+  catalogProductsToStoreProducts,
 } from '@/lib/catalog/mapper'
 import type { CatalogCategory, Facet, ProductSearchParams } from '@/lib/catalog/types'
-import { IProduct } from '@/lib/db/models/product.model'
+import type { StoreProduct } from '@/lib/catalog/store-product'
 
 function flattenCategories(nodes: CatalogCategory[]): CatalogCategory[] {
   const result: CatalogCategory[] = []
@@ -39,7 +40,7 @@ export async function getAllCategories() {
 }
 
 export async function searchCatalog(params: ProductSearchParams): Promise<{
-  products: IProduct[]
+  products: StoreProduct[]
   total: number
   facets: Facet[]
   page: number
@@ -47,7 +48,7 @@ export async function searchCatalog(params: ProductSearchParams): Promise<{
 }> {
   const result = await searchProducts(params)
   return {
-    products: catalogProductsToIProducts(result.data),
+    products: catalogProductsToStoreProducts(result.data),
     total: result.total,
     facets: result.facets || [],
     page: result.page,
@@ -64,9 +65,7 @@ export async function getProductsForCard({
 }) {
   const products = tag
     ? await getProductsByTag({ tag, limit })
-    : (
-        await searchCatalog({ size: limit })
-      ).products.slice(0, limit)
+    : (await searchCatalog({ size: limit })).products.slice(0, limit)
 
   return products.map((product) => ({
     name: product.name,
@@ -92,7 +91,7 @@ export async function getProductsByTag({
 export async function getProductBySlug(slug: string) {
   const product = await fetchProductByIdOrSlug(slug)
   if (!product) throw new Error('Product not found')
-  return catalogProductToIProduct(product)
+  return catalogProductToStoreProduct(product)
 }
 
 export async function getRelatedProductsByCategory({
@@ -119,18 +118,8 @@ export async function getRelatedProductsByCategory({
 }
 
 export async function getProductsByIds(ids: string[]) {
-  const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))]
-  const products = await Promise.all(
-    uniqueIds.map(async (id) => {
-      try {
-        const product = await fetchProductByIdOrSlug(id)
-        return product ? catalogProductToIProduct(product) : null
-      } catch {
-        return null
-      }
-    })
-  )
-  return products.filter((product): product is IProduct => Boolean(product))
+  const catalogProducts = await fetchProductsByIds(ids)
+  return catalogProductsToStoreProducts(catalogProducts)
 }
 
 export async function getProductsByCategories(

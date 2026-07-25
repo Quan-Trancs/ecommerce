@@ -38,11 +38,13 @@ public class ProductSearchService {
             BigDecimal maxPrice,
             List<String> tags,
             Map<String, List<String>> attributeFilters,
+            String sort,
             int page,
             int size
     ) {
         List<ProductEntity> published = productRepository.findAllPublishedWithDetails();
         hydrateAttributes(published);
+        hydrateVariants(published);
 
         Set<String> categoryIds = resolveCategoryIds(category);
         Set<String> brandSet = brands == null ? Collections.emptySet() :
@@ -58,8 +60,7 @@ public class ProductSearchService {
                 .filter(p -> matchesPrice(p, minPrice, maxPrice))
                 .filter(p -> matchesTags(p, tagSet))
                 .filter(p -> matchesAttributes(p, attrFilters))
-                .sorted(Comparator.comparing(ProductEntity::getNumSales, Comparator.nullsLast(Integer::compareTo)).reversed()
-                        .thenComparing(ProductEntity::getName))
+                .sorted(resolveSortComparator(sort))
                 .collect(Collectors.toList());
 
         List<ProductSearchResponseDto.FacetDto> facets = buildFacets(
@@ -88,8 +89,54 @@ public class ProductSearchService {
         return productRepository.findDetailedByIdOrSlug(idOrSlug)
                 .map(product -> {
                     hydrateAttributes(Collections.singletonList(product));
+                    hydrateVariants(Collections.singletonList(product));
                     return ProductMapper.toDto(product);
                 });
+    }
+
+    public List<ProductResponseDto> findByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ProductEntity> products = productRepository.findDetailedByIdIn(ids);
+        hydrateAttributes(products);
+        hydrateVariants(products);
+        Map<String, ProductEntity> byId = products.stream()
+                .collect(Collectors.toMap(ProductEntity::getId, p -> p, (a, b) -> a));
+        // Preserve request order
+        List<ProductResponseDto> result = new ArrayList<>();
+        for (String id : ids) {
+            ProductEntity product = byId.get(id);
+            if (product != null) {
+                result.add(ProductMapper.toDto(product));
+            }
+        }
+        return result;
+    }
+
+    private Comparator<ProductEntity> resolveSortComparator(String sort) {
+        String key = sort == null ? "featured" : sort.trim().toLowerCase();
+        switch (key) {
+            case "price-asc":
+                return Comparator.comparing(ProductEntity::getPrice, Comparator.nullsLast(BigDecimal::compareTo))
+                        .thenComparing(ProductEntity::getName, Comparator.nullsLast(String::compareToIgnoreCase));
+            case "price-desc":
+                return Comparator.comparing(ProductEntity::getPrice, Comparator.nullsLast(BigDecimal::compareTo)).reversed()
+                        .thenComparing(ProductEntity::getName, Comparator.nullsLast(String::compareToIgnoreCase));
+            case "rating":
+                return Comparator
+                        .comparing(ProductEntity::getAvgRating, Comparator.nullsLast(Double::compareTo))
+                        .thenComparing(ProductEntity::getNumReviews, Comparator.nullsLast(Integer::compareTo))
+                        .reversed()
+                        .thenComparing(ProductEntity::getName, Comparator.nullsLast(String::compareToIgnoreCase));
+            case "newest":
+                return Comparator.comparing(ProductEntity::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed()
+                        .thenComparing(ProductEntity::getName, Comparator.nullsLast(String::compareToIgnoreCase));
+            case "featured":
+            default:
+                return Comparator.comparing(ProductEntity::getNumSales, Comparator.nullsLast(Integer::compareTo)).reversed()
+                        .thenComparing(ProductEntity::getName, Comparator.nullsLast(String::compareToIgnoreCase));
+        }
     }
 
     private void hydrateAttributes(List<ProductEntity> products) {
@@ -104,6 +151,22 @@ public class ProductSearchService {
             ProductEntity loaded = byId.get(product.getId());
             if (loaded != null) {
                 product.setAttributes(loaded.getAttributes());
+            }
+        }
+    }
+
+    private void hydrateVariants(List<ProductEntity> products) {
+        if (products.isEmpty()) {
+            return;
+        }
+        List<String> ids = products.stream().map(ProductEntity::getId).collect(Collectors.toList());
+        List<ProductEntity> withVariants = productRepository.fetchVariantsForIds(ids);
+        Map<String, ProductEntity> byId = withVariants.stream()
+                .collect(Collectors.toMap(ProductEntity::getId, p -> p, (a, b) -> a));
+        for (ProductEntity product : products) {
+            ProductEntity loaded = byId.get(product.getId());
+            if (loaded != null) {
+                product.setVariants(loaded.getVariants());
             }
         }
     }

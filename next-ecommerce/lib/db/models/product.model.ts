@@ -1,13 +1,20 @@
-import { IProductInput } from '@/types'
+import type { IProductInput } from '@/types'
 import { Document, Schema, model, Model, models } from 'mongoose'
+import type { StoreProduct } from '@/lib/catalog/store-product'
 
-export interface IProduct extends Document, IProductInput {
+/**
+ * Canonical UI type is StoreProduct (catalog-mapped).
+ * Mongoose Product model remains only for optional seed/legacy scripts.
+ */
+export type IProduct = StoreProduct
+
+export interface IProductDocument extends Document, IProductInput {
   _id: string
   createdAt: Date
   updatedAt: Date
 }
 
-const productSchema = new Schema<IProduct>(
+const productSchema = new Schema<IProductDocument>(
   {
     name: {
       type: String,
@@ -91,18 +98,8 @@ const productSchema = new Schema<IProduct>(
   }
 )
 
-// Add indexes for better query performance (slug index is auto-created by unique: true)
-productSchema.index({ category: 1 })
-productSchema.index({ tags: 1 })
-productSchema.index({ isPublished: 1 })
-productSchema.index({ category: 1, isPublished: 1 })
-productSchema.index({ tags: 1, isPublished: 1 })
-productSchema.index({ createdAt: -1 })
-productSchema.index({ price: 1 })
-productSchema.index({ brand: 1 })
+const Product =
+  (models.Product as Model<IProductDocument>) ||
+  model<IProductDocument>('Product', productSchema)
 
-const product =
-  (models.Product as Model<IProduct>) ||
-  model<IProduct>('Product', productSchema)
-
-export default product
+export default Product
