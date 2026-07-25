@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.4](./VERSION.md) — roles marketplace + SUPPORT desk. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.5](./VERSION.md) — roles marketplace + line fulfillment. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

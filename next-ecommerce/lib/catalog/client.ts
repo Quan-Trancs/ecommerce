@@ -182,6 +182,8 @@ export type StoreOrderPayload = {
     quantity: number
     color?: string
     size?: string
+    isShipped?: boolean
+    shippedAt?: string
   }[]
 }
 

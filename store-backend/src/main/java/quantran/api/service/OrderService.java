@@ -277,7 +277,8 @@ public class OrderService {
     }
 
     /**
-     * Seller ships a paid order that includes at least one of their products.
+     * Seller ships their own line items on a paid order.
+     * Order becomes SHIPPED only when every line item is shipped.
      * Does not modify isPaid / payment fields.
      */
     @Transactional
@@ -289,23 +290,40 @@ public class OrderService {
         OrderEntity order = orderRepository.findDetailedById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
-        boolean ownsLine = order.getItems() != null && order.getItems().stream()
-                .anyMatch(item -> item.getProductId() != null && owned.contains(item.getProductId()));
-        if (!ownsLine) {
+        if (order.getItems() == null || order.getItems().isEmpty()) {
+            throw new BusinessLogicException("Order has no items");
+        }
+
+        List<OrderItemEntity> sellerLines = order.getItems().stream()
+                .filter(item -> item.getProductId() != null && owned.contains(item.getProductId()))
+                .collect(Collectors.toList());
+        if (sellerLines.isEmpty()) {
             throw new UnauthorizedException("Order does not include your products");
         }
 
-        if (order.getStatus() == OrderEntity.Status.SHIPPED) {
-            return toDtoFiltered(order, owned);
-        }
         if (order.getStatus() == OrderEntity.Status.CANCELLED) {
             throw new BusinessLogicException("Cannot ship a cancelled order");
         }
-        if (!Boolean.TRUE.equals(order.getIsPaid()) && order.getStatus() != OrderEntity.Status.PAID) {
+        if (!Boolean.TRUE.equals(order.getIsPaid())
+                && order.getStatus() != OrderEntity.Status.PAID
+                && order.getStatus() != OrderEntity.Status.SHIPPED) {
             throw new BusinessLogicException("Order must be paid before shipping");
         }
 
-        order.setStatus(OrderEntity.Status.SHIPPED);
+        LocalDateTime now = LocalDateTime.now();
+        for (OrderItemEntity item : sellerLines) {
+            if (!Boolean.TRUE.equals(item.getIsShipped())) {
+                item.setIsShipped(true);
+                item.setShippedAt(now);
+            }
+        }
+
+        boolean allShipped = order.getItems().stream()
+                .allMatch(item -> Boolean.TRUE.equals(item.getIsShipped()));
+        if (allShipped) {
+            order.setStatus(OrderEntity.Status.SHIPPED);
+        }
+
         OrderEntity saved = orderRepository.save(order);
         return toDtoFiltered(saved, owned);
     }
@@ -365,6 +383,8 @@ public class OrderService {
                             .quantity(item.getQuantity())
                             .color(item.getColor())
                             .size(item.getSize())
+                            .isShipped(Boolean.TRUE.equals(item.getIsShipped()))
+                            .shippedAt(item.getShippedAt())
                             .build())
                     .collect(Collectors.toList()));
         }

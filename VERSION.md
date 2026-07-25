@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.5 — 2026-07-25
+
+Per-seller line fulfillment: sellers ship only their order lines; order becomes SHIPPED when all lines are shipped.
+
+### Backend
+- Flyway `V7__order_item_shipped.sql` — `is_shipped` / `shipped_at` on `store_order_items`
+- `PATCH /v1/seller/orders/{id}/status` marks seller-owned lines shipped (not whole-order alone)
+
+### Frontend
+- Seller orders show Shipped/Unshipped per line
+- Buyer delivered when all lines shipped or order status is SHIPPED
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.5` |
+| Store API | `store-backend/` | `1.3.5` (`store-api`) |
+
+---
+
 ## v1.3.4 — 2026-07-25
 
 SUPPORT role for customer service: view any order without full admin.

@@ -17,7 +17,7 @@ export default function SellerShipOrderButton({ orderId }: { orderId: string }) 
         startTransition(async () => {
           const result = await markSellerOrderShipped(orderId)
           if (result.success) {
-            toast.success('Order marked as shipped')
+            toast.success('Your line items marked as shipped')
           } else {
             toast.error(result.message || 'Could not mark shipped')
           }

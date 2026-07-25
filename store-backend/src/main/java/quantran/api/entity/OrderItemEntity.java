@@ -4,6 +4,7 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "store_order_items", indexes = {
@@ -49,4 +50,11 @@ public class OrderItemEntity {
 
     @Column(length = 50)
     private String size;
+
+    @Column(name = "is_shipped", nullable = false)
+    @Builder.Default
+    private Boolean isShipped = false;
+
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;
 }

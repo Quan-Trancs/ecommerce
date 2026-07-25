@@ -1,14 +1,17 @@
-import { listSellerOrders } from '@/lib/actions/seller.actions'
+import { listSellerOrders, type SellerOrder } from '@/lib/actions/seller.actions'
 import { formatDateTime, formatId } from '@/lib/utils'
 import ProductPrice from '@/components/shared/product/product-price'
 import SellerShipOrderButton from './seller-ship-order-button'
 
 export const metadata = { title: 'Seller orders' }
 
-function canShip(order: { status?: string; isPaid?: boolean }) {
+function canShipSellerLines(order: SellerOrder) {
   const status = (order.status || '').toUpperCase()
-  if (status === 'SHIPPED' || status === 'CANCELLED') return false
-  return Boolean(order.isPaid) || status === 'PAID'
+  if (status === 'CANCELLED') return false
+  if (!(order.isPaid || status === 'PAID' || status === 'SHIPPED')) return false
+  const lines = order.items || []
+  if (!lines.length) return false
+  return lines.some((item) => !item.isShipped)
 }
 
 export default async function SellerOrdersPage() {
@@ -26,8 +29,8 @@ export default async function SellerOrdersPage() {
       <div>
         <h2 className='text-xl font-semibold'>Seller orders</h2>
         <p className='text-sm text-muted-foreground'>
-          Orders that include your products ({orders.length}). Mark paid orders
-          as shipped after you send them.
+          Orders that include your products ({orders.length}). Mark your lines
+          shipped; the order becomes fully shipped when every seller has shipped.
         </p>
       </div>
 
@@ -56,7 +59,7 @@ export default async function SellerOrdersPage() {
                 </div>
                 <div className='flex items-center gap-3'>
                   <ProductPrice price={order.itemsPrice} plain />
-                  {canShip(order) ? (
+                  {canShipSellerLines(order) ? (
                     <SellerShipOrderButton orderId={order.id} />
                   ) : null}
                 </div>
@@ -69,6 +72,15 @@ export default async function SellerOrdersPage() {
                       ? ` (${[item.color, item.size].filter(Boolean).join(' / ')})`
                       : ''}{' '}
                     — <ProductPrice price={item.price} plain />
+                    <span
+                      className={
+                        item.isShipped
+                          ? 'ml-2 text-xs font-medium text-emerald-700'
+                          : 'ml-2 text-xs font-medium text-amber-700'
+                      }
+                    >
+                      {item.isShipped ? 'Shipped' : 'Unshipped'}
+                    </span>
                   </li>
                 ))}
               </ul>

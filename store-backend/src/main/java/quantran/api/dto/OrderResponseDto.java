@@ -58,5 +58,7 @@ public class OrderResponseDto {
         private Integer quantity;
         private String color;
         private String size;
+        private Boolean isShipped;
+        private LocalDateTime shippedAt;
     }
 }

@@ -136,6 +136,7 @@ export type SellerOrder = {
   isPaid?: boolean
   createdAt?: string
   items: {
+    id?: number
     productId: string
     name: string
     slug?: string
@@ -143,6 +144,8 @@ export type SellerOrder = {
     quantity: number
     color?: string
     size?: string
+    isShipped?: boolean
+    shippedAt?: string
   }[]
 }
 
@@ -157,6 +160,7 @@ export async function listSellerOrders(): Promise<SellerOrder[]> {
       ...item,
       price: Number(item.price),
       quantity: Number(item.quantity),
+      isShipped: Boolean(item.isShipped),
     })),
   }))
 }

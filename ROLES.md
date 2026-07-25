@@ -272,7 +272,7 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`
 
 ### Auth bridge (summary)
 
@@ -294,5 +294,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Debounce cart PUT traffic / revalidate line prices against live catalog on hydrate~~ (v1.3.2)
 - ~~Seller order status updates (fulfill / ship) beyond list view~~ (v1.3.3)
 - ~~Optional SUPPORT role~~ (v1.3.4)
-- Per-seller line fulfillment for multi-seller orders (order-level SHIPPED is v1)
+- ~~Per-seller line fulfillment for multi-seller orders~~ (v1.3.5)
 - Buyer order cancel / refund flow
+- Order search by email for support desk
