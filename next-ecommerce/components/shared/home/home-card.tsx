@@ -15,19 +15,23 @@ type CardItem = {
 export function HomeCard({ cards }: { cards: CardItem[] }) {
   return (
     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
-      {cards.map((card) => (
-        <section key={card.title} className='store-section flex flex-col'>
-          <h3 className='font-display mb-4 text-xl font-bold tracking-tight'>
-            {card.title}
-          </h3>
-          <div className='grid flex-1 grid-cols-2 gap-3'>
+      {cards.map((card, index) => (
+        <section
+          key={card.title}
+          className='brick brick-stud flex flex-col p-4 md:p-5'
+          style={{ animationDelay: `${index * 60}ms` }}
+        >
+          <div className='section-band mt-1'>
+            <h3 className='brick-title text-lg md:text-xl'>{card.title}</h3>
+          </div>
+          <div className='grid flex-1 grid-cols-2 gap-2.5'>
             {card.items.map((item) => (
               <Link
                 href={item.href}
                 key={item.name}
-                className='group flex flex-col rounded-xl bg-muted/50 p-2 transition hover:bg-muted'
+                className='group flex flex-col p-1.5 transition hover:bg-chrome/[0.03]'
               >
-                <div className='relative mx-auto aspect-square w-full overflow-hidden rounded-lg bg-white'>
+                <div className='brick-media relative mx-auto aspect-square w-full bg-white'>
                   <Image
                     src={item.image}
                     alt={item.name}
@@ -36,18 +40,15 @@ export function HomeCard({ cards }: { cards: CardItem[] }) {
                     className='object-contain p-2 transition duration-300 group-hover:scale-105'
                   />
                 </div>
-                <p className='mt-2 truncate text-center text-sm font-medium'>
+                <p className='mt-2 truncate text-center text-xs font-semibold text-chrome md:text-sm'>
                   {item.name}
                 </p>
               </Link>
             ))}
           </div>
           {card.link && (
-            <Link
-              href={card.link.href}
-              className='mt-4 text-sm font-semibold text-sky-700 hover:text-amber-700 hover:underline'
-            >
-              {card.link.text}
+            <Link href={card.link.href} className='brick-link mt-4'>
+              {card.link.text} →
             </Link>
           )}
         </section>

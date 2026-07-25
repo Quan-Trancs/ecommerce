@@ -74,12 +74,16 @@ export default async function Page() {
     <>
       <HomeCarousel items={data.carousels} />
 
-      <div className='relative -mt-10 md:-mt-16'>
-        <div className='page-shell space-y-5 px-3 pb-8 md:px-4'>
+      <div className='relative z-10 pt-5 md:pt-7'>
+        <div className='page-shell space-y-5 px-3 pb-10 md:px-4'>
           <HomeCard cards={cards} />
 
           <section className='store-section'>
-            <ProductSlider title="Today's Deals" products={todaysDeals} />
+            <ProductSlider
+              title="Today's Deals"
+              products={todaysDeals}
+              href='/search?tag=todays-deal'
+            />
           </section>
 
           <section className='store-section'>
@@ -87,6 +91,7 @@ export default async function Page() {
               title='Best Selling Products'
               products={bestSellingProducts}
               hideDetails
+              href='/search?tag=best-seller'
             />
           </section>
 

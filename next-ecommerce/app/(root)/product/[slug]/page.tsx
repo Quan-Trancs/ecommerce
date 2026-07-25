@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import AddToBrowsingHistory from '@/components/shared/product/add-to-browsing-history'
 import AddToCart from '@/components/shared/product/add-to-cart'
 import { roundToTwoDecimals } from '@/lib/utils'
+import Link from 'next/link'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -45,32 +46,39 @@ export default async function ProductDetails(props: {
   })
 
   return (
-    <div className='page-shell space-y-10 p-4 md:p-6'>
+    <div className='page-shell space-y-8 p-4 md:space-y-10 md:p-6'>
       <AddToBrowsingHistory id={product._id} category={product.category} />
-      <section className='grid grid-cols-1 gap-6 md:grid-cols-5 md:gap-8'>
-        <div className='store-section col-span-1 md:col-span-2'>
+
+      <section className='grid grid-cols-1 gap-5 md:grid-cols-5 md:gap-7'>
+        <div className='brick col-span-1 p-3 md:col-span-2 md:p-4'>
+          <p className='brick-label mb-3'>Gallery</p>
           <ProductGallery images={product.images} />
         </div>
 
-        <div className='col-span-1 flex w-full flex-col gap-4 md:col-span-2'>
-          <div className='space-y-3'>
-            <p className='text-sm font-medium text-muted-foreground'>
-              Brand{' '}
-              <span className='text-sky-700 hover:underline'>{product.brand}</span>
-              <span className='mx-2 text-border'>|</span>
-              {product.category}
+        <div className='col-span-1 flex w-full flex-col gap-5 md:col-span-2'>
+          <div className='brick space-y-3 p-4 md:p-5'>
+            <p className='brick-label'>Product</p>
+            <p className='text-sm font-medium text-slate-500'>
+              <span className='font-semibold text-deal'>{product.brand}</span>
+              <span className='mx-2 text-slate-300'>|</span>
+              <Link
+                href={`/search?category=${encodeURIComponent(product.category)}`}
+                className='hover:text-chrome hover:underline'
+              >
+                {product.category}
+              </Link>
             </p>
-            <h1 className='font-display text-2xl font-bold tracking-tight lg:text-3xl'>
-              {product.name}
-            </h1>
+            <h1 className='brick-title text-2xl lg:text-3xl'>{product.name}</h1>
             <div className='flex flex-wrap items-center gap-2 text-sm'>
-              <span className='font-semibold'>{product.avgRating.toFixed(1)}</span>
+              <span className='font-bold text-chrome'>
+                {product.avgRating.toFixed(1)}
+              </span>
               <Rating rating={product.avgRating} />
-              <span className='text-muted-foreground'>
+              <span className='filter-count'>
                 ({product.numReviews} ratings)
               </span>
             </div>
-            <Separator />
+            <Separator className='bg-slate-900/10' />
             <ProductPrice
               price={product.price}
               listPrice={product.listPrice}
@@ -79,32 +87,40 @@ export default async function ProductDetails(props: {
             />
           </div>
 
-          <SelectVariant
-            product={product}
-            size={size || product.sizes[0]}
-            color={color || product.colors[0]}
-          />
+          <div className='brick space-y-4 p-4 md:p-5'>
+            <p className='brick-label'>Options</p>
+            <SelectVariant
+              product={product}
+              size={size || product.sizes[0]}
+              color={color || product.colors[0]}
+            />
+          </div>
 
-          <div className='space-y-2'>
-            <p className='font-display text-base font-semibold'>About this item</p>
-            <p className='text-sm leading-relaxed text-muted-foreground md:text-base'>
+          <div className='brick space-y-2 p-4 md:p-5'>
+            <p className='brick-label'>About</p>
+            <p className='text-sm leading-relaxed text-slate-600 md:text-base'>
               {product.description}
             </p>
           </div>
         </div>
 
         <aside className='col-span-1'>
-          <div className='store-section sticky top-28 space-y-4'>
+          <div className='brick-buybox space-y-4'>
+            <p className='brick-label'>Buy box</p>
             <ProductPrice price={product.price} forListing={false} />
             {product.countInStock > 0 && product.countInStock < 3 && (
               <p className='text-sm font-bold text-deal'>
-                Only {product.countInStock} left in stock — order soon
+                Only {product.countInStock} left — order soon
               </p>
             )}
             {product.countInStock !== 0 ? (
-              <p className='text-lg font-semibold text-emerald-700'>In Stock</p>
+              <p className='font-display text-lg font-bold text-emerald-700'>
+                In Stock
+              </p>
             ) : (
-              <p className='text-lg font-semibold text-destructive'>Out of Stock</p>
+              <p className='font-display text-lg font-bold text-destructive'>
+                Out of Stock
+              </p>
             )}
             {product.countInStock !== 0 && (
               <AddToCart
@@ -131,6 +147,7 @@ export default async function ProductDetails(props: {
         <ProductSlider
           products={relatedProducts.data}
           title={`Best Sellers in ${product.category}`}
+          href={`/search?category=${encodeURIComponent(product.category)}`}
         />
       </section>
 

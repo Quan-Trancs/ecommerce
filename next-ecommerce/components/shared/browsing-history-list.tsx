@@ -1,7 +1,5 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { Separator } from '../ui/separator'
 import React, { useEffect } from 'react'
 import ProductSlider from './product/product-slider'
 import useBrowsingHistory from '@/hooks/use-browsing-history'
@@ -13,22 +11,22 @@ export default function BrowsingHistoryList({
 }) {
   const { products } = useBrowsingHistory()
 
+  if (products.length === 0) return null
+
   return (
-    products.length !== 0 && (
-      <div className='bg-background'>
-        <Separator className={cn('mb-4', className)} />
+    <div className={className}>
+      <div className='space-y-8'>
         <ProductList
-          title={"Related to items that you're viewed"}
+          title={"Related to items you've viewed"}
           type='related'
         />
-        <Separator className='mb-4' />
         <ProductList
-          title={'Your browsing history'}
+          title='Your browsing history'
           type='history'
           hideDetails
         />
       </div>
-    )
+    </div>
   )
 }
 

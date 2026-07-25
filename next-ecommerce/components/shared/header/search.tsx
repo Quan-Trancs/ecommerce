@@ -24,14 +24,18 @@ export default async function Search() {
 
   return (
     <form
-      action={'/search'}
+      action='/search'
       method='get'
-      className='flex h-11 items-stretch overflow-hidden rounded-full shadow-sm ring-1 ring-black/10 focus-within:ring-2 focus-within:ring-primary'
+      className='flex h-11 items-stretch overflow-hidden border border-black/20 bg-white shadow-[3px_3px_0_rgb(0_0_0_/0.2)] focus-within:border-primary'
       role='search'
+      style={{
+        clipPath:
+          'polygon(0 0, 100% 0, 100% 78%, 97% 100%, 0 100%)',
+      }}
     >
       <Select name='category' defaultValue='all'>
         <SelectTrigger
-          className='h-full w-auto min-w-[7rem] rounded-none border-0 border-r border-slate-200 bg-slate-100 text-sm text-slate-800'
+          className='h-full w-auto min-w-[7rem] rounded-none border-0 border-r border-slate-200 bg-slate-100 text-sm font-semibold text-chrome'
           aria-label='Select product category'
         >
           <SelectValue placeholder='All' />

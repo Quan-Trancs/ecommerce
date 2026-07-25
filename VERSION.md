@@ -1,5 +1,28 @@
 # Version History
 
+## v1.0.2 — 2026-07-24
+
+Storefront UI refresh: marketplace-style search filters and a shared modular “brick” design system across major pages.
+
+### Highlights
+- **Search / filters** — collapsible facet rail, color swatches, size tickets, price bars, active chips, sort control, mobile refine drawer (`SearchLayout`)
+- **Brick design system** — shared CSS modules (`.brick`, `.brick-cta`, `.brick-buybox`, `.product-tile`, `.store-section`) for consistent clipped blocks, labels, and CTAs
+- **Page polish** — home, PDP, cart, header search, and footer aligned to the same visual language
+- **Home overlap fix** — removed hero/content negative-margin overlap; stud spacing and carousel stacking cleaned up
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.0.2` |
+| Store API | `store-backend/` | `1.0.0` (`store-api`) |
+
+### Notable paths
+- `next-ecommerce/components/shared/search/search-filters.tsx`
+- `next-ecommerce/lib/search/filter-utils.ts`
+- `next-ecommerce/app/globals.css` (brick + filter tokens)
+
+---
+
 ## v1.0.1 — 2026-07-24
 
 Patch release fixing storefront layout and category image bugs found after v1.0.0.

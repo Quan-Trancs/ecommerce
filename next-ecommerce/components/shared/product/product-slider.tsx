@@ -7,21 +7,32 @@ import {
 } from '@/components/ui/carousel'
 import ProductCard from './product-card'
 import { IProduct } from '@/lib/db/models/product.model'
+import Link from 'next/link'
 
 export default function ProductSlider({
   title,
   products,
   hideDetails = false,
+  href,
 }: {
   title: string
   products: IProduct[]
   hideDetails?: boolean
+  href?: string
 }) {
   return (
     <div className='w-full'>
-      <h2 className='font-display mb-5 text-xl font-bold tracking-tight md:text-2xl'>
-        {title}
-      </h2>
+      <div className='section-band'>
+        <div>
+          <p className='brick-label mb-1'>Collection</p>
+          <h2 className='brick-title text-xl md:text-2xl'>{title}</h2>
+        </div>
+        {href && (
+          <Link href={href} className='brick-link'>
+            View all →
+          </Link>
+        )}
+      </div>
       <Carousel opts={{ align: 'start' }} className='w-full'>
         <CarouselContent className='-ml-2 md:-ml-3'>
           {products.map((product) => (
@@ -44,8 +55,8 @@ export default function ProductSlider({
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className='left-0 border-0 bg-white/95 shadow' />
-        <CarouselNext className='right-0 border-0 bg-white/95 shadow' />
+        <CarouselPrevious className='left-0 h-9 w-9 border border-slate-900/15 bg-white text-chrome hover:bg-chrome hover:text-white' />
+        <CarouselNext className='right-0 h-9 w-9 border border-slate-900/15 bg-white text-chrome hover:bg-chrome hover:text-white' />
       </Carousel>
     </div>
   )

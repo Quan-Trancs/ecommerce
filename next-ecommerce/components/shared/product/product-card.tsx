@@ -20,7 +20,7 @@ const ProductCard = ({
 }) => {
   const ProductImage = () => (
     <Link href={`/product/${product.slug}`} className='block'>
-      <div className='relative h-52 overflow-hidden rounded-xl bg-muted/40'>
+      <div className='brick-media relative h-48 bg-white md:h-52'>
         {product.images.length > 1 ? (
           <ImageHover
             src={product.images[0]}
@@ -42,20 +42,16 @@ const ProductCard = ({
 
   const ProductDetails = () => (
     <div className='flex-1 space-y-1.5 text-left'>
-      <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
-        {product.brand}
-      </p>
+      <p className='brick-label !text-slate-500'>{product.brand}</p>
       <Link
         href={`/product/${product.slug}`}
-        className='line-clamp-2 text-sm font-medium leading-snug text-foreground hover:text-sky-800'
+        className='line-clamp-2 text-sm font-semibold leading-snug text-chrome hover:text-deal'
       >
         {product.name}
       </Link>
       <div className='flex items-center gap-2'>
         <Rating rating={product.avgRating} />
-        <span className='text-xs text-muted-foreground'>
-          ({formatNumber(product.numReviews)})
-        </span>
+        <span className='filter-count'>({formatNumber(product.numReviews)})</span>
       </div>
       <ProductPrice
         isDeal={product.tags.includes('todays-deal')}
@@ -103,7 +99,7 @@ const ProductCard = ({
     return <div className='flex h-full flex-col'>{body}</div>
   }
 
-  return <article className='product-tile flex h-full flex-col'>{body}</article>
+  return <article className='product-tile'>{body}</article>
 }
 
 export default ProductCard

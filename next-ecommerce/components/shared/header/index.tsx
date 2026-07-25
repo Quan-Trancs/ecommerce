@@ -9,7 +9,7 @@ import data from '@/lib/data'
 
 export default function Header() {
   return (
-    <header className='sticky top-0 z-40 bg-chrome text-white shadow-md'>
+    <header className='sticky top-0 z-40 bg-chrome text-white shadow-[0_3px_0_rgb(240_161_26_/0.45)]'>
       <div className='page-shell px-3 md:px-4'>
         <div className='flex items-center justify-between gap-3 py-2.5'>
           <Link

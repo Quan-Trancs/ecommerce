@@ -1,6 +1,8 @@
 import { IProduct } from '@/lib/db/models/product.model'
-import { Button } from '../../ui/custom/custom-button'
 import Link from 'next/link'
+import { colorSwatch, isLightSwatch } from '@/lib/search/filter-utils'
+import { Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function SelectVariant({
   product,
@@ -15,65 +17,77 @@ export default function SelectVariant({
   const selectedSize = size || product.sizes[0]
 
   return (
-    <>
+    <div className='space-y-4'>
       {product.colors.length > 0 && (
-        <div className='space-y-2 space-x-2'>
-          <div>Color:</div>
-          {product.colors.map((x: string) => (
-            <Button
-              asChild
-              variant={'outline'}
-              className={
-                selectedColor === x ? 'border-2 border-primary' : 'border-2'
-              }
-              key={x}
-            >
-              <Link
-                replace
-                scroll={false}
-                href={`?${new URLSearchParams({
-                  color: x,
-                  size: selectedSize,
-                })}`}
-                key={x}
-              >
-                <div
-                  style={{ backgroundColor: x }}
-                  className='h-4 w-4 rounded-full border border-muted-foreground'
-                />
-                {x}
-              </Link>
-            </Button>
-          ))}
+        <div className='space-y-2'>
+          <p className='filter-section-title'>Color</p>
+          <div className='flex flex-wrap gap-2.5'>
+            {product.colors.map((x: string) => {
+              const selected = selectedColor === x
+              const swatch = x.startsWith('#') ? x : colorSwatch(x)
+              const light = isLightSwatch(x) || x.toLowerCase() === '#ffffff'
+              return (
+                <Link
+                  key={x}
+                  replace
+                  scroll={false}
+                  href={`?${new URLSearchParams({
+                    color: x,
+                    size: selectedSize,
+                  })}`}
+                  title={x}
+                  className='flex w-14 flex-col items-center gap-1'
+                >
+                  <span
+                    className='filter-swatch relative flex items-center justify-center'
+                    data-selected={selected || undefined}
+                    style={{ background: swatch }}
+                  >
+                    {selected && (
+                      <Check
+                        className={cn(
+                          'h-3.5 w-3.5',
+                          light ? 'text-chrome' : 'text-white'
+                        )}
+                        strokeWidth={3}
+                      />
+                    )}
+                  </span>
+                  <span className='w-full truncate text-center font-mono text-[9px] uppercase tracking-wide text-slate-500'>
+                    {x}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
 
       {product.sizes.length > 0 && (
-        <div className='mt-2 space-y-2 space-x-2'>
-          <div>Size:</div>
-          {product.sizes.map((x: string) => (
-            <Button
-              asChild
-              variant={'outline'}
-              className={
-                selectedSize === x ? 'border-2 border-primary' : 'border-2'
-              }
-              key={x}
-            >
-              <Link
-                replace
-                scroll={false}
-                href={`?${new URLSearchParams({
-                  color: selectedColor,
-                  size: x,
-                })}`}
-              >
-                {x}
-              </Link>
-            </Button>
-          ))}
+        <div className='space-y-2'>
+          <p className='filter-section-title'>Size</p>
+          <div className='flex flex-wrap gap-1.5'>
+            {product.sizes.map((x: string) => {
+              const selected = selectedSize === x
+              return (
+                <Link
+                  key={x}
+                  replace
+                  scroll={false}
+                  href={`?${new URLSearchParams({
+                    color: selectedColor,
+                    size: x,
+                  })}`}
+                  className='filter-size'
+                  data-selected={selected || undefined}
+                >
+                  {x}
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

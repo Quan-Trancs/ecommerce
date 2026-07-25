@@ -1,7 +1,6 @@
 'use client'
 
 import { ChevronUp } from 'lucide-react'
-import { Button } from '../ui/custom/custom-button'
 import Link from 'next/link'
 import { APP_NAME } from '@/lib/constants'
 
@@ -35,20 +34,20 @@ const columns = [
 
 export default function Footer() {
   return (
-    <footer className='mt-10 bg-chrome text-white'>
-      <Button
-        variant='ghost'
-        className='w-full rounded-none bg-chrome-muted py-4 text-sm font-medium text-white hover:bg-slate-700 hover:text-white'
+    <footer className='mt-12 bg-chrome text-white'>
+      <button
+        type='button'
+        className='flex w-full items-center justify-center gap-2 border-b border-white/10 bg-chrome-muted py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-white/90 transition hover:bg-slate-700'
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
-        <ChevronUp className='mr-2 h-4 w-4' />
+        <ChevronUp className='h-4 w-4' />
         Back to top
-      </Button>
+      </button>
 
       <div className='page-shell grid gap-8 px-4 py-10 md:grid-cols-3 md:px-6'>
         {columns.map((column) => (
           <div key={column.title}>
-            <h3 className='font-display mb-3 text-base font-bold'>
+            <h3 className='mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-primary'>
               {column.title}
             </h3>
             <ul className='space-y-2 text-sm text-white/75'>
@@ -56,7 +55,7 @@ export default function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className='transition hover:text-white hover:underline'
+                    className='transition hover:text-primary hover:underline'
                   >
                     {link.label}
                   </Link>
@@ -69,21 +68,24 @@ export default function Footer() {
 
       <div className='border-t border-white/10'>
         <div className='page-shell flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-white/70 md:px-6'>
-          <Link href='/' className='font-display text-lg font-bold text-white'>
+          <Link
+            href='/'
+            className='font-display text-xl font-extrabold tracking-tight text-white'
+          >
             {APP_NAME}
           </Link>
-          <div className='flex flex-wrap justify-center gap-4'>
-            <Link href='/page/conditions-of-use' className='hover:underline'>
+          <div className='flex flex-wrap justify-center gap-4 font-mono text-[11px] uppercase tracking-wider'>
+            <Link href='/page/conditions-of-use' className='hover:text-primary'>
               Conditions of Use
             </Link>
-            <Link href='/page/privacy-policy' className='hover:underline'>
+            <Link href='/page/privacy-policy' className='hover:text-primary'>
               Privacy Policy
             </Link>
-            <Link href='/page/help' className='hover:underline'>
+            <Link href='/page/help' className='hover:text-primary'>
               Help
             </Link>
           </div>
-          <p>
+          <p className='text-white/50'>
             © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
           </p>
         </div>
