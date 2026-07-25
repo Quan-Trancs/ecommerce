@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.42 — 2026-07-25
+
+Admin KPI dashboard on `/admin`.
+
+### Frontend
+- Platform overview: 7d/all-time paid revenue, order volume & status, refunds, coupons
+- Support queue counts (awaiting / unassigned), catalog published & low-stock, accounts by role
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.42` |
+| Store API | `store-backend/` | `1.3.42` (`store-api`) |
+
+---
+
 ## v1.3.41 — 2026-07-25
 
 Support ticket assignment (claim / release / reassign).

@@ -8,6 +8,12 @@ import { formatError } from '@/lib/utils'
 import { listUsers, updateUser } from '@/lib/db/users'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 import { logStaffAction } from '@/lib/audit/log-staff-action'
+import {
+  getAdminDashboardKpis,
+  type AdminDashboardKpis,
+} from '@/lib/db/admin-kpis'
+
+export type { AdminDashboardKpis }
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -25,6 +31,12 @@ async function requireAdmin() {
     throw new Error('Admin role required')
   }
   return session
+}
+
+export async function getAdminKpis(): Promise<AdminDashboardKpis> {
+  await requireAdmin()
+  const kpis = await getAdminDashboardKpis()
+  return JSON.parse(JSON.stringify(kpis))
 }
 
 export type AdminUserRow = {
