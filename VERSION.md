@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.33 — 2026-07-25
+
+Redis pub/sub fanout for live in-app notification SSE.
+
+### Frontend
+- Optional Redis bridge (`REDIS_URL` or `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD`)
+- Publish wakes SSE clients across storefront instances; in-process bus remains the default
+- Poll fallback unchanged when Redis is unset or unavailable
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.33` |
+| Store API | `store-backend/` | `1.3.33` (`store-api`) |
+
+---
+
 ## v1.3.32 — 2026-07-25
 
 In-app notifications for order lifecycle events.

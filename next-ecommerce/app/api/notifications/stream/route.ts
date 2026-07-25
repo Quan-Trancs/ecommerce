@@ -5,6 +5,7 @@ import {
   listInAppNotifications,
 } from '@/lib/db/in-app-notifications'
 import { getNotificationBus } from '@/lib/notify/notification-bus'
+import { getNotificationRedis } from '@/lib/notify/redis-pubsub'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -62,7 +63,13 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      send('hello', { ok: true, accountId })
+      void getNotificationRedis().then((clients) => {
+        send('hello', {
+          ok: true,
+          accountId,
+          fanout: clients ? 'redis' : 'local',
+        })
+      })
       void pushSummary('hello')
 
       unsubscribe = getNotificationBus().subscribe(accountId, () => {

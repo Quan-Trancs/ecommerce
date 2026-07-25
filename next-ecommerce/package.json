@@ -1,6 +1,6 @@
 {
   "name": "next-ecommerce",
-  "version": "1.3.32",
+  "version": "1.3.33",
   "private": true,
   "scripts": {
     "email": "email dev",
@@ -40,6 +40,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.55.0",
     "react-medium-image-zoom": "^5.2.14",
+    "redis": "^4.7.1",
     "resend": "^4.2.0",
     "sonner": "^2.0.2",
     "stripe": "^22.3.2",
