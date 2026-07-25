@@ -65,7 +65,8 @@ export default function NotificationsList({
 
       {notifications.length === 0 ? (
         <div className='rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground'>
-          No notifications yet. Public order-note messages will appear here.
+          No notifications yet. Order updates and public messages will appear
+          here.
         </div>
       ) : (
         <ul className='divide-y rounded-lg border'>

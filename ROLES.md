@@ -322,3 +322,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Real-time notification refresh (SSE / websocket)~~ (v1.3.29)
 - ~~Desktop notifications when the storefront tab is backgrounded~~ (v1.3.30)
 - ~~In-app mute preferences (global inbox + per-order + live toasts)~~ (v1.3.31)
+- ~~In-app notifications for paid / shipped / cancelled orders~~ (v1.3.32)

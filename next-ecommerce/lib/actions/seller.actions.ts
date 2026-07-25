@@ -226,7 +226,9 @@ export async function markSellerOrderShipped(orderId: string) {
 
     const status = String(order.status || '').toUpperCase()
     if (status === 'SHIPPED') {
-      await notifyOrderShipped(orderId)
+      await notifyOrderShipped(orderId, {
+        excludeAccountId: subject.userId,
+      })
     }
 
     return { success: true as const, order }

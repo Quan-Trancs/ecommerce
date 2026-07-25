@@ -18,6 +18,7 @@ import {
 } from '@/emails/index'
 import { SERVER_URL } from '@/lib/constants'
 import { roleLabel } from '@/lib/auth/roles'
+import { notifyInAppOrderEvent } from '@/lib/notify/in-app'
 import {
   enqueueOrderNoteEmail,
   getDigestMaxBatch,
@@ -95,20 +96,46 @@ async function orderForEmail(orderId: string): Promise<IOrder | null> {
 export async function notifyOrderPaid(orderId: string) {
   try {
     const order = await orderForEmail(orderId)
-    if (!order) return
-    await sendPurchaseReceipt({ order })
+    if (order) {
+      await sendPurchaseReceipt({ order })
+    }
+    await notifyInAppOrderEvent({ orderId, event: 'PAID' })
   } catch (err) {
     console.error('notifyOrderPaid failed:', err)
   }
 }
 
-export async function notifyOrderShipped(orderId: string) {
+export async function notifyOrderShipped(
+  orderId: string,
+  options?: { excludeAccountId?: string | null }
+) {
   try {
     const order = await orderForEmail(orderId)
-    if (!order) return
-    await sendOrderShippedEmail({ order })
+    if (order) {
+      await sendOrderShippedEmail({ order })
+    }
+    await notifyInAppOrderEvent({
+      orderId,
+      event: 'SHIPPED',
+      excludeAccountId: options?.excludeAccountId,
+    })
   } catch (err) {
     console.error('notifyOrderShipped failed:', err)
+  }
+}
+
+export async function notifyOrderCancelled(
+  orderId: string,
+  options?: { excludeAccountId?: string | null }
+) {
+  try {
+    await notifyInAppOrderEvent({
+      orderId,
+      event: 'CANCELLED',
+      excludeAccountId: options?.excludeAccountId,
+    })
+  } catch (err) {
+    console.error('notifyOrderCancelled failed:', err)
   }
 }
 

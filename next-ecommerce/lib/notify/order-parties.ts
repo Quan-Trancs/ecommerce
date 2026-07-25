@@ -4,10 +4,10 @@ import {
   fetchStoreOrderAsAdmin,
 } from '@/lib/catalog/client'
 
-/** Buyer + product-scoped sellers on an order, excluding the author. */
+/** Buyer + product-scoped sellers on an order, optionally excluding one account. */
 export async function resolveOrderPartyAccounts(input: {
   orderId: string
-  authorUserId: string
+  authorUserId?: string | null
 }): Promise<DbUser[]> {
   const storeOrder = await fetchStoreOrderAsAdmin(input.orderId)
   if (!storeOrder) return []
@@ -28,7 +28,7 @@ export async function resolveOrderPartyAccounts(input: {
       if (product.sellerAccountId) ids.add(product.sellerAccountId)
     }
   }
-  ids.delete(input.authorUserId)
+  if (input.authorUserId) ids.delete(input.authorUserId)
 
   const accounts: DbUser[] = []
   for (const id of ids) {

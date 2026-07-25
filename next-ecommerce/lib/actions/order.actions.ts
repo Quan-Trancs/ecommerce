@@ -22,7 +22,7 @@ import {
 import { hasSupportAccess } from '@/lib/auth/roles'
 import type { StoreTokenSubject } from '@/lib/auth/store-token'
 import { refundPaymentIntent, retrievePaymentIntent } from '@/lib/stripe'
-import { notifyOrderPaid, notifyPublicOrderNote } from '@/lib/email/order-notifications'
+import { notifyOrderPaid, notifyOrderCancelled, notifyPublicOrderNote } from '@/lib/email/order-notifications'
 import { notifyUrgentOrderNoteChannels } from '@/lib/notify/urgent-channels'
 import { notifyInAppOrderNote } from '@/lib/notify/in-app'
 
@@ -418,6 +418,9 @@ export async function cancelOrder(orderId: string) {
     }
 
     await cancelStoreOrder(orderId, subject, refundMeta)
+    await notifyOrderCancelled(orderId, {
+      excludeAccountId: session.user.id,
+    })
     revalidatePath(`/account/orders/${orderId}`)
     revalidatePath('/account/orders')
     revalidatePath('/seller/orders')

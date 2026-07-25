@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.32 — 2026-07-25
+
+In-app notifications for order lifecycle events.
+
+### Frontend
+- Inbox rows on **paid** (checkout + webhooks), **fully shipped**, and **cancelled**
+- Same global in-app pref + per-order mutes as order notes
+- Canceller / shipping seller excluded from their own event fanout
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.32` |
+| Store API | `store-backend/` | `1.3.32` (`store-api`) |
+
+---
+
 ## v1.3.31 — 2026-07-25
 
 In-app mute preferences for order-note notifications.

@@ -156,10 +156,11 @@ export default function NotificationPreferencesForm({
           className='mt-1'
         />
         <span>
-          <span className='font-medium'>In-app inbox for order notes</span>
+          <span className='font-medium'>In-app inbox for order updates</span>
           <span className='mt-1 block text-muted-foreground'>
-            Add public order messages to your notification center. You can also
-            mute a single order from its support thread.
+            Add paid / shipped / cancelled updates and public order messages to
+            your notification center. You can also mute a single order from its
+            support thread.
           </span>
         </span>
       </label>
