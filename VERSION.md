@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.19 — 2026-07-25
+
+Private staff-only order notes (internal visibility).
+
+### Backend
+- Flyway `V9__order_note_visibility.sql` — `visibility` (`PUBLIC` | `INTERNAL`)
+- List filters INTERNAL notes from buyers; SUPPORT/ADMIN see all
+- `POST` accepts `visibility`; INTERNAL requires assist role
+
+### Frontend
+- Support/admin checkbox: “Internal (staff only)”
+- Internal notes styled with badge; buyers never receive them from API
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.19` |
+| Store API | `store-backend/` | `1.3.19` (`store-api`) |
+
+---
+
 ## v1.3.18 — 2026-07-25
 
 S3-compatible cloud storage for seller product images.

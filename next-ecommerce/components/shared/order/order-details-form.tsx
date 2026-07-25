@@ -153,7 +153,11 @@ export default function OrderDetailsForm({
             </Table>
           </CardContent>
         </Card>
-        <OrderNotesThread orderId={order._id} initialNotes={notes} />
+        <OrderNotesThread
+          orderId={order._id}
+          initialNotes={notes}
+          canPostInternal={canCancelElevated}
+        />
       </div>
       <div>
         <Card>

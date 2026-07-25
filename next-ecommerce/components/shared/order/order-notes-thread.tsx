@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { addOrderNote, type OrderNote } from '@/lib/actions/order.actions'
-import { formatDateTime } from '@/lib/utils'
+import { cn, formatDateTime } from '@/lib/utils'
 
 function roleLabel(role: string) {
   const upper = (role || '').toUpperCase()
@@ -20,13 +20,17 @@ function roleLabel(role: string) {
 export default function OrderNotesThread({
   orderId,
   initialNotes,
+  canPostInternal = false,
 }: {
   orderId: string
   initialNotes: OrderNote[]
+  /** SUPPORT/ADMIN may post and see INTERNAL notes. */
+  canPostInternal?: boolean
 }) {
   const router = useRouter()
   const [notes, setNotes] = useState(initialNotes)
   const [body, setBody] = useState('')
+  const [internal, setInternal] = useState(false)
   const [pending, startTransition] = useTransition()
 
   function onSubmit(event: FormEvent) {
@@ -36,8 +40,10 @@ export default function OrderNotesThread({
       toast.error('Message is required')
       return
     }
+    const visibility =
+      canPostInternal && internal ? 'INTERNAL' : 'PUBLIC'
     startTransition(async () => {
-      const result = await addOrderNote(orderId, trimmed)
+      const result = await addOrderNote(orderId, trimmed, { visibility })
       if (result.success && result.note) {
         setNotes((prev) => [...prev, result.note!])
         setBody('')
@@ -55,33 +61,48 @@ export default function OrderNotesThread({
         <div>
           <h2 className='text-xl pb-1'>Support thread</h2>
           <p className='text-sm text-muted-foreground'>
-            Messages between you and support about this order.
+            {canPostInternal
+              ? 'Buyer-visible messages and optional internal staff notes.'
+              : 'Messages between you and support about this order.'}
           </p>
         </div>
 
         {notes.length === 0 ? (
           <p className='text-sm text-muted-foreground'>
-            No messages yet. Ask a question or leave a note for support.
+            {canPostInternal
+              ? 'No messages yet. Reply to the buyer or leave an internal note.'
+              : 'No messages yet. Ask a question or leave a note for support.'}
           </p>
         ) : (
           <ul className='max-h-80 space-y-3 overflow-y-auto pr-1'>
-            {notes.map((note) => (
-              <li
-                key={note.id}
-                className='rounded-md border bg-muted/30 px-3 py-2 text-sm'
-              >
-                <div className='mb-1 flex flex-wrap items-center gap-2'>
-                  <span className='font-medium'>
-                    {note.authorDisplayName || 'User'}
-                  </span>
-                  <Badge variant='outline'>{roleLabel(note.authorRole)}</Badge>
-                  <span className='text-xs text-muted-foreground'>
-                    {formatDateTime(new Date(note.createdAt)).dateTime}
-                  </span>
-                </div>
-                <p className='whitespace-pre-wrap'>{note.body}</p>
-              </li>
-            ))}
+            {notes.map((note) => {
+              const isInternal = note.visibility === 'INTERNAL'
+              return (
+                <li
+                  key={note.id}
+                  className={cn(
+                    'rounded-md border px-3 py-2 text-sm',
+                    isInternal
+                      ? 'border-amber-500/40 bg-amber-500/5'
+                      : 'bg-muted/30'
+                  )}
+                >
+                  <div className='mb-1 flex flex-wrap items-center gap-2'>
+                    <span className='font-medium'>
+                      {note.authorDisplayName || 'User'}
+                    </span>
+                    <Badge variant='outline'>{roleLabel(note.authorRole)}</Badge>
+                    {isInternal ? (
+                      <Badge variant='secondary'>Internal</Badge>
+                    ) : null}
+                    <span className='text-xs text-muted-foreground'>
+                      {formatDateTime(new Date(note.createdAt)).dateTime}
+                    </span>
+                  </div>
+                  <p className='whitespace-pre-wrap'>{note.body}</p>
+                </li>
+              )
+            })}
           </ul>
         )}
 
@@ -91,16 +112,37 @@ export default function OrderNotesThread({
             onChange={(e) => setBody(e.target.value)}
             rows={3}
             maxLength={2000}
-            placeholder='Write a message…'
+            placeholder={
+              canPostInternal && internal
+                ? 'Internal staff note (buyer cannot see)…'
+                : 'Write a message…'
+            }
             className='border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:opacity-50'
             disabled={pending}
           />
-          <div className='flex items-center justify-between gap-2'>
-            <span className='text-xs text-muted-foreground'>
-              {body.length}/2000
-            </span>
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            <div className='flex items-center gap-3'>
+              <span className='text-xs text-muted-foreground'>
+                {body.length}/2000
+              </span>
+              {canPostInternal ? (
+                <label className='flex items-center gap-2 text-xs text-muted-foreground'>
+                  <input
+                    type='checkbox'
+                    checked={internal}
+                    onChange={(e) => setInternal(e.target.checked)}
+                    disabled={pending}
+                  />
+                  Internal (staff only)
+                </label>
+              ) : null}
+            </div>
             <Button type='submit' disabled={pending || !body.trim()}>
-              {pending ? 'Sending…' : 'Send message'}
+              {pending
+                ? 'Sending…'
+                : canPostInternal && internal
+                  ? 'Save internal note'
+                  : 'Send message'}
             </Button>
           </div>
         </form>

@@ -18,6 +18,7 @@ import quantran.api.repository.OrderRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +35,7 @@ public class OrderNoteService {
     public List<OrderNoteDto> listForUser(String orderId, String userId, boolean elevate) {
         OrderEntity order = requireAccessibleOrder(orderId, userId, elevate);
         return orderNoteRepository.findByOrderIdOrderByCreatedAtAsc(order.getId()).stream()
+                .filter(note -> elevate || isPublic(note))
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
@@ -55,15 +57,43 @@ public class OrderNoteService {
             throw new BusinessLogicException("Note must be at most " + MAX_BODY_LENGTH + " characters");
         }
 
+        OrderNoteEntity.Visibility visibility = resolveVisibility(
+                request == null ? null : request.getVisibility(),
+                elevate
+        );
+
         Role effectiveRole = role == null ? Role.BUYER : role;
         OrderNoteEntity note = OrderNoteEntity.builder()
                 .orderId(order.getId())
                 .authorUserId(userId)
                 .authorRole(effectiveRole.name())
+                .visibility(visibility)
                 .body(body)
                 .createdAt(LocalDateTime.now())
                 .build();
         return toDto(orderNoteRepository.save(note));
+    }
+
+    private OrderNoteEntity.Visibility resolveVisibility(String raw, boolean elevate) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return OrderNoteEntity.Visibility.PUBLIC;
+        }
+        String normalized = raw.trim().toUpperCase(Locale.ROOT);
+        if ("INTERNAL".equals(normalized) || "STAFF".equals(normalized) || "PRIVATE".equals(normalized)) {
+            if (!elevate) {
+                throw new UnauthorizedException("Only support or admin can post internal notes");
+            }
+            return OrderNoteEntity.Visibility.INTERNAL;
+        }
+        if ("PUBLIC".equals(normalized)) {
+            return OrderNoteEntity.Visibility.PUBLIC;
+        }
+        throw new BusinessLogicException("visibility must be PUBLIC or INTERNAL");
+    }
+
+    private boolean isPublic(OrderNoteEntity note) {
+        return note.getVisibility() == null
+                || note.getVisibility() == OrderNoteEntity.Visibility.PUBLIC;
     }
 
     private OrderEntity requireAccessibleOrder(String orderId, String userId, boolean elevate) {
@@ -82,12 +112,16 @@ public class OrderNoteService {
         String displayName = accountRepository.findById(note.getAuthorUserId())
                 .map(this::formatAuthorName)
                 .orElse(null);
+        OrderNoteEntity.Visibility visibility = note.getVisibility() == null
+                ? OrderNoteEntity.Visibility.PUBLIC
+                : note.getVisibility();
         return OrderNoteDto.builder()
                 .id(note.getId())
                 .orderId(note.getOrderId())
                 .authorUserId(note.getAuthorUserId())
                 .authorRole(note.getAuthorRole())
                 .authorDisplayName(displayName)
+                .visibility(visibility.name())
                 .body(note.getBody())
                 .createdAt(note.getCreatedAt())
                 .build();

@@ -16,6 +16,11 @@ import java.time.LocalDateTime;
 @Builder
 public class OrderNoteEntity {
 
+    public enum Visibility {
+        PUBLIC,
+        INTERNAL
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,6 +33,11 @@ public class OrderNoteEntity {
 
     @Column(name = "author_role", nullable = false, length = 20)
     private String authorRole;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private Visibility visibility = Visibility.PUBLIC;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String body;

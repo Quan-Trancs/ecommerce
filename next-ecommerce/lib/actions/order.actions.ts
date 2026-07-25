@@ -554,17 +554,23 @@ export type OrderNote = {
   authorUserId: string
   authorRole: string
   authorDisplayName?: string | null
+  visibility: 'PUBLIC' | 'INTERNAL'
   body: string
   createdAt: string
 }
 
 function noteToClient(note: StoreOrderNote): OrderNote {
+  const visibility =
+    (note.visibility || 'PUBLIC').toUpperCase() === 'INTERNAL'
+      ? 'INTERNAL'
+      : 'PUBLIC'
   return {
     id: note.id,
     orderId: note.orderId,
     authorUserId: note.authorUserId,
     authorRole: note.authorRole,
     authorDisplayName: note.authorDisplayName,
+    visibility,
     body: note.body,
     createdAt: note.createdAt,
   }
@@ -579,7 +585,8 @@ export async function getOrderNotes(orderId: string): Promise<OrderNote[]> {
 
 export async function addOrderNote(
   orderId: string,
-  body: string
+  body: string,
+  options?: { visibility?: 'PUBLIC' | 'INTERNAL' }
 ): Promise<{ success: boolean; message: string; note?: OrderNote }> {
   try {
     const session = await auth()
@@ -588,15 +595,23 @@ export async function addOrderNote(
     if (!trimmed) {
       return { success: false, message: 'Message is required' }
     }
+    const visibility = options?.visibility || 'PUBLIC'
+    if (visibility === 'INTERNAL' && !hasSupportAccess(session.user.role)) {
+      return {
+        success: false,
+        message: 'Only support or admin can post internal notes',
+      }
+    }
     const note = await createStoreOrderNote(
       orderId,
       trimmed,
-      subjectFromSession(session)
+      subjectFromSession(session),
+      { visibility }
     )
     revalidatePath(`/account/orders/${orderId}`)
     return {
       success: true,
-      message: 'Message sent',
+      message: visibility === 'INTERNAL' ? 'Internal note saved' : 'Message sent',
       note: noteToClient(note),
     }
   } catch (err) {

@@ -372,6 +372,8 @@ export type StoreOrderNote = {
   authorUserId: string
   authorRole: string
   authorDisplayName?: string | null
+  /** PUBLIC (buyer-visible) or INTERNAL (SUPPORT/ADMIN only). */
+  visibility?: string | null
   body: string
   createdAt: string
 }
@@ -395,7 +397,8 @@ export async function fetchStoreOrderNotes(
 export async function createStoreOrderNote(
   orderId: string,
   body: string,
-  subject: StoreTokenSubject
+  subject: StoreTokenSubject,
+  options?: { visibility?: 'PUBLIC' | 'INTERNAL' }
 ): Promise<StoreOrderNote> {
   const authHeaders = await storeAuthHeaders(subject)
   if (!authHeaders.Authorization) {
@@ -409,7 +412,10 @@ export async function createStoreOrderNote(
         'Content-Type': 'application/json',
         ...authHeaders,
       },
-      body: JSON.stringify({ body }),
+      body: JSON.stringify({
+        body,
+        visibility: options?.visibility || 'PUBLIC',
+      }),
     }
   )
 }

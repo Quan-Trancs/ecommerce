@@ -14,6 +14,8 @@ public class OrderNoteDto {
     private String authorUserId;
     private String authorRole;
     private String authorDisplayName;
+    /** PUBLIC (buyer-visible) or INTERNAL (SUPPORT/ADMIN only). */
+    private String visibility;
     private String body;
     private LocalDateTime createdAt;
 }

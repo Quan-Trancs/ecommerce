@@ -272,13 +272,13 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`
 
 ### Auth bridge (summary)
 
 1. NextAuth owns login against Postgres `accounts` (`password_hash` + `role`).
 2. Server actions mint API JWT via `mintStoreAccessToken` → `POST /v1/auth/token` with `X-Admin-Key` (never from the browser).
-3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get elevates for SUPPORT/ADMIN; pay stays owner/ADMIN **or** `X-Admin-Key` (webhooks); cancel elevates for SUPPORT/ADMIN (PayPal/Stripe refund from storefront when paid); order notes (`GET/POST /v1/orders/{id}/notes`) elevate for SUPPORT/ADMIN.
+3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get elevates for SUPPORT/ADMIN; pay stays owner/ADMIN **or** `X-Admin-Key` (webhooks); cancel elevates for SUPPORT/ADMIN (PayPal/Stripe refund from storefront when paid); order notes (`GET/POST /v1/orders/{id}/notes`) elevate for SUPPORT/ADMIN; `INTERNAL` notes are staff-only.
 4. `GET /v1/orders/me` backs the buyer order list (`status` / `from` / `to` filters); `GET /v1/orders/assist/recent` and `GET /v1/orders/assist/by-email` for support; `POST /v1/orders/{id}/cancel` restocks (optional refund metadata).
 5. Signed-in carts persist via `GET/PUT/DELETE /v1/cart` (Zustand + localStorage for guests / offline UI).
 6. Payment webhooks at `/api/webhooks/stripe` and `/api/webhooks/paypal` mark orders paid when client approve is missed.
@@ -309,4 +309,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Product image upload for seller listings~~ (v1.3.16)
 - ~~Order notes / support ticket thread~~ (v1.3.17)
 - ~~Cloud object storage for product images (S3-compatible) beyond local uploads~~ (v1.3.18)
-- Private staff-only order notes (internal visibility)
+- ~~Private staff-only order notes (internal visibility)~~ (v1.3.19)
+- Seller participation in order notes (product-scoped)
+- Product image delete / replace cleanup in object storage
