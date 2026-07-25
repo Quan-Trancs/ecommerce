@@ -21,6 +21,11 @@ export default async function AccountPage() {
       description: 'Products you saved for later',
     },
     {
+      href: '/account/addresses',
+      title: 'Addresses',
+      description: 'Saved shipping addresses for checkout',
+    },
+    {
       href: '/account/notifications',
       title: 'Notifications',
       description: 'In-app alerts for order messages',

@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.50 — 2026-07-25
+
+Saved shipping addresses for buyers.
+
+### Backend
+- Flyway `V28__saved_addresses.sql` — per-account address book with default flag
+
+### Frontend
+- `/account/addresses` manage saved addresses
+- Checkout: pick a saved address or save a new one on submit
+- Account hub link to Addresses
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.50` |
+| Store API | `store-backend/` | `1.3.50` (`store-api`) |
+
+---
+
 ## v1.3.49 — 2026-07-25
 
 Checkout gift cards / store credit.

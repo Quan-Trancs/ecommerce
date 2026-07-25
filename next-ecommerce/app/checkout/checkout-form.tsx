@@ -44,7 +44,9 @@ import {
 } from '@/lib/constants'
 import { Separator } from '@radix-ui/react-separator'
 import { createOrder } from '@/lib/actions/order.actions'
+import { saveMyAddress } from '@/lib/actions/address.actions'
 import { toast } from 'sonner'
+import SavedAddressesPicker from '@/components/shared/address/saved-addresses-picker'
 
 const shippingAddressDefaultValues =
   process.env.NODE_ENV === 'development'
@@ -100,14 +102,26 @@ const CheckoutForm = () => {
   const [promoPending, setPromoPending] = useState(false)
   const [giftInput, setGiftInput] = useState('')
   const [giftPending, setGiftPending] = useState(false)
+  const [saveAddress, setSaveAddress] = useState(true)
 
   const shippingAddressForm = useForm<ShippingAddress>({
     resolver: zodResolver(ShippingAddressSchema),
     defaultValues: shippingAddress || shippingAddressDefaultValues,
   })
-  const onSubmitShippingAddress: SubmitHandler<ShippingAddress> = (values) => {
+  const onSubmitShippingAddress: SubmitHandler<ShippingAddress> = async (
+    values
+  ) => {
     setShippingAddress(values)
     setIsAddressSelected(true)
+    if (saveAddress) {
+      const result = await saveMyAddress({
+        address: values,
+        isDefault: true,
+      })
+      if (!result.success) {
+        toast.error(result.message)
+      }
+    }
   }
 
   useEffect(() => {
@@ -445,10 +459,24 @@ const CheckoutForm = () => {
             ) : (
               <div className='md:ml-8'>
                 <span className='text-black text-lg font-bold'>
-                  Enter a new shipping address
+                  Shipping address
                 </span>
 
                 <Separator className='border-gray-300 border-b-1 mt-4' />
+
+                <SavedAddressesPicker
+                  className='my-4'
+                  onSelect={async (address) => {
+                    shippingAddressForm.reset(address)
+                    setShippingAddress(address)
+                    setIsAddressSelected(true)
+                    toast.success('Using saved address')
+                  }}
+                />
+
+                <p className='mb-3 text-sm font-medium'>
+                  Enter a new shipping address
+                </p>
 
                 <Form {...shippingAddressForm}>
                   <form
@@ -580,6 +608,14 @@ const CheckoutForm = () => {
                             )}
                           />
                         </div>
+                        <label className='flex items-center gap-2 pt-2 text-sm'>
+                          <input
+                            type='checkbox'
+                            checked={saveAddress}
+                            onChange={(e) => setSaveAddress(e.target.checked)}
+                          />
+                          Save this address to my account
+                        </label>
                       </CardContent>
                       <CardFooter className='  p-4'>
                         <Button type='submit' className='rounded-full '>

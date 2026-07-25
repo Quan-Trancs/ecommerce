@@ -272,7 +272,7 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`, `V12__account_order_note_email_mode.sql`, `V13__account_quiet_hours.sql`, `V14__urgent_notes_sms_push.sql`, `V15__in_app_notifications.sql`, `V16__in_app_mute_prefs.sql`, `V17__product_reviews.sql`, `V18__coupons.sql`, `V19__seller_payouts.sql`, `V20__low_stock_alerts.sql`, `V21__partial_refunds.sql`, `V22__staff_audit_log.sql`, `V23__support_ticket_assignments.sql`, `V24__wishlist.sql`, `V25__order_returns.sql`, `V26__return_refund_meta.sql`, `V27__gift_cards.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`, `V12__account_order_note_email_mode.sql`, `V13__account_quiet_hours.sql`, `V14__urgent_notes_sms_push.sql`, `V15__in_app_notifications.sql`, `V16__in_app_mute_prefs.sql`, `V17__product_reviews.sql`, `V18__coupons.sql`, `V19__seller_payouts.sql`, `V20__low_stock_alerts.sql`, `V21__partial_refunds.sql`, `V22__staff_audit_log.sql`, `V23__support_ticket_assignments.sql`, `V24__wishlist.sql`, `V25__order_returns.sql`, `V26__return_refund_meta.sql`, `V27__gift_cards.sql`, `V28__saved_addresses.sql`
 
 ### Auth bridge (summary)
 
@@ -340,3 +340,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Wishlist hearts on product cards~~ (v1.3.47)
 - ~~Return request email / in-app notify~~ (v1.3.48)
 - ~~Checkout gift cards / store credit~~ (v1.3.49)
+- ~~Saved shipping addresses~~ (v1.3.50)

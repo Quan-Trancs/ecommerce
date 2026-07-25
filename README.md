@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.49](./VERSION.md) — gift cards. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.50](./VERSION.md) — saved shipping addresses. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
