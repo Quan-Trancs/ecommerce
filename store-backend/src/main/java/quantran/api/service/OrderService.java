@@ -19,7 +19,9 @@ import quantran.api.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -252,6 +254,32 @@ public class OrderService {
                 .country(shipping.getCountry())
                 .phone(shipping.getPhone())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> listContainingProducts(List<String> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Set<String> owned = new HashSet<>(productIds);
+        return orderRepository.findDetailedContainingProductIds(productIds).stream()
+                .map(order -> toDtoFiltered(order, owned))
+                .collect(Collectors.toList());
+    }
+
+    private OrderResponseDto toDtoFiltered(OrderEntity order, Set<String> productIds) {
+        OrderResponseDto dto = toDto(order);
+        if (dto.getItems() != null) {
+            List<OrderResponseDto.OrderItemDto> filtered = dto.getItems().stream()
+                    .filter(item -> item.getProductId() != null && productIds.contains(item.getProductId()))
+                    .collect(Collectors.toList());
+            dto.setItems(filtered);
+            BigDecimal sellerItems = filtered.stream()
+                    .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            dto.setItemsPrice(sellerItems);
+        }
+        return dto;
     }
 
     private OrderResponseDto toDto(OrderEntity order) {

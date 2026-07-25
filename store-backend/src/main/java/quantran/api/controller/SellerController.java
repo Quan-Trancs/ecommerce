@@ -9,14 +9,19 @@ import quantran.api.account.AccountService;
 import quantran.api.account.Role;
 import quantran.api.dto.AdminProductCreateRequestDto;
 import quantran.api.dto.AdminProductUpdateRequestDto;
+import quantran.api.dto.OrderResponseDto;
 import quantran.api.dto.ProductResponseDto;
 import quantran.api.exception.UnauthorizedException;
+import quantran.api.repository.ProductRepository;
 import quantran.api.security.JwtAuthSupport;
+import quantran.api.service.OrderService;
 import quantran.api.service.SellerProductService;
+import quantran.api.entity.ProductEntity;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Seller-scoped catalog endpoints.
@@ -30,6 +35,8 @@ public class SellerController {
     private final AccountService accountService;
     private final JwtAuthSupport jwtAuthSupport;
     private final SellerProductService sellerProductService;
+    private final OrderService orderService;
+    private final ProductRepository productRepository;
 
     @GetMapping("/me")
     public ResponseEntity<?> me(HttpServletRequest request) {
@@ -64,10 +71,12 @@ public class SellerController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<List<?>> myOrders(HttpServletRequest request) {
-        requireSeller(request);
-        // Fulfillment queue reserved — join order items by seller products later.
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<OrderResponseDto>> myOrders(HttpServletRequest request) {
+        AccountEntity seller = requireSeller(request);
+        List<String> productIds = productRepository.findBySellerAccountId(seller.getId()).stream()
+                .map(ProductEntity::getId)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(orderService.listContainingProducts(productIds));
     }
 
     private AccountEntity requireSeller(HttpServletRequest request) {

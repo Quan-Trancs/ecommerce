@@ -269,7 +269,7 @@ Flyway: `V4__accounts_roles_seller.sql`
 
 ## Next build steps
 
-- ~~Connect storefront seller UI to `/v1/seller/products` create/update~~ (done in v1.2.1)
-- Seller order fulfillment join (order items × seller products)
+- ~~Connect storefront seller UI to `/v1/seller/products` create/update~~ (v1.2.1)
+- ~~Seller order fulfillment join (order items × seller products)~~ (v1.2.2)
 - Sync NextAuth role changes → `PATCH /v1/accounts/{id}/role`
 - Optional SUPPORT role if you need customer-service without full admin

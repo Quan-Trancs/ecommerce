@@ -125,3 +125,38 @@ export async function updateSellerProduct(
     return { success: false as const, message: formatError(error) }
   }
 }
+
+export type SellerOrder = {
+  id: string
+  userId: string
+  status?: string
+  paymentMethod?: string
+  itemsPrice: number
+  totalPrice: number
+  isPaid?: boolean
+  createdAt?: string
+  items: {
+    productId: string
+    name: string
+    slug?: string
+    price: number
+    quantity: number
+    color?: string
+    size?: string
+  }[]
+}
+
+export async function listSellerOrders(): Promise<SellerOrder[]> {
+  const subject = await requireSellerSubject()
+  const orders = await sellerFetch<SellerOrder[]>('/v1/seller/orders', subject)
+  return orders.map((order) => ({
+    ...order,
+    itemsPrice: Number(order.itemsPrice),
+    totalPrice: Number(order.totalPrice),
+    items: (order.items || []).map((item) => ({
+      ...item,
+      price: Number(item.price),
+      quantity: Number(item.quantity),
+    })),
+  }))
+}

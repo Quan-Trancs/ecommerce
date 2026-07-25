@@ -1,5 +1,23 @@
 # Version History
 
+## v1.2.2 — 2026-07-24
+
+Seller order queue: list orders that include the seller’s products (line items filtered to owned SKUs).
+
+### Backend
+- `GET /v1/seller/orders` joins order items × `products.seller_account_id`
+
+### Frontend
+- `/seller/orders` shows seller-scoped line items and subtotal
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.2.2` |
+| Store API | `store-backend/` | `1.2.2` (`store-api`) |
+
+---
+
 ## v1.2.1 — 2026-07-24
 
 Seller product loop: create/list/publish owned listings end-to-end.
