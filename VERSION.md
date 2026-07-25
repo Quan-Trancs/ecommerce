@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.52 — 2026-07-25
+
+Buyer product compare (side-by-side, max 4).
+
+### Frontend
+- Zustand + localStorage compare list (no sign-in)
+- Compare toggle on product cards and PDP
+- Floating compare bar → `/compare` attribute table
+- Catalog mapper keeps product `attributes` for spec rows
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.52` |
+| Store API | `store-backend/` | `1.3.52` (`store-api`) |
+
+---
+
 ## v1.3.51 — 2026-07-25
 
 Atomic inventory reservations at checkout with unpaid TTL.

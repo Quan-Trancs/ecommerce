@@ -51,6 +51,7 @@ export function catalogProductToStoreProduct(
     tags: product.tags?.length ? product.tags : ['new-arrival'],
     sizes,
     colors,
+    attributes: product.attributes ?? {},
     avgRating: product.avgRating ?? 0,
     numReviews: product.numReviews ?? 0,
     ratingDistribution: [

@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import AddToBrowsingHistory from '@/components/shared/product/add-to-browsing-history'
 import AddToCart from '@/components/shared/product/add-to-cart'
 import WishlistToggleButton from '@/components/shared/product/wishlist-toggle-button'
+import CompareAddButton from '@/components/shared/product/compare-add-button'
 import { roundToTwoDecimals } from '@/lib/utils'
 import Link from 'next/link'
 import { auth } from '@/auth'
@@ -161,6 +162,15 @@ export default async function ProductDetails(props: {
               productId={product._id}
               initialWishlisted={wishlistStatus.wishlisted}
               signedIn={wishlistStatus.signedIn}
+            />
+            <CompareAddButton
+              item={{
+                id: product._id,
+                slug: product.slug,
+                name: product.name,
+                image: product.images[0],
+                price: product.price,
+              }}
             />
           </div>
         </aside>

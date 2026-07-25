@@ -3,6 +3,7 @@
 import { Toaster } from 'sonner'
 import CartSidebar from './cart-sidebar'
 import CartHydrator from './cart-hydrator'
+import CompareFloatingBar from './compare/compare-floating-bar'
 import useCartSidebar from '@/hooks/use-cart-sidebar'
 
 export default function ClientProviders({
@@ -24,6 +25,7 @@ export default function ClientProviders({
         <div>{children}</div>
       )}
 
+      <CompareFloatingBar />
       <Toaster />
     </>
   )

@@ -24,6 +24,7 @@ export type StoreProduct = {
   tags: string[]
   sizes: string[]
   colors: string[]
+  attributes?: Record<string, string[]>
   avgRating: number
   numReviews: number
   ratingDistribution: { rating: number; count: number }[]

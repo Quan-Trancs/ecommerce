@@ -7,6 +7,7 @@ import { formatNumber, generateId, roundToTwoDecimals } from '@/lib/utils'
 import ProductPrice from './product-price'
 import AddToCart from './add-to-cart'
 import WishlistHeartButton from './wishlist-heart-button'
+import CompareToggleButton from './compare-toggle-button'
 
 const ProductCard = ({
   product,
@@ -44,11 +45,20 @@ const ProductCard = ({
           )}
         </div>
       </Link>
-      <div className='absolute right-2 top-2 z-10'>
+      <div className='absolute right-2 top-2 z-10 flex flex-col gap-2'>
         <WishlistHeartButton
           productId={product._id}
           initialWishlisted={wishlisted}
           signedIn={signedIn}
+        />
+        <CompareToggleButton
+          item={{
+            id: product._id,
+            slug: product.slug,
+            name: product.name,
+            image: product.images[0],
+            price: product.price,
+          }}
         />
       </div>
     </div>

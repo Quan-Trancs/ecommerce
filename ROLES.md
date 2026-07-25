@@ -342,3 +342,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Checkout gift cards / store credit~~ (v1.3.49)
 - ~~Saved shipping addresses~~ (v1.3.50)
 - ~~Inventory reservations at checkout (atomic + unpaid TTL)~~ (v1.3.51)
+- ~~Buyer product compare~~ (v1.3.52)
