@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.36 — 2026-07-25
+
+Seller payouts and earnings history.
+
+### Backend
+- Flyway `V19__seller_payouts.sql` — payout ledger per seller account
+
+### Frontend
+- `/seller/earnings` — available / gross / paid out, payout history, recent paid lines
+- `/admin/payouts` — record settlements against available balance
+- Available = paid line revenue − recorded payouts
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.36` |
+| Store API | `store-backend/` | `1.3.36` (`store-api`) |
+
+---
+
 ## v1.3.35 — 2026-07-25
 
 Checkout promo codes / coupons.

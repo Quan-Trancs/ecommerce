@@ -40,6 +40,12 @@ export default async function SellerHomePage() {
               Last 30 days:{' '}
               <ProductPrice price={analytics.salesRevenueLast30Days} plain />
             </p>
+            <Link
+              href='/seller/earnings'
+              className='mt-2 inline-block text-xs text-primary underline'
+            >
+              View earnings & payouts
+            </Link>
           </div>
           <Link
             href='/seller/orders'

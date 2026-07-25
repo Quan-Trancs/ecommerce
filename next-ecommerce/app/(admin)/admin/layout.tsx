@@ -14,6 +14,7 @@ export default async function AdminLayout({
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/catalog', label: 'Catalog' },
     { href: '/admin/coupons', label: 'Coupons' },
+    { href: '/admin/payouts', label: 'Payouts' },
     { href: '/account', label: 'Account' },
   ]
 
