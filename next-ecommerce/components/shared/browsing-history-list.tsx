@@ -1,31 +1,59 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import ProductSlider from './product/product-slider'
 import useBrowsingHistory from '@/hooks/use-browsing-history'
+import useIsMounted from '@/hooks/use-is-mounted'
+import type { IProduct } from '@/lib/catalog/store-product'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function BrowsingHistoryList({
   className,
+  excludeId,
+  showRelated = true,
 }: {
   className?: string
+  /** Hide this product (e.g. current PDP) from the recently viewed strip. */
+  excludeId?: string
+  showRelated?: boolean
 }) {
-  const { products } = useBrowsingHistory()
+  const mounted = useIsMounted()
+  const { products, clear } = useBrowsingHistory()
 
-  if (products.length === 0) return null
+  if (!mounted || products.length === 0) return null
+
+  const idsForFetch = excludeId
+    ? products.filter((p) => p.id !== excludeId)
+    : products
+
+  if (idsForFetch.length === 0) return null
 
   return (
-    <div className={className}>
-      <div className='space-y-8'>
+    <div className={cn('space-y-8', className)}>
+      <ProductList
+        title='Recently viewed'
+        type='history'
+        excludeId={excludeId}
+        action={
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='text-muted-foreground'
+            onClick={clear}
+          >
+            Clear
+          </Button>
+        }
+      />
+      {showRelated ? (
         <ProductList
-          title={"Related to items you've viewed"}
+          title="Related to items you've viewed"
           type='related'
+          excludeId={excludeId}
         />
-        <ProductList
-          title='Your browsing history'
-          type='history'
-          hideDetails
-        />
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -33,30 +61,64 @@ export default function BrowsingHistoryList({
 function ProductList({
   title,
   type = 'history',
-  hideDetails = false,
+  excludeId,
+  action,
 }: {
   title: string
   type: 'history' | 'related'
-  hideDetails?: boolean
+  excludeId?: string
+  action?: React.ReactNode
 }) {
   const { products } = useBrowsingHistory()
-  const [data, setData] = React.useState([])
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const res = await fetch(
-        `/api/products/browsing-history?type=${type}&categories=${products
-          .map((product) => product.category)
-          .join(',')}&ids=${products.map((product) => product.id).join(',')}`
-      )
-      const data = await res.json()
-      setData(data)
-    }
-    fetchProducts()
-  }, [products, type])
+  const [data, setData] = useState<IProduct[]>([])
+  const [loading, setLoading] = useState(true)
 
-  return (
-    data.length > 0 && (
-      <ProductSlider title={title} products={data} hideDetails={hideDetails} />
+  useEffect(() => {
+    const ids = products
+      .filter((p) => !excludeId || p.id !== excludeId)
+      .map((p) => p.id)
+    const categories = products
+      .filter((p) => !excludeId || p.id !== excludeId)
+      .map((p) => p.category)
+
+    if (ids.length === 0) {
+      setData([])
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setLoading(true)
+    void fetch(
+      `/api/products/browsing-history?type=${type}&categories=${encodeURIComponent(
+        categories.join(',')
+      )}&ids=${encodeURIComponent(ids.join(','))}`
     )
-  )
+      .then(async (res) => {
+        const json = await res.json()
+        if (cancelled) return
+        if (!Array.isArray(json)) {
+          setData([])
+          return
+        }
+        const rows = json as IProduct[]
+        setData(
+          excludeId ? rows.filter((p) => p._id !== excludeId) : rows
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setData([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [products, type, excludeId])
+
+  if (loading || data.length === 0) return null
+
+  return <ProductSlider title={title} products={data} action={action} />
 }

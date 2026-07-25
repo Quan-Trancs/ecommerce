@@ -1,5 +1,24 @@
 # Version History
 
+## v1.3.55 — 2026-07-25
+
+Recently viewed products carousel polish.
+
+### Frontend
+- “Recently viewed” carousel with full product cards + Clear
+- Safer Zustand history (immutable updates, max 12)
+- Hydration-safe mount; exclude current PDP product
+- Shown on home, PDP, cart, and search
+- Related-to-viewed strip kept (optional per page)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.55` |
+| Store API | `store-backend/` | `1.3.55` (`store-api`) |
+
+---
+
 ## v1.3.54 — 2026-07-25
 
 Order invoice PDF download.

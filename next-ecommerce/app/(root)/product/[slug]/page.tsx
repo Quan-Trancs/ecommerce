@@ -199,7 +199,7 @@ export default async function ProductDetails(props: {
       </section>
 
       <section className='store-section'>
-        <BrowsingHistoryList />
+        <BrowsingHistoryList excludeId={product._id} />
       </section>
     </div>
   )

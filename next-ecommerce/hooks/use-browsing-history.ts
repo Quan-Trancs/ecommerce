@@ -1,13 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type BrowsingHistoryItem = {
+  id: string
+  category: string
+}
+
 type BrowsingHistory = {
-  products: { id: string; category: string }[]
+  products: BrowsingHistoryItem[]
 }
 
 const initialState: BrowsingHistory = {
   products: [],
 }
+
+export const BROWSING_HISTORY_MAX = 12
 
 export const browsingHistoryStore = create<BrowsingHistory>()(
   persist(() => initialState, {
@@ -20,22 +27,15 @@ export default function useBrowsingHistory() {
 
   return {
     products,
-    addItem: (product: { id: string; category: string }) => {
-      const index = products.findIndex((p) => p.id === product.id)
-      if (index !== -1) products.splice(index, 1)
-      products.unshift(product)
-
-      if (products.length > 10) products.pop()
-
-      browsingHistoryStore.setState({
-        products,
-      })
+    addItem: (product: BrowsingHistoryItem) => {
+      const next = [
+        product,
+        ...products.filter((p) => p.id !== product.id),
+      ].slice(0, BROWSING_HISTORY_MAX)
+      browsingHistoryStore.setState({ products: next })
     },
-
     clear: () => {
-      browsingHistoryStore.setState({
-        products: [],
-      })
+      browsingHistoryStore.setState({ products: [] })
     },
   }
 }

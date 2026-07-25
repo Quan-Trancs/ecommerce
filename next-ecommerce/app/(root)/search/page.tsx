@@ -1,4 +1,5 @@
 import ProductCard from '@/components/shared/product/product-card'
+import BrowsingHistoryList from '@/components/shared/browsing-history-list'
 import {
   SearchLayout,
 } from '@/components/shared/search/search-filters'
@@ -119,40 +120,45 @@ export default async function SearchPage(props: {
         : 'All Products'
 
   return (
-    <SearchLayout
-      categories={categories}
-      facets={facets}
-      current={current}
-      total={total}
-      heading={heading}
-    >
-      {sortedProducts.length === 0 ? (
-        <div className='border border-dashed border-slate-900/20 bg-white/80 px-6 py-16 text-center'>
-          <p className='font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-deal'>
-            Empty set
-          </p>
-          <p className='mt-2 font-display text-lg font-bold text-chrome'>
-            No products matched these filters
-          </p>
-          <p className='mt-1 text-sm text-slate-500'>
-            Try clearing filters or browsing another department.
-          </p>
-          <Link href='/search' className='filter-cta mt-5 inline-flex w-auto px-8'>
-            Clear filters
-          </Link>
-        </div>
-      ) : (
-        <div className='grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 xl:grid-cols-4'>
-          {sortedProducts.map((product) => (
-            <ProductCard
-              key={product._id}
-              product={product}
-              wishlisted={saved.has(product._id)}
-              signedIn={wishlist.signedIn}
-            />
-          ))}
-        </div>
-      )}
-    </SearchLayout>
+    <>
+      <SearchLayout
+        categories={categories}
+        facets={facets}
+        current={current}
+        total={total}
+        heading={heading}
+      >
+        {sortedProducts.length === 0 ? (
+          <div className='border border-dashed border-slate-900/20 bg-white/80 px-6 py-16 text-center'>
+            <p className='font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-deal'>
+              Empty set
+            </p>
+            <p className='mt-2 font-display text-lg font-bold text-chrome'>
+              No products matched these filters
+            </p>
+            <p className='mt-1 text-sm text-slate-500'>
+              Try clearing filters or browsing another department.
+            </p>
+            <Link href='/search' className='filter-cta mt-5 inline-flex w-auto px-8'>
+              Clear filters
+            </Link>
+          </div>
+        ) : (
+          <div className='grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 xl:grid-cols-4'>
+            {sortedProducts.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                wishlisted={saved.has(product._id)}
+                signedIn={wishlist.signedIn}
+              />
+            ))}
+          </div>
+        )}
+      </SearchLayout>
+      <section className='store-section page-shell px-4 py-8 md:px-6'>
+        <BrowsingHistoryList showRelated={false} />
+      </section>
+    </>
   )
 }

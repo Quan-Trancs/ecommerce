@@ -16,6 +16,7 @@ export default function ProductSlider({
   href,
   wishlistedIds,
   signedIn,
+  action,
 }: {
   title: string
   products: IProduct[]
@@ -23,6 +24,7 @@ export default function ProductSlider({
   href?: string
   wishlistedIds?: string[]
   signedIn?: boolean
+  action?: React.ReactNode
 }) {
   const saved = new Set(wishlistedIds || [])
   return (
@@ -32,11 +34,14 @@ export default function ProductSlider({
           <p className='brick-label mb-1'>Collection</p>
           <h2 className='brick-title text-xl md:text-2xl'>{title}</h2>
         </div>
-        {href && (
-          <Link href={href} className='brick-link'>
-            View all →
-          </Link>
-        )}
+        <div className='flex items-center gap-3'>
+          {action}
+          {href && (
+            <Link href={href} className='brick-link'>
+              View all →
+            </Link>
+          )}
+        </div>
       </div>
       <Carousel opts={{ align: 'start' }} className='w-full'>
         <CarouselContent className='-ml-2 md:-ml-3'>
