@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { listSellerProducts } from '@/lib/actions/seller.actions'
-import ProductPrice from '@/components/shared/product/product-price'
 import SellerProductPublishToggle from './seller-product-publish-toggle'
+import SellerProductStockPriceForm from './seller-product-stock-price-form'
 
 export const metadata = { title: 'Seller products' }
 
@@ -46,29 +46,29 @@ export default async function SellerProductsPage() {
       ) : (
         <ul className='divide-y rounded-lg border'>
           {products.map((product) => (
-            <li
-              key={product.id}
-              className='flex flex-wrap items-center justify-between gap-3 p-4'
-            >
-              <div className='min-w-0'>
-                <Link
-                  href={`/product/${product.slug}`}
-                  className='font-semibold text-primary hover:underline'
-                >
-                  {product.name}
-                </Link>
-                <p className='text-sm text-muted-foreground'>
-                  Stock {product.stockQuantity ?? 0} ·{' '}
-                  {product.isPublished ? 'Published' : 'Draft'}
-                </p>
-              </div>
-              <div className='flex items-center gap-3'>
-                <ProductPrice price={product.price} plain />
+            <li key={product.id} className='space-y-3 p-4'>
+              <div className='flex flex-wrap items-start justify-between gap-3'>
+                <div className='min-w-0'>
+                  <Link
+                    href={`/product/${product.slug}`}
+                    className='font-semibold text-primary hover:underline'
+                  >
+                    {product.name}
+                  </Link>
+                  <p className='text-sm text-muted-foreground'>
+                    {product.isPublished ? 'Published' : 'Draft'}
+                  </p>
+                </div>
                 <SellerProductPublishToggle
                   productId={product.id}
                   isPublished={Boolean(product.isPublished)}
                 />
               </div>
+              <SellerProductStockPriceForm
+                productId={product.id}
+                price={Number(product.price)}
+                stockQuantity={Number(product.stockQuantity ?? 0)}
+              />
             </li>
           ))}
         </ul>

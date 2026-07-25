@@ -272,6 +272,6 @@ Flyway: `V4__accounts_roles_seller.sql`
 - ~~Connect storefront seller UI to `/v1/seller/products` create/update~~ (v1.2.1)
 - ~~Seller order fulfillment join (order items × seller products)~~ (v1.2.2)
 - ~~Sync NextAuth role changes → store accounts~~ (v1.2.3 — admin UI + mint upsert)
-- Optional SUPPORT role if you need customer-service without full admin
-- Seller product edit (price/stock form) beyond publish toggle
+- ~~Seller product edit (price/stock form) beyond publish toggle~~ (v1.2.4)
 - Harden admin catalog page against `/v1/admin/products`
+- Optional SUPPORT role if you need customer-service without full admin
