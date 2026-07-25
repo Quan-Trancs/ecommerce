@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.21 — 2026-07-25
+
+Product image delete / replace cleanup in object storage.
+
+### Frontend
+- Replace image deletes the previous managed local/S3 object after a successful patch
+- Failed replace rolls back the newly uploaded object
+- Remove image clears listing images and deletes managed storage when applicable
+- External URLs are never deleted
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.21` |
+| Store API | `store-backend/` | `1.3.21` (`store-api`) |
+
+---
+
 ## v1.3.20 — 2026-07-25
 
 Seller participation in order notes (product-scoped).

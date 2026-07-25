@@ -1,6 +1,10 @@
-import { mkdir, writeFile } from 'fs/promises'
+import { mkdir, unlink, writeFile } from 'fs/promises'
 import path from 'path'
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3'
 
 export type StoredProductImage = {
   /** Public URL or site-relative path for the product image. */
@@ -18,6 +22,13 @@ export function isS3UploadConfigured(): boolean {
     process.env.S3_BUCKET?.trim() &&
       process.env.S3_ACCESS_KEY_ID?.trim() &&
       process.env.S3_SECRET_ACCESS_KEY?.trim()
+  )
+}
+
+function keyPrefix() {
+  return (process.env.S3_KEY_PREFIX?.trim() || 'products').replace(
+    /^\/+|\/+$/g,
+    ''
   )
 }
 
@@ -61,6 +72,70 @@ function publicUrlForKey(key: string): string {
   return `https://${bucket}.s3.${region}.amazonaws.com/${key}`
 }
 
+const LOCAL_UPLOAD_RE = /^\/uploads\/products\/([A-Za-z0-9._-]+)$/
+
+/**
+ * Resolve a managed object key (S3) or local filename for URLs we created.
+ * External URLs return null and must not be deleted.
+ */
+export function resolveManagedProductImage(
+  url: string | null | undefined
+): { kind: 'local'; filename: string } | { kind: 's3'; key: string } | null {
+  if (!url || typeof url !== 'string') return null
+  const trimmed = url.trim()
+  if (!trimmed) return null
+
+  const local = trimmed.match(LOCAL_UPLOAD_RE)
+  if (local) {
+    return { kind: 'local', filename: local[1] }
+  }
+
+  if (!isS3UploadConfigured()) return null
+
+  const prefix = keyPrefix()
+  const expectedPrefix = `${prefix}/`
+
+  const publicBase = process.env.S3_PUBLIC_BASE_URL?.trim()
+  if (publicBase) {
+    const base = `${trimSlash(publicBase)}/`
+    if (trimmed.startsWith(base)) {
+      const key = trimmed.slice(base.length)
+      if (key.startsWith(expectedPrefix) && !key.includes('..')) {
+        return { kind: 's3', key }
+      }
+    }
+  }
+
+  const bucket = process.env.S3_BUCKET!.trim()
+  const region = process.env.S3_REGION?.trim() || 'us-east-1'
+  const endpoint = process.env.S3_ENDPOINT?.trim()
+
+  if (endpoint) {
+    const pathStyle = `${trimSlash(endpoint)}/${bucket}/`
+    if (trimmed.startsWith(pathStyle)) {
+      const key = trimmed.slice(pathStyle.length)
+      if (key.startsWith(expectedPrefix) && !key.includes('..')) {
+        return { kind: 's3', key }
+      }
+    }
+  }
+
+  const virtualHosted = [
+    `https://${bucket}.s3.${region}.amazonaws.com/`,
+    `https://${bucket}.s3.amazonaws.com/`,
+  ]
+  for (const base of virtualHosted) {
+    if (trimmed.startsWith(base)) {
+      const key = trimmed.slice(base.length)
+      if (key.startsWith(expectedPrefix) && !key.includes('..')) {
+        return { kind: 's3', key }
+      }
+    }
+  }
+
+  return null
+}
+
 async function storeLocal(
   buffer: Buffer,
   filename: string
@@ -77,11 +152,7 @@ async function storeS3(
   contentType: string
 ): Promise<StoredProductImage> {
   const bucket = process.env.S3_BUCKET!.trim()
-  const prefix = (process.env.S3_KEY_PREFIX?.trim() || 'products').replace(
-    /^\/+|\/+$/g,
-    ''
-  )
-  const key = `${prefix}/${filename}`
+  const key = `${keyPrefix()}/${filename}`
   const client = getS3Client()
 
   await client.send(
@@ -110,4 +181,56 @@ export async function storeProductImage(input: {
     return storeS3(input.buffer, input.filename, input.contentType)
   }
   return storeLocal(input.buffer, input.filename)
+}
+
+/**
+ * Best-effort delete for managed local/S3 product images only.
+ * External URLs are skipped. Failures are swallowed (orphan cleanup).
+ */
+export async function deleteManagedProductImage(
+  url: string | null | undefined
+): Promise<'deleted' | 'skipped' | 'failed'> {
+  const managed = resolveManagedProductImage(url)
+  if (!managed) return 'skipped'
+
+  try {
+    if (managed.kind === 'local') {
+      const filePath = path.join(
+        process.cwd(),
+        'public',
+        'uploads',
+        'products',
+        managed.filename
+      )
+      await unlink(filePath)
+      return 'deleted'
+    }
+
+    if (!isS3UploadConfigured()) return 'skipped'
+    await getS3Client().send(
+      new DeleteObjectCommand({
+        Bucket: process.env.S3_BUCKET!.trim(),
+        Key: managed.key,
+      })
+    )
+    return 'deleted'
+  } catch {
+    return 'failed'
+  }
+}
+
+/** Delete previous managed URLs that are no longer referenced. */
+export async function deleteOrphanedProductImages(
+  previousUrls: Array<string | null | undefined>,
+  nextUrls: Array<string | null | undefined>
+): Promise<void> {
+  const keep = new Set(
+    nextUrls
+      .filter((u): u is string => typeof u === 'string' && u.trim().length > 0)
+      .map((u) => u.trim())
+  )
+  for (const url of previousUrls) {
+    if (!url || keep.has(url.trim())) continue
+    await deleteManagedProductImage(url)
+  }
 }

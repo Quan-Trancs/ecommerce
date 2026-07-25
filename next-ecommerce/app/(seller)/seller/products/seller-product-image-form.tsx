@@ -2,10 +2,13 @@
 
 import Image from 'next/image'
 import { useRef, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { updateSellerProduct } from '@/lib/actions/seller.actions'
-import { uploadSellerProductImage } from '@/lib/actions/upload.actions'
+import {
+  removeSellerProductImage,
+  replaceSellerProductImage,
+} from '@/lib/actions/upload.actions'
 import { shouldUnoptimizeProductImage } from '@/lib/storage/product-image-url'
 
 export default function SellerProductImageForm({
@@ -15,6 +18,7 @@ export default function SellerProductImageForm({
   productId: string
   imageUrl?: string
 }) {
+  const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [pending, startTransition] = useTransition()
 
@@ -47,19 +51,17 @@ export default function SellerProductImageForm({
           const body = new FormData()
           body.set('file', file)
           startTransition(async () => {
-            const uploaded = await uploadSellerProductImage(body)
-            if (!uploaded.success) {
-              toast.error(uploaded.message)
-              return
-            }
-            const result = await updateSellerProduct(productId, {
-              images: [uploaded.url],
-            })
+            const result = await replaceSellerProductImage(
+              productId,
+              body,
+              imageUrl
+            )
             if (!result.success) {
-              toast.error(result.message || 'Could not update image')
+              toast.error(result.message)
               return
             }
             toast.success('Product image updated')
+            router.refresh()
           })
         }}
       />
@@ -70,8 +72,30 @@ export default function SellerProductImageForm({
         disabled={pending}
         onClick={() => inputRef.current?.click()}
       >
-        {pending ? 'Uploading…' : 'Change image'}
+        {pending ? 'Working…' : 'Change image'}
       </Button>
+      {imageUrl ? (
+        <Button
+          type='button'
+          variant='ghost'
+          size='sm'
+          disabled={pending}
+          onClick={() => {
+            if (!window.confirm('Remove this product image?')) return
+            startTransition(async () => {
+              const result = await removeSellerProductImage(productId, imageUrl)
+              if (!result.success) {
+                toast.error(result.message)
+                return
+              }
+              toast.success('Product image removed')
+              router.refresh()
+            })
+          }}
+        >
+          Remove
+        </Button>
+      ) : null}
     </div>
   )
 }
