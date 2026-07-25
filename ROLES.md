@@ -36,12 +36,11 @@ flowchart TB
   end
 
   subgraph Data
-    Mongo[(Mongo users)]
-    PG[(Postgres catalog / orders / accounts)]
+    PG[(Postgres — users, catalog, orders)]
   end
 
   Browser --> NextAuth
-  NextAuth --> Mongo
+  NextAuth --> PG
   NextAuth --> Routes
   Routes --> Actions
   Actions --> Mint
@@ -102,9 +101,9 @@ flowchart TD
 sequenceDiagram
   participant U as User
   participant FE as Next.js server action
-  participant NA as NextAuth / Mongo
+  participant NA as NextAuth / Postgres accounts
   participant API as store-backend
-  participant DB as Postgres accounts
+  participant DB as Postgres
 
   U->>FE: Sign in / place order
   FE->>NA: auth() session (id, role)
@@ -153,6 +152,7 @@ erDiagram
   ACCOUNT {
     string id PK
     string email
+    string password_hash
     string role "BUYER|SELLER|ADMIN"
     boolean active
   }
@@ -224,6 +224,9 @@ next-ecommerce/
     roles.ts              # ROLES, normalizeRole, access helpers
     require-role.ts       # requireSession / requireSeller / requireAdmin
     store-token.ts        # BFF JWT mint (server-only)
+  lib/db/
+    postgres.ts           # shared pg pool (DATABASE_URL)
+    users.ts              # accounts CRUD for NextAuth
   app/(root)/account/     # Buyer hub + orders
   app/(seller)/seller/    # Seller overview, products, orders (shell)
   app/(admin)/admin/      # Admin overview, users, catalog (shell)
@@ -232,7 +235,7 @@ next-ecommerce/
 
 Signup lets users choose **Buyer** or **Seller**. Admin is seeded only (`admin@example.com`).
 
-Demo seeds (after `npm run seed`):
+Demo seeds (after `npm run seed` with Postgres up):
 
 - `buyer@example.com` / `BuyerPass123!`
 - `seller@example.com` / `SellerPass123!`
@@ -258,14 +261,14 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`
 
 ### Auth bridge (summary)
 
-1. NextAuth owns login (Mongo users + `role`).
+1. NextAuth owns login against Postgres `accounts` (`password_hash` + `role`).
 2. Server actions mint API JWT via `mintStoreAccessToken` → `POST /v1/auth/token` with `X-Admin-Key` (never from the browser).
 3. Order + seller/admin APIs require `Authorization: Bearer …`; order get/pay also enforce owner (or ADMIN).
-4. `GET /v1/orders/me` backs the buyer order list when the store API is up.
+4. `GET /v1/orders/me` backs the buyer order list.
 
 ## Next build steps
 
@@ -274,6 +277,6 @@ Flyway: `V4__accounts_roles_seller.sql`
 - ~~Sync NextAuth role changes → store accounts~~ (v1.2.3 — admin UI + mint upsert)
 - ~~Seller product edit (price/stock form) beyond publish toggle~~ (v1.2.4)
 - ~~Harden admin catalog page against `/v1/admin/products`~~ (v1.2.5)
+- ~~Single Postgres DB (drop Mongo users + order fallback)~~ (v1.3.0)
 - Optional SUPPORT role if you need customer-service without full admin
 - Cart server revalidation / persistent cart (still client Zustand)
-- Unify Mongo vs store order history when both backends are used

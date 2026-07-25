@@ -1,22 +1,32 @@
 import { loadEnvConfig } from '@next/env'
 import { cwd } from 'process'
 import data from '@/lib/data'
-import { connectToDatabase } from '.'
-import User from './models/user.model'
+import { replaceAllUsers } from './users'
+import type { Role } from '@/lib/auth/roles'
 
 loadEnvConfig(cwd())
 
 const main = async () => {
   try {
     const { users } = data
-    await connectToDatabase(process.env.MONGODB_URI)
-
-    await User.deleteMany()
-    const createdUsers = await User.insertMany(users)
+    const createdUsers = await replaceAllUsers(
+      users.map((user) => ({
+        name: user.name,
+        email: user.email,
+        passwordHash: user.password,
+        role: user.role as Role,
+        emailVerified: user.emailVerified,
+      }))
+    )
 
     console.log({
-      createdUsers,
-      message: 'Seeded users successfully (catalog is seeded by store-backend)',
+      createdUsers: createdUsers.map((u) => ({
+        id: u.id,
+        email: u.email,
+        role: u.role,
+      })),
+      message:
+        'Seeded users into Postgres accounts (catalog is seeded by store-backend)',
     })
     process.exit(0)
   } catch (error) {

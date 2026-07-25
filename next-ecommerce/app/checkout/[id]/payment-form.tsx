@@ -10,7 +10,7 @@ import {
   approvePayPalOrder,
   createPayPalOrder,
 } from '@/lib/actions/order.actions'
-import { IOrder } from '@/lib/db/models/order.model'
+import { IOrder } from '@/lib/types/order'
 import { formatDateTime } from '@/lib/utils'
 
 import CheckoutFooter from '../checkout-footer'

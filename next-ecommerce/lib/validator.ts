@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { formatNumberWithDecimal } from './utils'
 
 //common
-const MongoId = z.string().regex(/^[0-9a-fA-F]{24}$/, { message: 'Invalid ID' })
+const AccountId = z.string().min(1, 'Invalid ID')
 
 const Price = (field: string) =>
   z.coerce
@@ -45,7 +45,7 @@ export const OrderItemSchema = z.object({
 
 export const OrderInputSchema = z.object({
   user: z.union([
-    MongoId,
+    AccountId,
     z.object({
       name: z.string(),
       email: z.string().email(),

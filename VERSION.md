@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.0 — 2026-07-24
+
+Single database: Postgres only. NextAuth users and store accounts share `accounts`; MongoDB removed.
+
+### Backend
+- Flyway `V5__accounts_auth_credentials.sql` — `password_hash`, `email_verified`, `image` on `accounts`
+
+### Frontend
+- Auth/register/admin/seed use `pg` against the store Postgres DB
+- Removed Mongo adapter, mongoose models, and Mongo order fallback
+- Orders are store API / Postgres only
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.0` |
+| Store API | `store-backend/` | `1.3.0` (`store-api`) |
+
+---
+
 ## v1.2.5 — 2026-07-24
 
 Admin catalog moderation: list/create/update platform products via `/v1/admin/products`.

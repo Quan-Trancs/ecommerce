@@ -15,7 +15,7 @@ import {
 } from '@react-email/components'
 
 import { formatCurrency } from '@/lib/utils'
-import { IOrder } from '@/lib/db/models/order.model'
+import { IOrder } from '@/lib/types/order'
 import { SERVER_URL } from '@/lib/constants'
 
 type OrderInformationProps = {

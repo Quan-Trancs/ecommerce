@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Platform account mirrored from the storefront auth subject (Mongo user id).
+ * Platform account / auth identity (Postgres is the single app database).
  */
 @Entity
 @Table(name = "accounts", indexes = {
@@ -28,6 +28,16 @@ public class AccountEntity {
 
     @Column(length = 200)
     private String displayName;
+
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(length = 500)
+    private String image;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

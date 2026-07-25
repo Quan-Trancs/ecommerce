@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.2.5](./VERSION.md) — roles + seller ops + admin catalog. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.0](./VERSION.md) — single Postgres DB + roles marketplace. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
@@ -8,6 +8,8 @@ Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog*
 |---------|------|--------|------|
 | **Storefront** | [`next-ecommerce/`](./next-ecommerce) | Next.js | Shop UI + buyer/seller/admin workspaces |
 | **Store API** | [`store-backend/`](./store-backend) | Spring Boot, PostgreSQL | Catalog, orders, accounts & seller APIs |
+
+**Database:** one Postgres instance (`store`) for users/auth, catalog, and orders. Redis is optional cache only.
 
 ## Catalog strategy (big-store style)
 
@@ -34,7 +36,9 @@ docker compose up -d postgres redis
 ```bash
 cd next-ecommerce
 cp env.example .env
+# Set DATABASE_URL to the same Postgres as store-backend
 npm install
+npm run seed   # demo buyer/seller/admin into accounts
 npm run dev
 ```
 

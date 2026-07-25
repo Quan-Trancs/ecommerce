@@ -18,8 +18,8 @@ export default async function AdminUsersPage() {
       <div>
         <h2 className='text-xl font-semibold'>Users & roles</h2>
         <p className='text-sm text-muted-foreground'>
-          Login roles live in Mongo; changing a role also upserts the store
-          account via the auth bridge.
+          Accounts live in Postgres (<code>accounts</code>). Role changes update
+          the same row used by NextAuth and the store API.
         </p>
       </div>
 
@@ -29,7 +29,8 @@ export default async function AdminUsersPage() {
         </div>
       ) : users.length === 0 ? (
         <div className='rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground'>
-          No users found. Run <code>npm run seed</code> in next-ecommerce.
+          No users found. Run <code>npm run seed</code> in next-ecommerce
+          (requires Postgres up).
         </div>
       ) : (
         <div className='overflow-x-auto rounded-lg border'>
@@ -39,7 +40,7 @@ export default async function AdminUsersPage() {
                 <th className='px-4 py-3'>Name</th>
                 <th className='px-4 py-3'>Email</th>
                 <th className='px-4 py-3'>Role</th>
-                <th className='px-4 py-3'>Store account</th>
+                <th className='px-4 py-3'>Status</th>
               </tr>
             </thead>
             <tbody className='divide-y'>
@@ -51,7 +52,7 @@ export default async function AdminUsersPage() {
                     <AdminUserRoleSelect userId={user.id} role={user.role} />
                   </td>
                   <td className='px-4 py-3 text-muted-foreground'>
-                    {user.storeSynced ? 'Synced' : 'Pending first API login'}
+                    {user.active ? 'Active' : 'Inactive'}
                   </td>
                 </tr>
               ))}

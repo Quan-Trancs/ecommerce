@@ -2,11 +2,10 @@
 
 import { auth } from '@/auth'
 import { revalidatePath } from 'next/cache'
-import { connectToDatabase } from '@/lib/db'
-import User from '@/lib/db/models/user.model'
 import { hasAdminAccess, normalizeRole, ALL_ROLES, type Role } from '@/lib/auth/roles'
-import { mintStoreAccessToken, storeAuthHeaders } from '@/lib/auth/store-token'
+import { mintStoreAccessToken } from '@/lib/auth/store-token'
 import { formatError } from '@/lib/utils'
+import { listUsers, updateUser } from '@/lib/db/users'
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -31,52 +30,19 @@ export type AdminUserRow = {
   name: string
   email: string
   role: Role
-  storeSynced: boolean
+  active: boolean
 }
 
 export async function listAdminUsers(): Promise<AdminUserRow[]> {
   await requireAdmin()
-  await connectToDatabase()
-  const users = await User.find({})
-    .select('name email role')
-    .sort({ createdAt: -1 })
-    .lean()
-
-  const session = await auth()
-  const subject = {
-    userId: session!.user.id!,
-    email: session!.user.email,
-    displayName: session!.user.name,
-    role: session!.user.role,
-  }
-
-  let storeIds = new Set<string>()
-  try {
-    const headers = await storeAuthHeaders(subject)
-    if (headers.Authorization) {
-      const res = await fetch(`${getStoreApiUrl()}/v1/accounts`, {
-        headers: { Accept: 'application/json', ...headers },
-        cache: 'no-store',
-      })
-      if (res.ok) {
-        const accounts = (await res.json()) as { id: string }[]
-        storeIds = new Set(accounts.map((a) => a.id))
-      }
-    }
-  } catch {
-    /* store API optional for listing */
-  }
-
-  return users.map((u) => {
-    const id = String(u._id)
-    return {
-      id,
-      name: u.name,
-      email: u.email,
-      role: normalizeRole(u.role),
-      storeSynced: storeIds.has(id),
-    }
-  })
+  const users = await listUsers()
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: normalizeRole(u.role),
+    active: u.active,
+  }))
 }
 
 export async function updateAdminUserRole(userId: string, role: Role) {
@@ -92,19 +58,14 @@ export async function updateAdminUserRole(userId: string, role: Role) {
       }
     }
 
-    await connectToDatabase()
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { role },
-      { new: true }
-    )
+    const user = await updateUser(userId, { role })
     if (!user) {
       return { success: false as const, message: 'User not found' }
     }
 
-    // Upsert store account with the new role (BFF mint)
+    // Refresh JWT claims / seller profile via auth bridge
     await mintStoreAccessToken({
-      userId: String(user._id),
+      userId: user.id,
       email: user.email,
       displayName: user.name,
       role,

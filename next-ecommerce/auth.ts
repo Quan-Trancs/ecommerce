@@ -1,12 +1,9 @@
 import NextAuth, { type DefaultSession } from 'next-auth'
 import authConfig from './auth.config'
-import client from './lib/db/client'
-import { MongoDBAdapter } from '@auth/mongodb-adapter'
-import { connectToDatabase } from './lib/db'
-import User from './lib/db/models/user.model'
 import bcrypt from 'bcryptjs'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { normalizeRole, type Role } from './lib/auth/roles'
+import { findUserByEmail, updateUser } from './lib/db/users'
 
 declare module 'next-auth' {
   interface Session {
@@ -31,7 +28,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: 'jwt',
     maxAge: 7 * 24 * 60 * 60,
   },
-  adapter: MongoDBAdapter(client),
   providers: [
     CredentialsProvider({
       credentials: {
@@ -41,44 +37,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { type: 'password' },
       },
       async authorize(credentials) {
-        await connectToDatabase()
         if (credentials == null) return null
 
-        const user = await User.findOne({ email: credentials.email })
+        const user = await findUserByEmail(String(credentials.email || ''))
+        if (!user?.passwordHash || !user.active) return null
 
-        if (user && user.password) {
-          const isMatch = await bcrypt.compare(
-            credentials.password as string,
-            user.password
-          )
-          if (isMatch) {
-            const role = normalizeRole(user.role)
-            if (user.role !== role) {
-              await User.findByIdAndUpdate(user.id, { role })
-            }
-            return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role,
-            }
-          }
+        const isMatch = await bcrypt.compare(
+          credentials.password as string,
+          user.passwordHash
+        )
+        if (!isMatch) return null
+
+        const role = normalizeRole(user.role)
+        if (user.role !== role) {
+          await updateUser(user.id, { role })
         }
 
-        return null
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role,
+        }
       },
     }),
   ],
   callbacks: {
     jwt: async ({ token, user, trigger, session }) => {
       if (user) {
-        if (!user.name) {
-          await connectToDatabase()
-          await User.findByIdAndUpdate(user.id, {
-            name: user.name || user.email?.split('@')[0],
-          })
+        const name = user.name || user.email?.split('@')[0]
+        if (user.id && name && !user.name) {
+          await updateUser(user.id, { name })
         }
-        token.name = user.name || user.email?.split('@')[0]
+        token.name = name
         token.role = normalizeRole((user as { role?: string }).role)
       }
 

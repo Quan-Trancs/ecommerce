@@ -3,12 +3,9 @@
 import { Cart, OrderItem, ShippingAddress } from '@/types'
 import { AVAILABLE_DELIVERY_DATES } from '../constants'
 import { formatError, roundToTwoDecimals } from '../utils'
-import { connectToDatabase } from '../db'
 import { auth } from '@/auth'
-import { OrderInputSchema } from '../validator'
-import Order, { IOrder } from '../db/models/order.model'
+import type { IOrder } from '@/lib/types/order'
 import { paypal } from '../paypal'
-import { sendPurchaseReceipt } from '@/emails'
 import { revalidatePath } from 'next/cache'
 import {
   createStoreOrder,
@@ -87,7 +84,7 @@ function storeOrderToClient(order: StoreOrder): IOrder {
     isDelivered: false,
     createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
     updatedAt: new Date(),
-  } as unknown as IOrder
+  }
 }
 
 export const createOrder = async (clientSideCart: Cart) => {
@@ -118,7 +115,6 @@ export const createOrderFromCart = async (
   clientSideCart: Cart,
   subject: StoreTokenSubject
 ) => {
-  const userId = subject.userId
   const priced = await calculateDeliveryDateAndPrice({
     items: clientSideCart.items,
     shippingAddress: clientSideCart.shippingAddress,
@@ -150,53 +146,35 @@ export const createOrderFromCart = async (
   const shipping = cart.shippingAddress
   if (!shipping) throw new Error('Shipping address required')
 
-  try {
-    const storeOrder = await createStoreOrder(
-      {
-        paymentMethod: cart.paymentMethod || 'PayPal',
-        itemsPrice: cart.itemsPrice!,
-        shippingPrice: cart.shippingPrice ?? 0,
-        taxPrice: cart.taxPrice ?? 0,
-        totalPrice: cart.totalPrice!,
-        shipping: {
-          fullName: shipping.fullName,
-          address: shipping.street,
-          city: shipping.city,
-          postalCode: shipping.postalCode,
-          country: shipping.country,
-          phone: shipping.phone,
-        },
-        items: cart.items.map((item) => ({
-          productId: String(item.product),
-          name: item.name,
-          slug: item.slug,
-          image: item.image,
-          price: item.price,
-          quantity: item.quantity,
-          color: item.color,
-          size: item.size,
-        })),
+  const storeOrder = await createStoreOrder(
+    {
+      paymentMethod: cart.paymentMethod || 'PayPal',
+      itemsPrice: cart.itemsPrice!,
+      shippingPrice: cart.shippingPrice ?? 0,
+      taxPrice: cart.taxPrice ?? 0,
+      totalPrice: cart.totalPrice!,
+      shipping: {
+        fullName: shipping.fullName,
+        address: shipping.street,
+        city: shipping.city,
+        postalCode: shipping.postalCode,
+        country: shipping.country,
+        phone: shipping.phone,
       },
-      subject
-    )
-    return storeOrderToClient(storeOrder)
-  } catch (error) {
-    console.warn('Store order API failed, falling back to Mongo order:', error)
-  }
-
-  await connectToDatabase()
-  const order = OrderInputSchema.parse({
-    user: userId,
-    items: cart.items,
-    shippingAddress: cart.shippingAddress,
-    paymentMethod: cart.paymentMethod,
-    itemsPrice: cart.itemsPrice,
-    shippingPrice: cart.shippingPrice,
-    taxPrice: cart.taxPrice,
-    totalPrice: cart.totalPrice,
-    expectedDeliveryDate: cart.expectedDeliveryDate,
-  })
-  return await Order.create(order)
+      items: cart.items.map((item) => ({
+        productId: String(item.product),
+        name: item.name,
+        slug: item.slug,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+        color: item.color,
+        size: item.size,
+      })),
+    },
+    subject
+  )
+  return storeOrderToClient(storeOrder)
 }
 
 function subjectFromSession(session: {
@@ -219,14 +197,8 @@ export async function getOrderById(orderId: string): Promise<IOrder> {
   const session = await auth()
   const subject = session?.user?.id ? subjectFromSession(session) : undefined
   const storeOrder = await fetchStoreOrder(orderId, subject)
-  if (storeOrder) {
-    return JSON.parse(JSON.stringify(storeOrderToClient(storeOrder)))
-  }
-
-  await connectToDatabase()
-  const order = await Order.findById(orderId)
-  if (!order) throw new Error('Order not found')
-  return JSON.parse(JSON.stringify(order))
+  if (!storeOrder) throw new Error('Order not found')
+  return JSON.parse(JSON.stringify(storeOrderToClient(storeOrder)))
 }
 
 export async function getMyOrders(): Promise<IOrder[]> {
@@ -235,17 +207,9 @@ export async function getMyOrders(): Promise<IOrder[]> {
 
   const subject = subjectFromSession(session)
   const storeOrders = await fetchMyStoreOrders(subject)
-  if (storeOrders.length) {
-    return JSON.parse(
-      JSON.stringify(storeOrders.map((order) => storeOrderToClient(order)))
-    )
-  }
-
-  await connectToDatabase()
-  const orders = await Order.find({ user: session.user.id })
-    .sort({ createdAt: -1 })
-    .lean()
-  return JSON.parse(JSON.stringify(orders))
+  return JSON.parse(
+    JSON.stringify(storeOrders.map((order) => storeOrderToClient(order)))
+  )
 }
 
 export async function createPayPalOrder(orderId: string) {
@@ -258,25 +222,8 @@ export async function createPayPalOrder(orderId: string) {
     const paypalOrder = await paypal.createOrder(order.totalPrice)
 
     const storeOrder = await fetchStoreOrder(orderId, subject)
-    if (storeOrder) {
-      // Payment id stored when capture completes via pay endpoint
-      return {
-        success: true,
-        message: 'PayPal order created successfully',
-        data: paypalOrder.id,
-      }
-    }
+    if (!storeOrder) throw new Error('Order not found')
 
-    await connectToDatabase()
-    const mongoOrder = await Order.findById(orderId)
-    if (!mongoOrder) throw new Error('Order not found')
-    mongoOrder.paymentResult = {
-      id: paypalOrder.id,
-      email_address: '',
-      status: '',
-      pricePaid: '0',
-    }
-    await mongoOrder.save()
     return {
       success: true,
       message: 'PayPal order created successfully',
@@ -302,47 +249,20 @@ export async function approvePayPalOrder(
     }
 
     const storeOrder = await fetchStoreOrder(orderId, subject)
-    if (storeOrder) {
-      await payStoreOrder(
-        orderId,
-        {
-          id: captureData.id,
-          status: captureData.status,
-          emailAddress: captureData.payer?.email_address,
-          pricePaid:
-            captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount
-              ?.value,
-        },
-        subject
-      )
-      revalidatePath(`/account/orders/${orderId}`)
-      return {
-        success: true,
-        message: 'Your order has been successfully paid by PayPal',
-      }
-    }
+    if (!storeOrder) throw new Error('Order not found')
 
-    await connectToDatabase()
-    const order = await Order.findById(orderId).populate('user', 'email')
-    if (!order) throw new Error('Order not found')
-    if (
-      captureData.id !== order.paymentResult?.id &&
-      order.paymentResult?.id &&
-      captureData.id !== data.orderID
-    ) {
-      // allow capture id vs create id mismatch when using store API path
-    }
-    order.isPaid = true
-    order.paidAt = new Date()
-    order.paymentResult = {
-      id: captureData.id,
-      status: captureData.status,
-      email_address: captureData.payer.email_address,
-      pricePaid:
-        captureData.purchase_units[0]?.payments?.captures[0]?.amount?.value,
-    }
-    await order.save()
-    await sendPurchaseReceipt({ order })
+    await payStoreOrder(
+      orderId,
+      {
+        id: captureData.id,
+        status: captureData.status,
+        emailAddress: captureData.payer?.email_address,
+        pricePaid:
+          captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount
+            ?.value,
+      },
+      subject
+    )
     revalidatePath(`/account/orders/${orderId}`)
     return {
       success: true,
