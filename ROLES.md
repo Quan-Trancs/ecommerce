@@ -280,5 +280,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Harden admin catalog page against `/v1/admin/products`~~ (v1.2.5)
 - ~~Single Postgres DB (drop Mongo users + order fallback)~~ (v1.3.0)
 - ~~Cart server revalidation / persistent cart~~ (v1.3.1)
+- ~~Debounce cart PUT traffic / revalidate line prices against live catalog on hydrate~~ (v1.3.2)
 - Optional SUPPORT role if you need customer-service without full admin
-- Debounce cart PUT traffic / revalidate line prices against live catalog on hydrate
+- Seller order status updates (fulfill / ship) beyond list view

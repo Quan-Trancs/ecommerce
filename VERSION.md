@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.2 — 2026-07-25
+
+Cart polish: debounce server PUTs and revalidate line price/stock against the live catalog on hydrate.
+
+### Frontend
+- `schedulePersist` debounces cart upserts (~450ms, latest snapshot wins)
+- `revalidateCartItems` / `refreshCartFromCatalog` drop OOS/unpublished SKUs and refresh price/stock
+- Guests get catalog refresh on load; signed-in users still merge + persist
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.2` |
+| Store API | `store-backend/` | `1.3.2` (`store-api`) |
+
+---
+
 ## v1.3.1 — 2026-07-25
 
 Persistent cart for signed-in users in Postgres (guests stay on localStorage).

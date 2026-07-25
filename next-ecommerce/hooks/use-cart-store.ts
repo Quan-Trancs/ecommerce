@@ -31,11 +31,30 @@ interface CartState {
   clearCart: () => void
 }
 
+const PERSIST_DEBOUNCE_MS = 450
+let persistTimer: ReturnType<typeof setTimeout> | null = null
+let pendingPersistCart: Cart | null = null
+
 function schedulePersist(cart: Cart) {
-  // Fire-and-forget; guests no-op inside the server action
-  void persistCartSnapshot(cart).catch((error) => {
-    console.warn('Cart persist failed:', error)
-  })
+  pendingPersistCart = cart
+  if (persistTimer) clearTimeout(persistTimer)
+  persistTimer = setTimeout(() => {
+    const snapshot = pendingPersistCart
+    pendingPersistCart = null
+    persistTimer = null
+    if (!snapshot) return
+    void persistCartSnapshot(snapshot).catch((error) => {
+      console.warn('Cart persist failed:', error)
+    })
+  }, PERSIST_DEBOUNCE_MS)
+}
+
+function cancelScheduledPersist() {
+  pendingPersistCart = null
+  if (persistTimer) {
+    clearTimeout(persistTimer)
+    persistTimer = null
+  }
 }
 
 const useCartStore = create(
@@ -277,6 +296,7 @@ const useCartStore = create(
       },
 
       clearCart: () => {
+        cancelScheduledPersist()
         const nextCart = {
           ...get().cart,
           items: [],

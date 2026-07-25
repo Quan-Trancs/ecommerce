@@ -2,11 +2,14 @@
 
 import { useEffect, useRef } from 'react'
 import useCartStore from '@/hooks/use-cart-store'
-import { hydrateCartFromServer } from '@/lib/actions/cart.actions'
+import {
+  hydrateCartFromServer,
+  refreshCartFromCatalog,
+} from '@/lib/actions/cart.actions'
 
 /**
- * On mount, merge localStorage cart with Postgres cart when signed in.
- * Guests keep local-only carts (hydrate returns null).
+ * On mount: merge local + server cart when signed in, always refresh prices/stock.
+ * Guests keep local-only carts with live catalog revalidation.
  */
 export default function CartHydrator() {
   const ran = useRef(false)
@@ -20,8 +23,18 @@ export default function CartHydrator() {
       try {
         const local = useCartStore.getState().cart
         const merged = await hydrateCartFromServer(local)
-        if (!cancelled && merged) {
+        if (cancelled) return
+
+        if (merged) {
           useCartStore.setState({ cart: merged, isUpdating: false })
+          return
+        }
+
+        if (local.items?.length) {
+          const refreshed = await refreshCartFromCatalog(local)
+          if (!cancelled) {
+            useCartStore.setState({ cart: refreshed, isUpdating: false })
+          }
         }
       } catch (error) {
         console.warn('Cart hydrate failed:', error)
