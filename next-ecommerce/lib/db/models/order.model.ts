@@ -17,8 +17,7 @@ const orderSchema = new Schema<IOrder>(
     items: [
       {
         product: {
-          type: Schema.Types.ObjectId,
-          ref: 'Product',
+          type: String,
           required: true,
         },
         clientId: { type: String, required: true },

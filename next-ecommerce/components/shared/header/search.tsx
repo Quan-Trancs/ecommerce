@@ -1,6 +1,5 @@
 import { SearchIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-
 import {
   Select,
   SelectContent,
@@ -8,50 +7,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
 import { APP_NAME } from '@/lib/constants'
+import { getCategoryTree } from '@/lib/actions/product.actions'
+import type { CatalogCategory } from '@/lib/catalog/types'
 
-const categories = [
-  'All',
-  'Clothing',
-  'Accessories',
-  'Shoes',
-  'Watches',
-  'Jewelry',
-]
+function flattenTopCategories(tree: CatalogCategory[]) {
+  return tree.map((c) => ({ name: c.name, slug: c.slug }))
+}
 
 export default async function Search() {
+  const tree = await getCategoryTree()
+  const categories = [
+    { name: 'All', slug: 'all' },
+    ...flattenTopCategories(tree),
+  ]
+
   return (
-    <form action={'/search'} method='get' className='flex items-stretch h-10' role="search">
-      <Select name='category'>
-        <SelectTrigger 
-          className='w-auto min-h-10 dark:border-gray-200 bg-gray-100 text-black border-r rounded-r-none rounded-l-md rtl:rounded-r-md rtl:rounded-l-none'
-          aria-label="Select product category"
+    <form
+      action={'/search'}
+      method='get'
+      className='flex h-11 items-stretch overflow-hidden rounded-full shadow-sm ring-1 ring-black/10 focus-within:ring-2 focus-within:ring-primary'
+      role='search'
+    >
+      <Select name='category' defaultValue='all'>
+        <SelectTrigger
+          className='h-full w-auto min-w-[7rem] rounded-none border-0 border-r border-slate-200 bg-slate-100 text-sm text-slate-800'
+          aria-label='Select product category'
         >
           <SelectValue placeholder='All' />
         </SelectTrigger>
         <SelectContent>
           {categories.map((category) => (
-            <SelectItem key={category} value={category}>
-              {category}
+            <SelectItem key={category.slug} value={category.slug}>
+              {category.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Input
-        className='flex-1 rounded-none dark:border-gray-200 bg-gray-100 text-black text-base h-full'
-        placeholder={`Search Site ${APP_NAME}`}
+        className='h-full flex-1 rounded-none border-0 bg-white text-base text-slate-900 shadow-none focus-visible:ring-0'
+        placeholder={`Search ${APP_NAME}`}
         name='q'
         type='search'
         aria-label={`Search ${APP_NAME} products`}
       />
       <button
         type='submit'
-        className='bg-primary text-primary-foreground text-black rounded-s-none rounded-e-md h-full px-3 py-2'
-        aria-label="Search products"
+        className='flex h-full items-center justify-center bg-primary px-4 text-primary-foreground transition hover:brightness-95'
+        aria-label='Search products'
       >
-        <SearchIcon className='w-6 h-6' />
+        <SearchIcon className='h-5 w-5' />
       </button>
     </form>
   )

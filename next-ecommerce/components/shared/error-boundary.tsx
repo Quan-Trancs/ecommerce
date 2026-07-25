@@ -1,20 +1,33 @@
 'use client'
 
-import * as React from 'react'
+import React, { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-export class ErrorBoundary extends (React as any).Component<any, any> {
-  constructor(props: any) {
+type ErrorBoundaryProps = {
+  children: ReactNode
+  fallback?: ReactNode
+}
+
+type ErrorBoundaryState = {
+  hasError: boolean
+  error?: Error
+}
+
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  constructor(props: ErrorBoundaryProps) {
     super(props)
     this.state = { hasError: false }
   }
 
-  static getDerivedStateFromError(error: any) {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo)
   }
 
@@ -25,24 +38,27 @@ export class ErrorBoundary extends (React as any).Component<any, any> {
       }
 
       return (
-        <Card className="max-w-md mx-auto mt-8">
+        <Card className='max-w-md mx-auto mt-8'>
           <CardHeader>
-            <CardTitle className="text-destructive">Something went wrong</CardTitle>
+            <CardTitle className='text-destructive'>
+              Something went wrong
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              We encountered an unexpected error. Please try refreshing the page.
+          <CardContent className='space-y-4'>
+            <p className='text-muted-foreground'>
+              We encountered an unexpected error. Please try refreshing the
+              page.
             </p>
-            <div className="flex gap-2">
-              <Button 
+            <div className='flex gap-2'>
+              <Button
                 onClick={() => window.location.reload()}
-                variant="default"
+                variant='default'
               >
                 Refresh Page
               </Button>
-              <Button 
+              <Button
                 onClick={() => this.setState({ hasError: false })}
-                variant="outline"
+                variant='outline'
               >
                 Try Again
               </Button>
@@ -54,4 +70,4 @@ export class ErrorBoundary extends (React as any).Component<any, any> {
 
     return this.props.children
   }
-} 
+}

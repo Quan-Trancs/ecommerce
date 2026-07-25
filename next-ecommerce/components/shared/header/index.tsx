@@ -9,52 +9,52 @@ import data from '@/lib/data'
 
 export default function Header() {
   return (
-    <header className='bg-[#131921] text-white'>
-      <div className='px-2'>
-        <div className='flex justify-between items-center'>
-          <div className='flex items-center'>
-            <Link
-              href='/'
-              className='flex items-center header-button font-extrabold text-2xl m-1'
-            >
-              <Image
-                src='/icons/logo-dark.svg'
-                alt={`${APP_NAME} logo`}
-                width={40}
-                height={40}
-                color='white'
-              />
-              {APP_NAME}
-            </Link>
-          </div>
-          <div className='hidden md:block flex-1 max-w-xl'>
+    <header className='sticky top-0 z-40 bg-chrome text-white shadow-md'>
+      <div className='page-shell px-3 md:px-4'>
+        <div className='flex items-center justify-between gap-3 py-2.5'>
+          <Link
+            href='/'
+            className='header-button m-0 flex items-center gap-2 font-display text-xl font-extrabold tracking-tight md:text-2xl'
+          >
+            <Image
+              src='/icons/logo-dark.svg'
+              alt={`${APP_NAME} logo`}
+              width={36}
+              height={36}
+            />
+            <span className='leading-none'>{APP_NAME}</span>
+          </Link>
+
+          <div className='hidden flex-1 md:block md:max-w-2xl lg:max-w-3xl'>
             <Search />
           </div>
           <Menu />
         </div>
-        <div className='md:hidden block py-2'>
+        <div className='block pb-2.5 md:hidden'>
           <Search />
         </div>
       </div>
 
-      <div className='flex items-center px-3 mb-[1px] bg-[#232f3e]'>
-        <Button
-          variant='ghost'
-          className='dark header-button flex items-center gap-1 text-base [&_svg]:size-6'
-        >
-          <MenuIcon />
-          All
-        </Button>
-        <div className='flex items-center flex-wrap gap-3 overflow-hidden max-h-[42px]'>
-          {data.headerMenus.map((menu) => (
-            <Link
-              href={menu.href}
-              key={menu.href}
-              className='header-button !p-2'
-            >
-              {menu.name}
-            </Link>
-          ))}
+      <div className='border-t border-white/10 bg-chrome-muted'>
+        <div className='page-shell flex items-center gap-1 overflow-x-auto px-2 md:px-3'>
+          <Button
+            variant='ghost'
+            className='header-button dark flex shrink-0 items-center gap-1 text-sm font-medium [&_svg]:size-5'
+          >
+            <MenuIcon />
+            All
+          </Button>
+          <nav className='flex items-center gap-1 py-1.5'>
+            {data.headerMenus.map((menu) => (
+              <Link
+                href={menu.href}
+                key={menu.href}
+                className='header-button shrink-0 whitespace-nowrap !px-3 text-sm font-medium text-white/90'
+              >
+                {menu.name}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </header>

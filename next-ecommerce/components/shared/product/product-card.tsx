@@ -1,5 +1,4 @@
 import { IProduct } from '@/lib/db/models/product.model'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import Link from 'next/link'
 import ImageHover from './image-hover'
 import Image from 'next/image'
@@ -20,8 +19,8 @@ const ProductCard = ({
   hideAddToCart?: boolean
 }) => {
   const ProductImage = () => (
-    <Link href={`/product/${product.slug}`}>
-      <div className='relative h-52'>
+    <Link href={`/product/${product.slug}`} className='block'>
+      <div className='relative h-52 overflow-hidden rounded-xl bg-muted/40'>
         {product.images.length > 1 ? (
           <ImageHover
             src={product.images[0]}
@@ -29,37 +28,34 @@ const ProductCard = ({
             hoverSrc={product.images[1]}
           />
         ) : (
-          <div className='relative h-52'>
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes='80vw'
-              className='object-contain'
-            />
-          </div>
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            sizes='280px'
+            className='object-contain p-3 transition duration-300 hover:scale-105'
+          />
         )}
       </div>
     </Link>
   )
 
   const ProductDetails = () => (
-    <div className='flex-1 space-y-2'>
-      <p className='font-bold'>{product.brand}</p>
+    <div className='flex-1 space-y-1.5 text-left'>
+      <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
+        {product.brand}
+      </p>
       <Link
         href={`/product/${product.slug}`}
-        className='overflow-hidden text-eclipse'
-        style={{
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-        }}
+        className='line-clamp-2 text-sm font-medium leading-snug text-foreground hover:text-sky-800'
       >
         {product.name}
       </Link>
-      <div className='flex gap-2 justify-center'>
+      <div className='flex items-center gap-2'>
         <Rating rating={product.avgRating} />
-        <span>({formatNumber(product.numReviews)})</span>
+        <span className='text-xs text-muted-foreground'>
+          ({formatNumber(product.numReviews)})
+        </span>
       </div>
       <ProductPrice
         isDeal={product.tags.includes('todays-deal')}
@@ -71,14 +67,14 @@ const ProductCard = ({
   )
 
   const AddButton = () => (
-    <div className='w-full text-center'>
+    <div className='w-full pt-1'>
       <AddToCart
         minimal
         item={{
           clientId: generateId(),
           product: product._id,
-          size: product.sizes[0],
-          color: product.colors[0],
+          size: product.sizes[0] || 'Standard',
+          color: product.colors[0] || 'Default',
           countInStock: product.countInStock,
           name: product.name,
           slug: product.slug,
@@ -91,33 +87,23 @@ const ProductCard = ({
     </div>
   )
 
-  return hideBorders ? (
-    <div className='flex flex-col'>
+  const body = (
+    <>
       <ProductImage />
       {!hideDetails && (
-        <>
-          <div className='flex-1 p-3 text-center'>
-            <ProductDetails />
-          </div>
+        <div className='flex flex-1 flex-col gap-2 p-3'>
+          <ProductDetails />
           {!hideAddToCart && <AddButton />}
-        </>
+        </div>
       )}
-    </div>
-  ) : (
-    <Card className='flex flex-col'>
-      <CardHeader className='p-3'>
-        <ProductImage />
-      </CardHeader>
-      {!hideDetails && (
-        <>
-          <CardContent className='flex-1 p-3 text-center'>
-            <ProductDetails />
-          </CardContent>
-          <CardFooter>{!hideAddToCart && <AddButton />}</CardFooter>
-        </>
-      )}
-    </Card>
+    </>
   )
+
+  if (hideBorders) {
+    return <div className='flex h-full flex-col'>{body}</div>
+  }
+
+  return <article className='product-tile flex h-full flex-col'>{body}</article>
 }
 
 export default ProductCard

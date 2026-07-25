@@ -34,15 +34,15 @@ const ProductPrice = ({
   ) : isDeal ? (
     <div className='space-y-2'>
       <div className='flex items-center justify-center gap-2'>
-        <span className='bg-red-700 rounded-sm p-1 text-white text-sm font-semibold'>
+        <span className='bg-deal rounded-sm px-1.5 py-0.5 text-white text-sm font-semibold'>
           {discountPercent}% off
         </span>
-        <span className='text-red-700 text-xs font-bold'>
+        <span className='text-deal text-xs font-bold'>
           Limited time deal
         </span>
       </div>
       <div
-        className={`flex ${forListing && 'justify-center'} items-center gap-2`}
+        className={`flex ${forListing ? 'justify-start' : 'justify-start'} items-center gap-2`}
       >
         <div className={cn('text-3xl', className)}>
           <span className='text-xs align-super'>$</span>
@@ -56,8 +56,8 @@ const ProductPrice = ({
     </div>
   ) : (
     <div className=''>
-      <div className='flex justify-center gap-3'>
-        <div className='text-orange-700 text-3xl'>-{discountPercent}%</div>
+      <div className='flex justify-start gap-3'>
+        <div className='text-deal text-2xl font-bold md:text-3xl'>-{discountPercent}%</div>
         <div className={cn('text-3xl', className)}>
           <span className='text-xs align-super'>$</span>
           {intValue}

@@ -1,9 +1,11 @@
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Next.js App'
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Commerce Store'
 export const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
-export const APP_SLOGAN = process.env.NEXT_PUBLIC_APP_SLOGAN || 'Slogan'
+export const APP_SLOGAN =
+  process.env.NEXT_PUBLIC_APP_SLOGAN || 'Everything you need, one store'
 export const APP_DESCRIPTION =
-  process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Description'
+  process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
+  'A general commercial storefront with smart category and filter discovery'
 
 export const APP_COPYRIGHT =
   process.env.NEXT_PUBLIC_APP_COPYRIGHT ||
@@ -64,4 +66,4 @@ export const AVAILABLE_DELIVERY_DATES = [
 
 //sender
 export const SENDER_EMAIL = 'quantrancs@gmail.com'
-export const SENDER_NAME = 'Next E-Commerce'
+export const SENDER_NAME = 'Commerce Store'

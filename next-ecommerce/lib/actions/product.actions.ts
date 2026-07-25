@@ -1,15 +1,58 @@
 'use server'
 
-import { connectToDatabase } from '@/lib/db'
-import Product, { IProduct } from '@/lib/db/models/product.model'
 import { PAGE_SIZE } from '../constants'
+import {
+  fetchCategories,
+  fetchFlatCategories,
+  fetchProductByIdOrSlug,
+  searchProducts,
+} from '@/lib/catalog/client'
+import {
+  catalogProductToIProduct,
+  catalogProductsToIProducts,
+} from '@/lib/catalog/mapper'
+import type { CatalogCategory, Facet, ProductSearchParams } from '@/lib/catalog/types'
+import { IProduct } from '@/lib/db/models/product.model'
+
+function flattenCategories(nodes: CatalogCategory[]): CatalogCategory[] {
+  const result: CatalogCategory[] = []
+  const walk = (list: CatalogCategory[]) => {
+    for (const node of list) {
+      result.push(node)
+      if (node.children?.length) walk(node.children)
+    }
+  }
+  walk(nodes)
+  return result
+}
+
+export async function getCategoryTree() {
+  return fetchCategories()
+}
 
 export async function getAllCategories() {
-  await connectToDatabase()
-  const categories = await Product.find({ isPublished: true }).distinct(
-    'category'
-  )
-  return categories
+  const flat = await fetchFlatCategories()
+  if (flat.length) return flat.map((c) => c.name)
+
+  const tree = await fetchCategories()
+  return flattenCategories(tree).map((c) => c.name)
+}
+
+export async function searchCatalog(params: ProductSearchParams): Promise<{
+  products: IProduct[]
+  total: number
+  facets: Facet[]
+  page: number
+  size: number
+}> {
+  const result = await searchProducts(params)
+  return {
+    products: catalogProductsToIProducts(result.data),
+    total: result.total,
+    facets: result.facets || [],
+    page: result.page,
+    size: result.size,
+  }
 }
 
 export async function getProductsForCard({
@@ -19,23 +62,17 @@ export async function getProductsForCard({
   tag?: string
   limit?: number
 }) {
-  await connectToDatabase()
-  const products = await Product.find(
-    { tags: { $in: [tag] }, isPublished: true },
-    {
-      name: 1,
-      href: { $concat: ['/product/', '$slug'] },
-      image: { $arrayElemAt: ['$images', 0] },
-    }
-  )
-    .sort({ createdAt: 'desc' })
-    .limit(limit)
+  const products = tag
+    ? await getProductsByTag({ tag, limit })
+    : (
+        await searchCatalog({ size: limit })
+      ).products.slice(0, limit)
 
-  return JSON.parse(JSON.stringify(products)) as {
-    name: string
-    href: string
-    image: string
-  }[]
+  return products.map((product) => ({
+    name: product.name,
+    href: `/product/${product.slug}`,
+    image: product.images[0],
+  }))
 }
 
 export async function getProductsByTag({
@@ -45,24 +82,19 @@ export async function getProductsByTag({
   tag: string
   limit?: number
 }) {
-  await connectToDatabase()
-  const products = await Product.find({
-    tags: { $in: [tag] },
-    isPublished: true,
-  })
-    .sort({ createdAt: 'desc' })
-    .limit(limit)
-  return JSON.parse(JSON.stringify(products)) as IProduct[]
+  const { products } = await searchCatalog({ tag: [tag], size: limit })
+  if (products.length) return products.slice(0, limit)
+
+  const fallback = await searchCatalog({ size: Math.max(limit * 2, 20) })
+  return fallback.products.slice(0, limit)
 }
 
 export async function getProductBySlug(slug: string) {
-  await connectToDatabase()
-  const product = await Product.findOne({ slug, isPublished: true })
+  const product = await fetchProductByIdOrSlug(slug)
   if (!product) throw new Error('Product not found')
-  return JSON.parse(JSON.stringify(product)) as IProduct
+  return catalogProductToIProduct(product)
 }
 
-//related products
 export async function getRelatedProductsByCategory({
   category,
   productId,
@@ -74,22 +106,50 @@ export async function getRelatedProductsByCategory({
   limit?: number
   page?: number
 }) {
-  await connectToDatabase()
-  const skipAmount = (Number(page) - 1) * limit
-  const conditions = {
-    isPublished: true,
+  const { products, total } = await searchCatalog({
     category,
-    _id: { $ne: productId },
-  }
-  const products = await Product.find(conditions)
-    .sort({ createdAt: 'desc' })
-    .skip(skipAmount)
-    .limit(limit)
-
-  const productsCount = await Product.countDocuments(conditions)
-
+    page: Math.max(page - 1, 0),
+    size: limit + 5,
+  })
+  const filtered = products.filter((p) => p._id !== productId).slice(0, limit)
   return {
-    data: JSON.parse(JSON.stringify(products)) as IProduct[],
-    totalPages: Math.ceil(productsCount / limit),
+    data: filtered,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
   }
+}
+
+export async function getProductsByIds(ids: string[]) {
+  const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))]
+  const products = await Promise.all(
+    uniqueIds.map(async (id) => {
+      try {
+        const product = await fetchProductByIdOrSlug(id)
+        return product ? catalogProductToIProduct(product) : null
+      } catch {
+        return null
+      }
+    })
+  )
+  return products.filter((product): product is IProduct => Boolean(product))
+}
+
+export async function getProductsByCategories(
+  categories: string[],
+  excludeIds: string[] = [],
+  limit = 20
+) {
+  const exclude = new Set(excludeIds.map((id) => id.toUpperCase()))
+  const results = await Promise.all(
+    categories.map((category) => searchCatalog({ category, size: limit }))
+  )
+  const merged = results.flatMap((r) => r.products)
+  const seen = new Set<string>()
+  return merged
+    .filter((product) => {
+      const id = String(product._id).toUpperCase()
+      if (exclude.has(id) || seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
+    .slice(0, limit)
 }

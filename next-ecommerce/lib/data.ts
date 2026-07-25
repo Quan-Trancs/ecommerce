@@ -760,24 +760,20 @@ const data = {
   products,
   headerMenus: [
     {
-      name: "Today's Deal",
-      href: '/search?tag=todays+deal',
+      name: "Today's Deals",
+      href: '/search?tag=todays-deal',
     },
     {
       name: 'New Arrivals',
       href: '/search?tag=new-arrival',
     },
     {
-      name: 'Featured Products',
-      href: '/search?tag=featured-product',
+      name: 'Featured',
+      href: '/search?tag=featured',
     },
     {
       name: 'Best Sellers',
       href: '/search?tag=best-seller',
-    },
-    {
-      name: 'Browsing History',
-      href: '/#browsing-history',
     },
     {
       name: 'Customer Service',
@@ -786,24 +782,27 @@ const data = {
   ],
   carousels: [
     {
-      title: 'Most Popular Shoes For Sale',
-      buttonCaption: 'Shop Now',
-      image: '/images/banner3.jpg',
-      url: '/search?category=Shoes',
+      title: 'Everything for everyday life',
+      buttonCaption: 'Start shopping',
+      image:
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=2000&q=80',
+      url: '/search',
       isPublished: true,
     },
     {
-      title: 'Best Sellers in T-Shirts',
-      buttonCaption: 'Shop Now',
-      image: '/images/banner1.jpg',
-      url: '/search?category=T-Shirts',
+      title: 'Tech that just works',
+      buttonCaption: 'Shop electronics',
+      image:
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=2000&q=80',
+      url: '/search?category=electronics',
       isPublished: true,
     },
     {
-      title: 'Best Deals on Wrist Watches',
-      buttonCaption: 'See More',
-      image: '/images/banner2.jpg',
-      url: '/search?category=Wrist Watches',
+      title: 'Fresh looks for the season',
+      buttonCaption: 'Shop fashion',
+      image:
+        'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=2000&q=80',
+      url: '/search',
       isPublished: true,
     },
   ],
