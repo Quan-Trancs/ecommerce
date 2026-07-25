@@ -24,6 +24,7 @@ import type { StoreTokenSubject } from '@/lib/auth/store-token'
 import { refundPaymentIntent, retrievePaymentIntent } from '@/lib/stripe'
 import { notifyOrderPaid, notifyPublicOrderNote } from '@/lib/email/order-notifications'
 import { notifyUrgentOrderNoteChannels } from '@/lib/notify/urgent-channels'
+import { notifyInAppOrderNote } from '@/lib/notify/in-app'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -615,6 +616,16 @@ export async function addOrderNote(
     revalidatePath(`/account/orders/${orderId}`)
     const clientNote = noteToClient(note)
     if (visibility === 'PUBLIC') {
+      await notifyInAppOrderNote({
+        orderId,
+        noteId: clientNote.id,
+        authorUserId: session.user.id,
+        authorRole: session.user.role || note.authorRole || 'BUYER',
+        authorDisplayName:
+          note.authorDisplayName || session.user.name || session.user.email,
+        body: trimmed,
+        urgent,
+      })
       await notifyPublicOrderNote({
         orderId,
         authorUserId: session.user.id,

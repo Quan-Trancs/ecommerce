@@ -272,7 +272,7 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`, `V12__account_order_note_email_mode.sql`, `V13__account_quiet_hours.sql`, `V14__urgent_notes_sms_push.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`, `V12__account_order_note_email_mode.sql`, `V13__account_quiet_hours.sql`, `V14__urgent_notes_sms_push.sql`, `V15__in_app_notifications.sql`
 
 ### Auth bridge (summary)
 
@@ -318,4 +318,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Per-user immediate vs digest preference for order-note emails~~ (v1.3.25)
 - ~~Quiet hours for order-note emails~~ (v1.3.26)
 - ~~SMS / push channel for urgent order notes~~ (v1.3.27)
-- In-app notification center for order notes
+- ~~In-app notification center for order notes~~ (v1.3.28)
+- Real-time notification refresh (SSE / websocket)

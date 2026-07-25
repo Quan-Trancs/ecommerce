@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.27](./VERSION.md) — urgent SMS/push for order notes. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.28](./VERSION.md) — in-app notification center. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

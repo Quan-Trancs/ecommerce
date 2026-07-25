@@ -1,10 +1,7 @@
-import { findUserById, type DbUser } from '@/lib/db/users'
-import {
-  fetchProductsByIds,
-  fetchStoreOrderAsAdmin,
-} from '@/lib/catalog/client'
-import { SERVER_URL } from '@/lib/constants'
+import { findUserById } from '@/lib/db/users'
 import { roleLabel } from '@/lib/auth/roles'
+import { SERVER_URL } from '@/lib/constants'
+import { resolveOrderPartyAccounts } from '@/lib/notify/order-parties'
 import { sendSms } from '@/lib/notify/sms'
 import { sendWebPushToAccount } from '@/lib/notify/web-push'
 
@@ -12,39 +9,6 @@ function truncate(text: string, max: number) {
   const trimmed = text.trim()
   if (trimmed.length <= max) return trimmed
   return `${trimmed.slice(0, max - 1)}…`
-}
-
-async function resolvePartyAccounts(input: {
-  orderId: string
-  authorUserId: string
-}): Promise<DbUser[]> {
-  const storeOrder = await fetchStoreOrderAsAdmin(input.orderId)
-  if (!storeOrder) return []
-
-  const ids = new Set<string>()
-  if (storeOrder.userId) ids.add(storeOrder.userId)
-
-  const productIds = [
-    ...new Set(
-      (storeOrder.items || [])
-        .map((item) => item.productId)
-        .filter((id): id is string => Boolean(id))
-    ),
-  ]
-  if (productIds.length) {
-    const products = await fetchProductsByIds(productIds)
-    for (const product of products) {
-      if (product.sellerAccountId) ids.add(product.sellerAccountId)
-    }
-  }
-  ids.delete(input.authorUserId)
-
-  const accounts: DbUser[] = []
-  for (const id of ids) {
-    const account = await findUserById(id)
-    if (account) accounts.push(account)
-  }
-  return accounts
 }
 
 /**
@@ -65,7 +29,10 @@ export async function notifyUrgentOrderNoteChannels(input: {
       author?.name ||
       author?.email ||
       'Someone'
-    const parties = await resolvePartyAccounts(input)
+    const parties = await resolveOrderPartyAccounts({
+      orderId: input.orderId,
+      authorUserId: input.authorUserId,
+    })
     const orderUrl = `${SERVER_URL}/account/orders/${input.orderId}`
     const smsBody = truncate(
       `Urgent order note from ${authorLabel} (${roleLabel(input.authorRole)}) on ${input.orderId}: ${input.body}\n${orderUrl}`,

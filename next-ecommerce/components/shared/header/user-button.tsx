@@ -64,6 +64,12 @@ export default async function UserButton() {
               <Link className='w-full' href='/account/orders'>
                 <DropdownMenuItem>Your orders</DropdownMenuItem>
               </Link>
+              <Link className='w-full' href='/account/notifications'>
+                <DropdownMenuItem>Notifications</DropdownMenuItem>
+              </Link>
+              <Link className='w-full' href='/account/settings'>
+                <DropdownMenuItem>Notification settings</DropdownMenuItem>
+              </Link>
               {hasSellerAccess(session.user.role) && (
                 <Link className='w-full' href='/seller'>
                   <DropdownMenuItem>Seller dashboard</DropdownMenuItem>

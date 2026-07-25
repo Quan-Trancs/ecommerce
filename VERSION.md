@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.28 — 2026-07-25
+
+In-app notification center for order notes.
+
+### Backend
+- Flyway `V15__in_app_notifications.sql` — `in_app_notifications` inbox table
+
+### Frontend
+- Header bell with unread badge + recent dropdown
+- `/account/notifications` full inbox (mark read / mark all)
+- Public order notes create in-app rows for buyer + product-scoped sellers
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.28` |
+| Store API | `store-backend/` | `1.3.28` (`store-api`) |
+
+---
+
 ## v1.3.27 — 2026-07-25
 
 SMS / push channel for urgent order notes.
