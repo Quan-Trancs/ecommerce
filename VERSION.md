@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.25 — 2026-07-25
+
+Per-user immediate vs digest preference for order-note emails.
+
+### Backend
+- Flyway `V12__account_order_note_email_mode.sql` — `order_note_email_mode` (`DIGEST` | `IMMEDIATE`)
+
+### Frontend
+- Account settings: enable notes + Digest / Immediate delivery
+- Notify path respects per-recipient mode (global `ORDER_NOTE_DIGEST_MINUTES=0` still forces immediate)
+- Switching to Immediate flushes that user’s queued digests
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.25` |
+| Store API | `store-backend/` | `1.3.25` (`store-api`) |
+
+---
+
 ## v1.3.24 — 2026-07-25
 
 Digest / batch order-note emails instead of per-message.

@@ -41,6 +41,11 @@ public class AccountEntity {
     @Builder.Default
     private boolean notifyOrderNotes = true;
 
+    /** DIGEST (batched) or IMMEDIATE (per message). */
+    @Column(name = "order_note_email_mode", nullable = false, length = 20)
+    @Builder.Default
+    private String orderNoteEmailMode = "DIGEST";
+
     @Column(length = 500)
     private String image;
 

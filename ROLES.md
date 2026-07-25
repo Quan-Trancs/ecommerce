@@ -272,7 +272,7 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`, `V12__account_order_note_email_mode.sql`
 
 ### Auth bridge (summary)
 
@@ -315,4 +315,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Notify parties by email when a public order note is posted~~ (v1.3.22)
 - ~~Buyer/seller email preferences for order-note notifications~~ (v1.3.23)
 - ~~Digest / batch order-note emails instead of per-message~~ (v1.3.24)
-- Per-user immediate vs digest preference for order-note emails
+- ~~Per-user immediate vs digest preference for order-note emails~~ (v1.3.25)
+- Quiet hours for order-note emails

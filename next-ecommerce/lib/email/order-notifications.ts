@@ -1,4 +1,5 @@
 import { findUserById } from '@/lib/db/users'
+import type { OrderNoteEmailMode } from '@/lib/db/users'
 import {
   fetchProductsByIds,
   fetchStoreOrderAsAdmin,
@@ -103,13 +104,16 @@ export async function notifyOrderShipped(orderId: string) {
   }
 }
 
+type NoteRecipient = {
+  email: string
+  mode: OrderNoteEmailMode
+}
+
 async function resolvePublicNoteRecipients(input: {
   orderId: string
   authorUserId: string
 }): Promise<{
-  emails: string[]
-  authorLabel: string
-  authorRoleLabel: string
+  recipients: NoteRecipient[]
   bodyAuthor: Awaited<ReturnType<typeof findUserById>>
 } | null> {
   const storeOrder = await fetchStoreOrderAsAdmin(input.orderId)
@@ -138,27 +142,33 @@ async function resolvePublicNoteRecipients(input: {
 
   recipientIds.delete(input.authorUserId)
 
-  const supportInbox = process.env.SUPPORT_ORDER_NOTES_EMAIL?.trim()
-  const emails = new Set<string>()
+  const byEmail = new Map<string, OrderNoteEmailMode>()
   for (const userId of recipientIds) {
     const account = await findUserById(userId)
     if (!account?.email) continue
     if (!account.notifyOrderNotes) continue
-    emails.add(account.email.trim().toLowerCase())
+    const email = account.email.trim().toLowerCase()
+    byEmail.set(email, account.orderNoteEmailMode)
   }
+
+  const supportInbox = process.env.SUPPORT_ORDER_NOTES_EMAIL?.trim()
   if (supportInbox) {
-    emails.add(supportInbox.toLowerCase())
+    const email = supportInbox.toLowerCase()
+    if (!byEmail.has(email)) {
+      byEmail.set(email, 'DIGEST')
+    }
   }
 
   const author = await findUserById(input.authorUserId)
   if (author?.email) {
-    emails.delete(author.email.trim().toLowerCase())
+    byEmail.delete(author.email.trim().toLowerCase())
   }
 
   return {
-    emails: [...emails],
-    authorLabel: author?.name || author?.email || 'Someone',
-    authorRoleLabel: '',
+    recipients: [...byEmail.entries()].map(([email, mode]) => ({
+      email,
+      mode,
+    })),
     bodyAuthor: author,
   }
 }
@@ -186,6 +196,28 @@ function shouldFlushRecipient(
   return Date.now() - oldest >= windowMs
 }
 
+async function sendDigestForRows(
+  to: string,
+  rows: QueuedOrderNoteEmail[]
+): Promise<boolean> {
+  const notes = rows.map((row) => ({
+    orderId: row.orderId,
+    authorLabel: row.authorLabel,
+    authorRoleLabel: row.authorRoleLabel,
+    body: row.body,
+    createdAtLabel: new Intl.DateTimeFormat('en', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(row.createdAt),
+    orderUrl: `${SERVER_URL}/account/orders/${row.orderId}`,
+  }))
+
+  const result = await sendOrderNoteDigestEmail({ to, notes })
+  if (!result.sent) return false
+  await markOrderNoteEmailsSent(rows.map((r) => r.id))
+  return true
+}
+
 /**
  * Send queued digests that are due (age/batch) or all pending when forceAll.
  */
@@ -200,23 +232,8 @@ export async function flushOrderNoteDigests(
 
   for (const [to, rows] of byRecipient) {
     if (!shouldFlushRecipient(rows, forceAll)) continue
-
-    const notes = rows.map((row) => ({
-      orderId: row.orderId,
-      authorLabel: row.authorLabel,
-      authorRoleLabel: row.authorRoleLabel,
-      body: row.body,
-      createdAtLabel: new Intl.DateTimeFormat('en', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(row.createdAt),
-      orderUrl: `${SERVER_URL}/account/orders/${row.orderId}`,
-    }))
-
-    const result = await sendOrderNoteDigestEmail({ to, notes })
-    if (!result.sent) continue
-
-    await markOrderNoteEmailsSent(rows.map((r) => r.id))
+    const sent = await sendDigestForRows(to, rows)
+    if (!sent) continue
     recipients += 1
     messages += rows.length
   }
@@ -224,11 +241,29 @@ export async function flushOrderNoteDigests(
   return { recipients, messages }
 }
 
+/** Force-flush queued digests for one email (e.g. user switched to immediate). */
+export async function flushOrderNoteDigestsForEmail(
+  email: string
+): Promise<{ messages: number }> {
+  try {
+    const normalized = email.trim().toLowerCase()
+    if (!normalized) return { messages: 0 }
+    const pending = await listPendingOrderNoteEmails()
+    const rows = pending.filter((row) => row.recipientEmail === normalized)
+    if (!rows.length) return { messages: 0 }
+    const sent = await sendDigestForRows(normalized, rows)
+    return { messages: sent ? rows.length : 0 }
+  } catch (err) {
+    console.error('flushOrderNoteDigestsForEmail failed:', err)
+    return { messages: 0 }
+  }
+}
+
 /**
  * Email the buyer and product-scoped sellers when a PUBLIC order note is posted.
  * Skips the author. INTERNAL notes never notify.
- * Default: enqueue for digest (ORDER_NOTE_DIGEST_MINUTES, default 15).
- * Set ORDER_NOTE_DIGEST_MINUTES=0 for immediate per-message emails.
+ * Per-user mode: DIGEST (queue) or IMMEDIATE (send now).
+ * Global ORDER_NOTE_DIGEST_MINUTES=0 forces immediate for everyone.
  */
 export async function notifyPublicOrderNote(input: {
   orderId: string
@@ -239,7 +274,7 @@ export async function notifyPublicOrderNote(input: {
 }) {
   try {
     const resolved = await resolvePublicNoteRecipients(input)
-    if (!resolved || !resolved.emails.length) return
+    if (!resolved || !resolved.recipients.length) return
 
     const author = resolved.bodyAuthor
     const authorLabel =
@@ -249,10 +284,21 @@ export async function notifyPublicOrderNote(input: {
       'Someone'
     const authorRoleLabel = roleLabel(input.authorRole)
     const orderUrl = `${SERVER_URL}/account/orders/${input.orderId}`
+    const forceImmediate = isImmediateOrderNoteEmail()
 
-    if (isImmediateOrderNoteEmail()) {
+    const immediate: string[] = []
+    const digest: string[] = []
+    for (const recipient of resolved.recipients) {
+      if (forceImmediate || recipient.mode === 'IMMEDIATE') {
+        immediate.push(recipient.email)
+      } else {
+        digest.push(recipient.email)
+      }
+    }
+
+    if (immediate.length) {
       await Promise.all(
-        resolved.emails.map((to) =>
+        immediate.map((to) =>
           sendOrderNoteEmail({
             to,
             orderId: input.orderId,
@@ -263,10 +309,9 @@ export async function notifyPublicOrderNote(input: {
           })
         )
       )
-      return
     }
 
-    for (const to of resolved.emails) {
+    for (const to of digest) {
       await enqueueOrderNoteEmail({
         recipientEmail: to,
         orderId: input.orderId,
@@ -276,8 +321,9 @@ export async function notifyPublicOrderNote(input: {
       })
     }
 
-    // Opportunistic flush when a batch is full or the window already elapsed.
-    await flushOrderNoteDigests({ forceAll: false })
+    if (digest.length) {
+      await flushOrderNoteDigests({ forceAll: false })
+    }
   } catch (err) {
     console.error('notifyPublicOrderNote failed:', err)
   }

@@ -2,6 +2,8 @@ import { randomUUID } from 'crypto'
 import { normalizeRole, type Role } from '@/lib/auth/roles'
 import { query, withClient } from './postgres'
 
+export type OrderNoteEmailMode = 'DIGEST' | 'IMMEDIATE'
+
 export type DbUser = {
   id: string
   email: string
@@ -11,6 +13,8 @@ export type DbUser = {
   emailVerified: boolean
   /** Opt-in (default true): email on public order-note notifications. */
   notifyOrderNotes: boolean
+  /** DIGEST (batched) or IMMEDIATE (per message). */
+  orderNoteEmailMode: OrderNoteEmailMode
   image: string | null
   active: boolean
   createdAt: Date
@@ -25,10 +29,19 @@ type AccountRow = {
   role: string
   email_verified: boolean
   notify_order_notes: boolean
+  order_note_email_mode: string | null
   image: string | null
   active: boolean
   created_at: Date
   updated_at: Date | null
+}
+
+export function normalizeOrderNoteEmailMode(
+  value?: string | null
+): OrderNoteEmailMode {
+  const upper = (value || '').trim().toUpperCase()
+  if (upper === 'IMMEDIATE' || upper === 'INSTANT') return 'IMMEDIATE'
+  return 'DIGEST'
 }
 
 function mapRow(row: AccountRow): DbUser {
@@ -40,6 +53,7 @@ function mapRow(row: AccountRow): DbUser {
     role: normalizeRole(row.role),
     emailVerified: Boolean(row.email_verified),
     notifyOrderNotes: row.notify_order_notes !== false,
+    orderNoteEmailMode: normalizeOrderNoteEmailMode(row.order_note_email_mode),
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -50,6 +64,7 @@ function mapRow(row: AccountRow): DbUser {
 const SELECT_COLS = `
   id, email, display_name, password_hash, role, email_verified,
   COALESCE(notify_order_notes, TRUE) AS notify_order_notes,
+  COALESCE(order_note_email_mode, 'DIGEST') AS order_note_email_mode,
   image, active, created_at, updated_at
 `
 
@@ -94,8 +109,8 @@ export async function createUser(input: {
       await client.query(
         `INSERT INTO accounts (
            id, email, display_name, password_hash, role, email_verified,
-           notify_order_notes, image, active, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, NULL, TRUE, $7, $7)`,
+           notify_order_notes, order_note_email_mode, image, active, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, 'DIGEST', NULL, TRUE, $7, $7)`,
         [
           id,
           input.email.trim(),
@@ -136,6 +151,7 @@ export async function updateUser(
     role?: Role
     emailVerified?: boolean
     notifyOrderNotes?: boolean
+    orderNoteEmailMode?: OrderNoteEmailMode
   }
 ): Promise<DbUser | null> {
   const existing = await findUserById(id)
@@ -149,6 +165,10 @@ export async function updateUser(
     patch.notifyOrderNotes === undefined
       ? existing.notifyOrderNotes
       : Boolean(patch.notifyOrderNotes)
+  const orderNoteEmailMode =
+    patch.orderNoteEmailMode === undefined
+      ? existing.orderNoteEmailMode
+      : normalizeOrderNoteEmailMode(patch.orderNoteEmailMode)
   const now = new Date()
 
   await withClient(async (client) => {
@@ -157,9 +177,9 @@ export async function updateUser(
       await client.query(
         `UPDATE accounts
          SET display_name = $2, role = $3, email_verified = $4,
-             notify_order_notes = $5, updated_at = $6
+             notify_order_notes = $5, order_note_email_mode = $6, updated_at = $7
          WHERE id = $1`,
-        [id, name, role, emailVerified, notifyOrderNotes, now]
+        [id, name, role, emailVerified, notifyOrderNotes, orderNoteEmailMode, now]
       )
 
       if (role === 'SELLER' || role === 'ADMIN') {
@@ -186,6 +206,19 @@ export async function updateNotifyOrderNotes(
   notifyOrderNotes: boolean
 ): Promise<DbUser | null> {
   return updateUser(id, { notifyOrderNotes })
+}
+
+export async function updateOrderNoteNotificationPreferences(
+  id: string,
+  prefs: {
+    notifyOrderNotes: boolean
+    orderNoteEmailMode: OrderNoteEmailMode
+  }
+): Promise<DbUser | null> {
+  return updateUser(id, {
+    notifyOrderNotes: prefs.notifyOrderNotes,
+    orderNoteEmailMode: prefs.orderNoteEmailMode,
+  })
 }
 
 /** Seed helper: wipe auth rows (keeps catalog/orders). */

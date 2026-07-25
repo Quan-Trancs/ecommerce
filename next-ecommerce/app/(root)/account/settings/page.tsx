@@ -29,6 +29,7 @@ export default async function AccountSettingsPage() {
       <div className='max-w-lg rounded-lg border p-4'>
         <NotificationPreferencesForm
           notifyOrderNotes={prefs.notifyOrderNotes}
+          orderNoteEmailMode={prefs.orderNoteEmailMode}
         />
       </div>
     </div>

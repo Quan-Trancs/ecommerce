@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.24](./VERSION.md) — digest order-note emails. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.25](./VERSION.md) — immediate vs digest note emails. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
