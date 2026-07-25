@@ -1,5 +1,27 @@
 # Version History
 
+## v1.3.51 — 2026-07-25
+
+Atomic inventory reservations at checkout with unpaid TTL.
+
+### Backend
+- Atomic `UPDATE … WHERE stock_quantity >= qty` for product and variant stock on order create
+- Atomic restock on cancel / partial refund
+- Scheduled job cancels unpaid `PENDING` orders after 30 minutes and releases stock
+- Flyway `V29__inventory_reservation_index.sql` — partial index for expiry scans
+- Config: `app.orders.unpaid-reservation-minutes` (default 30)
+
+### Frontend
+- Checkout note that unpaid orders release reserved stock after 30 minutes
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.51` |
+| Store API | `store-backend/` | `1.3.51` (`store-api`) |
+
+---
+
 ## v1.3.50 — 2026-07-25
 
 Saved shipping addresses for buyers.

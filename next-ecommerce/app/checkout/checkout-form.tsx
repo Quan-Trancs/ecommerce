@@ -217,7 +217,8 @@ const CheckoutForm = () => {
             </Button>
             <p className='text-xs text-center py-2'>
               By placing your order, you agree to {APP_NAME}&apos;s privacy
-              notice and conditions of use.
+              notice and conditions of use. Unpaid orders release reserved stock
+              after 30 minutes.
             </p>
           </div>
         )}
@@ -894,7 +895,8 @@ const CheckoutForm = () => {
                     </p>
                     <p className='text-xs'>
                       By placing your order, you agree to {APP_NAME}&apos;s
-                      privacy notice and conditions of use.
+                      privacy notice and conditions of use. Unpaid orders
+                      release reserved stock after 30 minutes.
                     </p>
                   </div>
                 </CardContent>

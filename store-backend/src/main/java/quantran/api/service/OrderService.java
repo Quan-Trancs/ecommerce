@@ -103,10 +103,18 @@ public class OrderService {
                                 + ": available " + availableStock + ", requested " + line.getQuantity());
             }
 
+            // Atomic reservation: only one concurrent checkout can claim the last units
+            int reserved;
             if (variant != null) {
-                variant.setStockQuantity(availableStock - line.getQuantity());
+                reserved = productRepository.consumeVariantStock(variant.getId(), line.getQuantity());
             } else {
-                product.setStockQuantity(availableStock - line.getQuantity());
+                reserved = productRepository.consumeProductStock(product.getId(), line.getQuantity());
+            }
+            if (reserved == 0) {
+                throw new BusinessLogicException(
+                        "Insufficient stock for product " + product.getId()
+                                + (variant != null ? " variant" : "")
+                                + " (reserved by another checkout)");
             }
 
             String image = line.getImage();
@@ -410,11 +418,9 @@ public class OrderService {
                 .ifPresent(product -> {
                     ProductVariantEntity variant = findMatchingVariant(product, item.getColor(), item.getSize());
                     if (variant != null) {
-                        int current = variant.getStockQuantity() == null ? 0 : variant.getStockQuantity();
-                        variant.setStockQuantity(current + quantity);
+                        productRepository.releaseVariantStock(variant.getId(), quantity);
                     } else {
-                        int current = product.getStockQuantity() == null ? 0 : product.getStockQuantity();
-                        product.setStockQuantity(current + quantity);
+                        productRepository.releaseProductStock(product.getId(), quantity);
                     }
                 });
     }
@@ -489,13 +495,43 @@ public class OrderService {
             }
             ProductVariantEntity variant = findMatchingVariant(product, item.getColor(), item.getSize());
             if (variant != null) {
-                int current = variant.getStockQuantity() == null ? 0 : variant.getStockQuantity();
-                variant.setStockQuantity(current + item.getQuantity());
+                productRepository.releaseVariantStock(variant.getId(), item.getQuantity());
             } else {
-                int current = product.getStockQuantity() == null ? 0 : product.getStockQuantity();
-                product.setStockQuantity(current + item.getQuantity());
+                productRepository.releaseProductStock(product.getId(), item.getQuantity());
             }
         }
+    }
+
+    /**
+     * Release inventory held by abandoned unpaid PENDING orders (checkout reservation TTL).
+     * Returns how many orders were cancelled and restocked.
+     */
+    @Transactional
+    public int expireUnpaidReservations(int ttlMinutes) {
+        int minutes = Math.max(1, ttlMinutes);
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(minutes);
+        List<OrderEntity> expired = orderRepository.findExpiredUnpaidPending(
+                OrderEntity.Status.PENDING,
+                cutoff
+        );
+        int count = 0;
+        for (OrderEntity order : expired) {
+            if (order.getStatus() == OrderEntity.Status.CANCELLED) {
+                continue;
+            }
+            if (Boolean.TRUE.equals(order.getIsPaid())) {
+                continue;
+            }
+            restockOrderItems(order);
+            order.setStatus(OrderEntity.Status.CANCELLED);
+            quantran.api.dto.CancelOrderRequestDto meta = new quantran.api.dto.CancelOrderRequestDto();
+            meta.setRefundSkipped(true);
+            meta.setRefundNote("Expired unpaid inventory reservation after " + minutes + " minutes");
+            mergeRefundMetadata(order, meta);
+            orderRepository.save(order);
+            count++;
+        }
+        return count;
     }
 
     private void assertOwnerOrAdmin(OrderEntity order, String userId, boolean admin) {

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import quantran.api.entity.OrderEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,4 +30,13 @@ public interface OrderRepository extends JpaRepository<OrderEntity, String> {
             "  SELECT DISTINCT oi.order.id FROM OrderItemEntity oi WHERE oi.productId IN :productIds" +
             ") ORDER BY o.createdAt DESC")
     List<OrderEntity> findDetailedContainingProductIds(@Param("productIds") List<String> productIds);
+
+    @Query("SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items " +
+            "WHERE o.status = :status " +
+            "AND o.isPaid = false " +
+            "AND o.createdAt < :cutoff")
+    List<OrderEntity> findExpiredUnpaidPending(
+            @Param("status") OrderEntity.Status status,
+            @Param("cutoff") LocalDateTime cutoff
+    );
 }
