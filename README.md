@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.45](./VERSION.md) — return / RMA requests. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.46](./VERSION.md) — auto-refund on approved returns. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

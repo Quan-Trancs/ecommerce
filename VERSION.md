@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.46 — 2026-07-25
+
+Auto-refund when a return request is approved.
+
+### Backend
+- Partial refund API: `allowShipped` for RMA lines
+- Flyway `V26__return_refund_meta.sql` — refund fields on return requests
+
+### Frontend
+- Approve return → PayPal/Stripe refund + restock by default (checkbox to skip)
+- Failed refund leaves the request open; approved returns show refund amount
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.46` |
+| Store API | `store-backend/` | `1.3.46` (`store-api`) |
+
+---
+
 ## v1.3.45 — 2026-07-25
 
 Buyer return / RMA requests with staff review.

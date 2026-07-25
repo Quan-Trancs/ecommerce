@@ -19,6 +19,8 @@ public class PartialRefundRequestDto {
     private BigDecimal amount;
     private String note;
     private Boolean refundSkipped;
+    /** When true, allow refunding shipped lines (return / RMA flow). */
+    private Boolean allowShipped;
 
     @Data
     @NoArgsConstructor

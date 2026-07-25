@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 import { revalidatePath } from 'next/cache'
 import { hasSupportAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
-import { getOrderById } from '@/lib/actions/order.actions'
+import { getOrderById, partialRefundOrder } from '@/lib/actions/order.actions'
 import {
   cancelReturnRequest,
   createReturnRequest,
@@ -188,6 +188,7 @@ export async function reviewOrderReturn(input: {
   returnId: number
   decision: 'APPROVED' | 'REJECTED'
   reviewNote?: string
+  processRefund?: boolean
 }): Promise<{ success: boolean; message: string }> {
   try {
     const session = await auth()
@@ -196,14 +197,76 @@ export async function reviewOrderReturn(input: {
     }
     const decision =
       input.decision === 'APPROVED' ? 'APPROVED' : 'REJECTED'
+    const existing = await getReturnById(input.returnId)
+    if (!existing || existing.status !== 'REQUESTED') {
+      return { success: false, message: 'Return is not awaiting review' }
+    }
+
+    let refundMeta: {
+      amount?: number
+      refundId?: string | null
+      refundStatus?: string | null
+      refundSkipped?: boolean
+    } = {}
+
+    if (decision === 'APPROVED' && input.processRefund !== false) {
+      const lines = existing.items
+        .filter((i) => i.quantity > 0)
+        .map((i) => ({
+          orderItemId: i.orderItemId,
+          quantity: i.quantity,
+        }))
+      if (!lines.length) {
+        return { success: false, message: 'Return has no line items' }
+      }
+      const refundResult = await partialRefundOrder(
+        existing.orderId,
+        lines,
+        {
+          allowShipped: true,
+          skipStaffAudit: true,
+          note: `Return #${existing.id} refund`,
+        }
+      )
+      if (!refundResult.success) {
+        return {
+          success: false,
+          message: `Refund failed — return left open: ${refundResult.message}`,
+        }
+      }
+      refundMeta = {
+        amount: 'amount' in refundResult ? refundResult.amount : undefined,
+        refundId: 'refundId' in refundResult ? refundResult.refundId : null,
+        refundStatus:
+          'refundStatus' in refundResult ? refundResult.refundStatus : null,
+        refundSkipped:
+          'refundSkipped' in refundResult
+            ? Boolean(refundResult.refundSkipped)
+            : false,
+      }
+    }
+
     const updated = await reviewReturnRequest({
       returnId: input.returnId,
       reviewerId: session.user.id,
       status: decision,
       reviewNote: input.reviewNote,
+      refundAmount: refundMeta.amount ?? null,
+      refundId: refundMeta.refundId ?? null,
+      refundStatus: refundMeta.refundStatus ?? null,
+      refundSkipped:
+        decision === 'APPROVED' && input.processRefund !== false
+          ? Boolean(refundMeta.refundSkipped)
+          : null,
     })
     if (!updated) {
-      return { success: false, message: 'Return is not awaiting review' }
+      return {
+        success: false,
+        message:
+          decision === 'APPROVED' && input.processRefund !== false
+            ? 'Refund applied but return status update failed — check the order'
+            : 'Return is not awaiting review',
+      }
     }
 
     await logStaffAction({
@@ -212,24 +275,35 @@ export async function reviewOrderReturn(input: {
       action: decision === 'APPROVED' ? 'RETURN_APPROVE' : 'RETURN_REJECT',
       entityType: 'order',
       entityId: updated.orderId,
-      summary: `${decision === 'APPROVED' ? 'Approved' : 'Rejected'} return #${updated.id} on order ${updated.orderId}`,
+      summary: `${decision === 'APPROVED' ? 'Approved' : 'Rejected'} return #${updated.id} on order ${updated.orderId}${
+        refundMeta.amount != null
+          ? ` (refund $${Number(refundMeta.amount).toFixed(2)})`
+          : ''
+      }`,
       metadata: {
         returnId: updated.id,
         reason: updated.reason,
         reviewNote: input.reviewNote || null,
+        refundAmount: refundMeta.amount ?? null,
+        refundId: refundMeta.refundId ?? null,
+        refundSkipped: refundMeta.refundSkipped ?? null,
       },
     })
 
     try {
+      const refundBit =
+        decision === 'APPROVED' && refundMeta.amount != null
+          ? ` Refund $${Number(refundMeta.amount).toFixed(2)}${
+              refundMeta.refundId ? ` (${refundMeta.refundId})` : ''
+            }${refundMeta.refundSkipped ? ' — processor skipped' : ''}.`
+          : decision === 'APPROVED' && input.processRefund === false
+            ? ' Approved without automatic refund.'
+            : ''
       await createStoreOrderNote(
         updated.orderId,
         `Return #${updated.id} ${decision.toLowerCase()}: ${reasonLabel(updated.reason)}${
           input.reviewNote?.trim() ? ` — ${input.reviewNote.trim()}` : ''
-        }${
-          decision === 'APPROVED'
-            ? ' Staff may process a refund separately if needed.'
-            : ''
-        }`,
+        }.${refundBit}`,
         {
           userId: session.user.id,
           email: session.user.email,
@@ -245,10 +319,15 @@ export async function reviewOrderReturn(input: {
     revalidatePath(`/account/orders/${updated.orderId}`)
     revalidatePath('/support/returns')
     revalidatePath('/admin/audit')
+    revalidatePath('/seller/earnings')
     return {
       success: true,
       message:
-        decision === 'APPROVED' ? 'Return approved' : 'Return rejected',
+        decision === 'APPROVED'
+          ? refundMeta.amount != null
+            ? `Return approved and $${Number(refundMeta.amount).toFixed(2)} refunded`
+            : 'Return approved'
+          : 'Return rejected',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }

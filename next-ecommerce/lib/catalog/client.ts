@@ -378,6 +378,7 @@ export async function partialRefundStoreOrder(
     amount?: number
     note?: string
     refundSkipped?: boolean
+    allowShipped?: boolean
   }
 ): Promise<StoreOrder> {
   const authHeaders = await storeAuthHeaders(subject)

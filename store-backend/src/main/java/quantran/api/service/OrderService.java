@@ -298,7 +298,8 @@ public class OrderService {
     }
 
     /**
-     * Support/Admin: refund selected unshipped units, restock, and reduce remaining value.
+     * Support/Admin: refund selected units, restock, and reduce remaining value.
+     * By default only unshipped lines; set allowShipped for return / RMA refunds.
      * Order stays PAID unless every unit is refunded (then CANCELLED).
      */
     @Transactional
@@ -343,7 +344,8 @@ public class OrderService {
             if (item == null) {
                 throw new BusinessLogicException("Order item not found: " + line.getOrderItemId());
             }
-            if (Boolean.TRUE.equals(item.getIsShipped())) {
+            if (Boolean.TRUE.equals(item.getIsShipped())
+                    && !Boolean.TRUE.equals(request.getAllowShipped())) {
                 throw new BusinessLogicException("Cannot refund a shipped line: " + item.getName());
             }
             int refunded = item.getRefundedQuantity() == null ? 0 : item.getRefundedQuantity();

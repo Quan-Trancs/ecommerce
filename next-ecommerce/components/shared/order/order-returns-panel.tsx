@@ -49,6 +49,9 @@ export default function OrderReturnsPanel({
   const [note, setNote] = useState('')
   const [qtyById, setQtyById] = useState<Record<string, string>>({})
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({})
+  const [processRefundById, setProcessRefundById] = useState<
+    Record<string, boolean>
+  >({})
 
   const returnable = useMemo(() => {
     return (order.items || []).filter((item) => {
@@ -100,8 +103,8 @@ export default function OrderReturnsPanel({
       <div>
         <h2 className='text-xl'>Returns</h2>
         <p className='text-xs text-muted-foreground'>
-          Request a return on shipped items. Support reviews the request; refunds
-          are processed separately when approved.
+          Request a return on shipped items. Approving can refund and restock
+          automatically (PayPal/Stripe when available).
         </p>
       </div>
 
@@ -132,6 +135,13 @@ export default function OrderReturnsPanel({
               {ret.reviewNote ? (
                 <p className='text-xs text-muted-foreground'>
                   Staff: {ret.reviewNote}
+                </p>
+              ) : null}
+              {ret.status === 'APPROVED' && ret.refundAmount != null ? (
+                <p className='text-xs text-muted-foreground'>
+                  Refund ${Number(ret.refundAmount).toFixed(2)}
+                  {ret.refundId ? ` · ${ret.refundId}` : ''}
+                  {ret.refundSkipped ? ' · processor skipped' : ''}
                 </p>
               ) : null}
               {isBuyer && ret.status === 'REQUESTED' ? (
@@ -165,6 +175,19 @@ export default function OrderReturnsPanel({
                       }))
                     }
                   />
+                  <label className='flex items-center gap-2 text-xs text-muted-foreground'>
+                    <input
+                      type='checkbox'
+                      checked={processRefundById[String(ret.id)] !== false}
+                      onChange={(e) =>
+                        setProcessRefundById((prev) => ({
+                          ...prev,
+                          [String(ret.id)]: e.target.checked,
+                        }))
+                      }
+                    />
+                    Refund &amp; restock on approve
+                  </label>
                   <div className='flex flex-wrap gap-2'>
                     <Button
                       type='button'
@@ -176,6 +199,8 @@ export default function OrderReturnsPanel({
                             returnId: ret.id,
                             decision: 'APPROVED',
                             reviewNote: reviewNotes[String(ret.id)],
+                            processRefund:
+                              processRefundById[String(ret.id)] !== false,
                           })
                           if (result.success) {
                             toast.success(result.message)
@@ -197,6 +222,7 @@ export default function OrderReturnsPanel({
                             returnId: ret.id,
                             decision: 'REJECTED',
                             reviewNote: reviewNotes[String(ret.id)],
+                            processRefund: false,
                           })
                           if (result.success) {
                             toast.success(result.message)

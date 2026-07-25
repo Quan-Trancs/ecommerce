@@ -29,6 +29,10 @@ export type OrderReturnRequest = {
   reviewNote: string | null
   reviewedBy: string | null
   reviewedAt: string | null
+  refundAmount: number | null
+  refundId: string | null
+  refundStatus: string | null
+  refundSkipped: boolean
   createdAt: string
   updatedAt: string
   buyerEmail?: string | null
@@ -46,6 +50,10 @@ type RequestRow = {
   review_note: string | null
   reviewed_by: string | null
   reviewed_at: Date | string | null
+  refund_amount?: number | string | null
+  refund_id?: string | null
+  refund_status?: string | null
+  refund_skipped?: boolean | null
   created_at: Date | string
   updated_at: Date | string
   buyer_email?: string | null
@@ -68,6 +76,11 @@ function mapRequest(
     reviewedAt: row.reviewed_at
       ? new Date(row.reviewed_at).toISOString()
       : null,
+    refundAmount:
+      row.refund_amount == null ? null : Number(row.refund_amount),
+    refundId: row.refund_id || null,
+    refundStatus: row.refund_status || null,
+    refundSkipped: Boolean(row.refund_skipped),
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
     buyerEmail: row.buyer_email,
@@ -231,6 +244,10 @@ export async function reviewReturnRequest(input: {
   reviewerId: string
   status: 'APPROVED' | 'REJECTED'
   reviewNote?: string | null
+  refundAmount?: number | null
+  refundId?: string | null
+  refundStatus?: string | null
+  refundSkipped?: boolean | null
 }): Promise<OrderReturnRequest | null> {
   const result = await query<RequestRow>(
     `UPDATE order_return_requests
@@ -238,7 +255,14 @@ export async function reviewReturnRequest(input: {
          review_note = $3,
          reviewed_by = $4,
          reviewed_at = NOW(),
-         updated_at = NOW()
+         updated_at = NOW(),
+         refund_amount = COALESCE($5, refund_amount),
+         refund_id = COALESCE($6, refund_id),
+         refund_status = COALESCE($7, refund_status),
+         refund_skipped = CASE
+           WHEN $8::boolean IS NULL THEN refund_skipped
+           ELSE $8
+         END
      WHERE id = $1
        AND UPPER(status) = 'REQUESTED'
      RETURNING *`,
@@ -247,6 +271,10 @@ export async function reviewReturnRequest(input: {
       input.status,
       input.reviewNote?.trim()?.slice(0, 1000) || null,
       input.reviewerId,
+      input.refundAmount ?? null,
+      input.refundId ?? null,
+      input.refundStatus ?? null,
+      input.refundSkipped ?? null,
     ]
   )
   const row = result.rows[0]

@@ -506,11 +506,17 @@ export async function cancelOrder(orderId: string) {
 }
 
 /**
- * SUPPORT/ADMIN: refund selected unshipped quantities (processor + restock).
+ * SUPPORT/ADMIN: refund selected quantities (processor + restock).
+ * Default: unshipped only. Pass allowShipped for return / RMA refunds.
  */
 export async function partialRefundOrder(
   orderId: string,
-  lines: Array<{ orderItemId: number; quantity: number }>
+  lines: Array<{ orderItemId: number; quantity: number }>,
+  options?: {
+    allowShipped?: boolean
+    note?: string
+    skipStaffAudit?: boolean
+  }
 ) {
   try {
     const session = await auth()
@@ -528,6 +534,7 @@ export async function partialRefundOrder(
 
     const requested = lines.filter((l) => l.quantity > 0)
     if (!requested.length) throw new Error('Select quantities to refund')
+    const allowShipped = Boolean(options?.allowShipped)
 
     const byId = new Map(
       (storeOrder.items || [])
@@ -547,7 +554,7 @@ export async function partialRefundOrder(
     for (const line of requested) {
       const item = byId.get(line.orderItemId)
       if (!item) throw new Error(`Order item ${line.orderItemId} not found`)
-      if (item.isShipped) {
+      if (item.isShipped && !allowShipped) {
         throw new Error(`Cannot refund shipped item: ${item.name}`)
       }
       const refunded = Number(item.refundedQuantity) || 0
@@ -576,13 +583,16 @@ export async function partialRefundOrder(
     const refundAmount = roundToTwoDecimals(itemsGross + taxShare)
 
     const paymentMethod = (storeOrder.paymentMethod || '').toLowerCase()
+    const defaultNote =
+      options?.note?.trim() ||
+      `Partial refund $${refundAmount.toFixed(2)}`
     let refundMeta: {
       refundId?: string
       refundStatus?: string
       refundSkipped?: boolean
       note?: string
     } = {
-      note: `Partial refund $${refundAmount.toFixed(2)}`,
+      note: defaultNote,
     }
 
     if (paymentMethod === 'paypal') {
@@ -618,7 +628,7 @@ export async function partialRefundOrder(
     } else {
       refundMeta = {
         refundSkipped: true,
-        note: `Partial restock without processor refund (${storeOrder.paymentMethod || 'unknown'})`,
+        note: `${defaultNote} (processor refund skipped — ${storeOrder.paymentMethod || 'unknown'})`,
       }
     }
 
@@ -632,6 +642,7 @@ export async function partialRefundOrder(
       amount: refundAmount,
       note: refundMeta.note,
       refundSkipped: refundMeta.refundSkipped,
+      allowShipped,
     })
 
     await recordOrderRefund({
@@ -652,22 +663,25 @@ export async function partialRefundOrder(
 
     await checkAndNotifyLowStock(productIds)
 
-    await logStaffAction({
-      actorId: session.user.id,
-      actorRole: session.user.role,
-      action: 'ORDER_PARTIAL_REFUND',
-      entityType: 'order',
-      entityId: orderId,
-      summary: `Partial refund $${refundAmount.toFixed(2)} on order ${orderId}`,
-      metadata: {
-        amount: refundAmount,
-        refundId: refundMeta.refundId,
-        lines: refundLines.map((l) => ({
-          orderItemId: l.orderItemId,
-          quantity: l.quantity,
-        })),
-      },
-    })
+    if (!options?.skipStaffAudit) {
+      await logStaffAction({
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: 'ORDER_PARTIAL_REFUND',
+        entityType: 'order',
+        entityId: orderId,
+        summary: `Partial refund $${refundAmount.toFixed(2)} on order ${orderId}`,
+        metadata: {
+          amount: refundAmount,
+          refundId: refundMeta.refundId,
+          allowShipped,
+          lines: refundLines.map((l) => ({
+            orderItemId: l.orderItemId,
+            quantity: l.quantity,
+          })),
+        },
+      })
+    }
 
     revalidatePath(`/account/orders/${orderId}`)
     revalidatePath('/account/orders')
@@ -683,6 +697,9 @@ export async function partialRefundOrder(
         ? `Refunded $${refundAmount.toFixed(2)} and restocked selected units`
         : `Restocked selected units ($${refundAmount.toFixed(2)} — processor refund skipped)`,
       amount: refundAmount,
+      refundId: refundMeta.refundId || null,
+      refundStatus: refundMeta.refundStatus || null,
+      refundSkipped: Boolean(refundMeta.refundSkipped),
     }
   } catch (err) {
     return { success: false as const, message: formatError(err) }

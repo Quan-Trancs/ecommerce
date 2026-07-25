@@ -26,8 +26,8 @@ export default async function SupportReturnsPage() {
       <div>
         <h2 className='text-xl font-semibold'>Return requests</h2>
         <p className='text-sm text-muted-foreground'>
-          Open RMA requests awaiting staff review. Approve or reject on the
-          order page; process refunds separately when needed.
+          Open RMA requests awaiting staff review. Approving refunds and
+          restocks by default (toggle on the order page).
         </p>
       </div>
 
