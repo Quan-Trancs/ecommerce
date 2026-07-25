@@ -68,14 +68,8 @@ export function catalogProductToStoreProduct(
   }
 }
 
-/** @deprecated use catalogProductToStoreProduct */
-export const catalogProductToIProduct = catalogProductToStoreProduct
-
 export function catalogProductsToStoreProducts(
   products: CatalogProduct[]
 ): StoreProduct[] {
   return products.map(catalogProductToStoreProduct)
 }
-
-/** @deprecated use catalogProductsToStoreProducts */
-export const catalogProductsToIProducts = catalogProductsToStoreProducts

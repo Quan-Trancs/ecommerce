@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { APP_NAME } from '@/lib/constants'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useCSRF } from '@/hooks/use-csrf'
 
@@ -117,14 +116,8 @@ export default function CredentialsSignInForm() {
             </Button>
           </div>
           <div className='text-xs'>
-            By signing in, you agree to {APP_NAME}&apos;s{' '}
-            <Link href='/page/conditions-of-use' className='underline '>
-              Conditions of Use
-            </Link>{' '}
-            and{' '}
-            <Link href='/page/privacy-policy' className='underline'>
-              Privacy Notice.
-            </Link>
+            By signing in, you agree to {APP_NAME}&apos;s Conditions of Use and
+            Privacy Notice.
           </div>
         </div>
       </form>

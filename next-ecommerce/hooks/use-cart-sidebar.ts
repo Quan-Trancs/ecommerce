@@ -3,7 +3,7 @@ import useCartStore from './use-cart-store'
 import useDeviceType from './use-device-type'
 
 const isNotInPaths = (path: string) =>
-  !/^\/$|^\/cart$|^\/checkout$|^\/sign-in$|^\/sign-up$|^\/order(\/.*)?$|^\/account(\/.*)?$|^\/admin(\/.*)?$/.test(
+  !/^\/$|^\/cart$|^\/checkout$|^\/sign-in$|^\/sign-up$|^\/order(\/.*)?$|^\/account(\/.*)?$/.test(
     path
   )
 

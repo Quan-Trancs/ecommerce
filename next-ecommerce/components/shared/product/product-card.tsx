@@ -1,4 +1,4 @@
-import { IProduct } from '@/lib/db/models/product.model'
+import { IProduct } from '@/lib/catalog/store-product'
 import Link from 'next/link'
 import ImageHover from './image-hover'
 import Image from 'next/image'

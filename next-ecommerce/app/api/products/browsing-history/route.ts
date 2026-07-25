@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rate-limit'
-import { verifyCSRFToken } from '@/lib/csrf'
 import {
   getProductsByCategories,
   getProductsByIds,
@@ -79,47 +78,6 @@ export const GET = async (req: NextRequest) => {
     return NextResponse.json(related)
   } catch (error) {
     console.error('Browsing history API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export const POST = async (req: NextRequest) => {
-  try {
-    const isValid = await verifyCSRFToken(req)
-    if (!isValid) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
-    }
-
-    const clientId = getClientIdentifier(req)
-    if (apiRateLimiter.isRateLimited(clientId)) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        { status: 429 }
-      )
-    }
-
-    const body = await req.json()
-    const { productId, action } = body
-
-    if (!productId || !isValidProductId(productId)) {
-      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 })
-    }
-
-    if (!['add', 'remove'].includes(action)) {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-    }
-
-    const [product] = await getProductsByIds([productId])
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Product ${action === 'add' ? 'added to' : 'removed from'} browsing history`,
-    })
-  } catch (error) {
-    console.error('Browsing history POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -11,50 +11,19 @@ import org.springframework.web.context.request.WebRequest;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.io.IOException;
 
 @RestControllerAdvice
 @Log4j2
 public class GlobalExceptionHandler {
-    
-    @ExceptionHandler(BookNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleBookNotFound(BookNotFoundException ex, WebRequest request) {
-        log.warn("Book not found: {}", ex.getMessage());
-        
-        ErrorResponse error = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.NOT_FOUND.value())
-                .error("Book Not Found")
-                .message(ex.getMessage())
-                .path(request.getDescription(false))
-                .build();
-        
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-    }
-    
-    @ExceptionHandler(DuplicateBookException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateBook(DuplicateBookException ex, WebRequest request) {
-        log.warn("Duplicate book: {}", ex.getMessage());
-        
-        ErrorResponse error = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.CONFLICT.value())
-                .error("Duplicate Book")
-                .message(ex.getMessage())
-                .path(request.getDescription(false))
-                .build();
-        
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
-    }
-    
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
         log.warn("Invalid argument: {}", ex.getMessage());
-        
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -62,21 +31,18 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .path(request.getDescription(false))
                 .build();
-        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
-    
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, WebRequest request) {
         log.warn("Validation error: {}", ex.getMessage());
-        
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -85,22 +51,17 @@ public class GlobalExceptionHandler {
                 .details(errors)
                 .path(request.getDescription(false))
                 .build();
-        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
-    
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, WebRequest request) {
         log.warn("Constraint violation: {}", ex.getMessage());
-        
         Map<String, String> errors = new HashMap<>();
         Set<ConstraintViolation<?>> violations = ex.getConstraintViolations();
         for (ConstraintViolation<?> violation : violations) {
-            String fieldName = violation.getPropertyPath().toString();
-            String errorMessage = violation.getMessage();
-            errors.put(fieldName, errorMessage);
+            errors.put(violation.getPropertyPath().toString(), violation.getMessage());
         }
-        
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -109,14 +70,12 @@ public class GlobalExceptionHandler {
                 .details(errors)
                 .path(request.getDescription(false))
                 .build();
-        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
-    
+
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(ValidationException ex, WebRequest request) {
         log.warn("Validation exception: {}", ex.getMessage());
-        
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -125,38 +84,7 @@ public class GlobalExceptionHandler {
                 .details(ex.getFieldErrors())
                 .path(request.getDescription(false))
                 .build();
-        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
-    
-    @ExceptionHandler(DatabaseException.class)
-    public ResponseEntity<ErrorResponse> handleDatabaseException(DatabaseException ex, WebRequest request) {
-        log.error("Database error during {}: {}", ex.getOperation(), ex.getMessage(), ex);
-        
-        ErrorResponse error = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Database Error")
-                .message("Database operation failed: " + ex.getOperation())
-                .path(request.getDescription(false))
-                .build();
-        
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
-    
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
-        log.error("Unexpected error occurred", ex);
-        
-        ErrorResponse error = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Internal Server Error")
-                .message("An unexpected error occurred")
-                .path(request.getDescription(false))
-                .build();
-        
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
     @ExceptionHandler(UnauthorizedException.class)
@@ -223,8 +151,20 @@ public class GlobalExceptionHandler {
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
-    
-    // Error response DTO
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
+        log.error("Unexpected error occurred", ex);
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message("An unexpected error occurred")
+                .path(request.getDescription(false))
+                .build();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
     @lombok.Data
     @lombok.Builder
     @lombok.NoArgsConstructor
@@ -237,4 +177,4 @@ public class GlobalExceptionHandler {
         private String path;
         private Map<String, String> details;
     }
-} 
+}

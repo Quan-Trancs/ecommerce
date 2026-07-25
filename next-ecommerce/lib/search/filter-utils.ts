@@ -99,29 +99,3 @@ export function isLightSwatch(name: string) {
     key
   )
 }
-
-export function sortProducts<
-  T extends {
-    price: number
-    avgRating: number
-    createdAt?: Date | string
-  },
->(products: T[], sort?: string): T[] {
-  const list = [...products]
-  switch (sort) {
-    case 'price-asc':
-      return list.sort((a, b) => a.price - b.price)
-    case 'price-desc':
-      return list.sort((a, b) => b.price - a.price)
-    case 'rating':
-      return list.sort((a, b) => b.avgRating - a.avgRating)
-    case 'newest':
-      return list.sort((a, b) => {
-        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
-        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
-        return db - da
-      })
-    default:
-      return list
-  }
-}

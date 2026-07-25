@@ -155,23 +155,6 @@ export async function fetchCategories(): Promise<CatalogCategory[]> {
   }
 }
 
-export async function fetchFlatCategories(): Promise<CatalogCategory[]> {
-  try {
-    return await catalogFetch<CatalogCategory[]>('/v1/categories?view=flat')
-  } catch {
-    lastCatalogSource = 'fallback'
-    const flat: CatalogCategory[] = []
-    const walk = (nodes: CatalogCategory[]) => {
-      for (const node of nodes) {
-        flat.push({ ...node, children: [] })
-        if (node.children?.length) walk(node.children)
-      }
-    }
-    walk(FALLBACK_CATEGORIES)
-    return flat
-  }
-}
-
 export type StoreOrderPayload = {
   paymentMethod: string
   itemsPrice: number

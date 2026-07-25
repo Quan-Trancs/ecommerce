@@ -29,7 +29,7 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private long jwtExpiration;
     
-    @Value("${jwt.issuer:bookstore-api}")
+    @Value("${jwt.issuer:store-api}")
     private String jwtIssuer;
     
     private Key getSigningKey() {

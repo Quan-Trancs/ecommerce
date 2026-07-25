@@ -188,9 +188,8 @@ const CheckoutForm = () => {
               Place Your Order
             </Button>
             <p className='text-xs text-center py-2'>
-              By placing your order, you agree to {APP_NAME}&apos;s{' '}
-              <Link href='/page/privacy-policy'>privacy notice</Link> and
-              <Link href='/page/conditions-of-use'> conditions of use</Link>.
+              By placing your order, you agree to {APP_NAME}&apos;s privacy
+              notice and conditions of use.
             </p>
           </div>
         )}
@@ -680,15 +679,8 @@ const CheckoutForm = () => {
                       Order Total: <ProductPrice price={totalPrice} plain />
                     </p>
                     <p className='text-xs'>
-                      {' '}
-                      By placing your order, you agree to {APP_NAME}&apos;s{' '}
-                      <Link href='/page/privacy-policy'>privacy notice</Link>{' '}
-                      and
-                      <Link href='/page/conditions-of-use'>
-                        {' '}
-                        conditions of use
-                      </Link>
-                      .
+                      By placing your order, you agree to {APP_NAME}&apos;s
+                      privacy notice and conditions of use.
                     </p>
                   </div>
                 </CardContent>

@@ -6,7 +6,7 @@ import {
   Carousel,
 } from '@/components/ui/carousel'
 import ProductCard from './product-card'
-import { IProduct } from '@/lib/db/models/product.model'
+import { IProduct } from '@/lib/catalog/store-product'
 import Link from 'next/link'
 
 export default function ProductSlider({

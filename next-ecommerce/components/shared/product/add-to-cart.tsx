@@ -34,7 +34,7 @@ export default function AddToCart({
 
     setIsLoading(true)
     try {
-      await addItem(item, qty)
+      const itemId = await addItem(item, qty)
       toast('', {
         description: 'Added to cart',
         action: (
@@ -47,6 +47,7 @@ export default function AddToCart({
           </Button>
         ),
       })
+      return itemId
     } catch (error: any) {
       toast.error('', {
         description: error.message || 'Failed to add item to cart',

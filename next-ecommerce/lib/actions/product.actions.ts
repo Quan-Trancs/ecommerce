@@ -3,7 +3,6 @@
 import { PAGE_SIZE } from '../constants'
 import {
   fetchCategories,
-  fetchFlatCategories,
   fetchProductByIdOrSlug,
   fetchProductsByIds,
   searchProducts,
@@ -12,31 +11,11 @@ import {
   catalogProductToStoreProduct,
   catalogProductsToStoreProducts,
 } from '@/lib/catalog/mapper'
-import type { CatalogCategory, Facet, ProductSearchParams } from '@/lib/catalog/types'
+import type { Facet, ProductSearchParams } from '@/lib/catalog/types'
 import type { StoreProduct } from '@/lib/catalog/store-product'
-
-function flattenCategories(nodes: CatalogCategory[]): CatalogCategory[] {
-  const result: CatalogCategory[] = []
-  const walk = (list: CatalogCategory[]) => {
-    for (const node of list) {
-      result.push(node)
-      if (node.children?.length) walk(node.children)
-    }
-  }
-  walk(nodes)
-  return result
-}
 
 export async function getCategoryTree() {
   return fetchCategories()
-}
-
-export async function getAllCategories() {
-  const flat = await fetchFlatCategories()
-  if (flat.length) return flat.map((c) => c.name)
-
-  const tree = await fetchCategories()
-  return flattenCategories(tree).map((c) => c.name)
 }
 
 export async function searchCatalog(params: ProductSearchParams): Promise<{

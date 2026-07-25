@@ -204,6 +204,17 @@ export async function getOrderById(orderId: string): Promise<IOrder> {
   return JSON.parse(JSON.stringify(order))
 }
 
+export async function getMyOrders(): Promise<IOrder[]> {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('User not authenticated')
+
+  await connectToDatabase()
+  const orders = await Order.find({ user: session.user.id })
+    .sort({ createdAt: -1 })
+    .lean()
+  return JSON.parse(JSON.stringify(orders))
+}
+
 export async function createPayPalOrder(orderId: string) {
   try {
     const order = await getOrderById(orderId)

@@ -4,33 +4,26 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
-import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.cache.support.CompositeCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Enhanced cache configuration with optimized settings for better performance.
- * Implements multi-level caching (L1: Caffeine, L2: Redis) with monitoring.
+ * Multi-level cache: L1 Caffeine (in-memory) + L2 Redis (shared).
  */
 @Configuration
 public class CacheConfig {
-
-    @Value("${spring.cache.caffeine.spec:maximumSize=1000,expireAfterWrite=10m}")
-    private String caffeineSpec;
-
-    @Value("${spring.cache.redis.ttl:30m}")
-    private String redisTtl;
 
     @Value("${spring.cache.caffeine.maximum-size:1000}")
     private int caffeineMaxSize;
@@ -38,13 +31,9 @@ public class CacheConfig {
     @Value("${spring.cache.caffeine.expire-after-write:10m}")
     private String caffeineExpireAfterWrite;
 
-    /**
-     * Primary cache manager with multi-level caching strategy
-     */
     @Bean
     @Primary
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
-        // L1: Caffeine (in-memory) - Fast access for frequently used data
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(caffeineMaxSize)
@@ -52,97 +41,38 @@ public class CacheConfig {
                 .recordStats()
         );
 
-        // L2: Redis (distributed) - Persistent cache for shared data
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(Duration.ofMinutes(30))
                         .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                         .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer())))
-                .withCacheConfiguration("books", 
-                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)))
-                .withCacheConfiguration("authors", 
-                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(20)))
-                .withCacheConfiguration("publishers", 
-                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(20)))
-                .withCacheConfiguration("book_summaries", 
-                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration("book_counts", 
-                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
+                .withCacheConfiguration("products",
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)))
+                .withCacheConfiguration("categories",
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)))
+                .withCacheConfiguration("product_search",
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
                 .build();
 
-        // Composite: L1 first, then L2
         CompositeCacheManager compositeCacheManager = new CompositeCacheManager(
                 caffeineCacheManager, redisCacheManager
         );
-        compositeCacheManager.setFallbackToNoOpCache(false); // throw if cache not found
-        
+        compositeCacheManager.setFallbackToNoOpCache(false);
         return compositeCacheManager;
     }
 
-    /**
-     * Redis template for custom cache operations
-     */
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
-        // Use String serializer for keys
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
-        
-        // Use JSON serializer for values
         template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
-        
         template.afterPropertiesSet();
         return template;
     }
 
-    /**
-     * Cache configuration for specific cache names with different TTLs
-     */
-    @Bean
-    public CacheManager specificCacheManager(RedisConnectionFactory redisConnectionFactory) {
-        return RedisCacheManager.builder(redisConnectionFactory)
-                .withCacheConfiguration("books", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(15))
-                        .prefixCacheNameWith("store:"))
-                .withCacheConfiguration("authors", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(20))
-                        .prefixCacheNameWith("store:"))
-                .withCacheConfiguration("publishers", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(20))
-                        .prefixCacheNameWith("store:"))
-                .withCacheConfiguration("book_summaries", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(10))
-                        .prefixCacheNameWith("store:"))
-                .withCacheConfiguration("book_counts", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(5))
-                        .prefixCacheNameWith("store:"))
-                .withCacheConfiguration("books_fts", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(30))
-                        .prefixCacheNameWith("store:"))
-                .withCacheConfiguration("books_indexed", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(15))
-                        .prefixCacheNameWith("store:"))
-                .withCacheConfiguration("books_price_range", 
-                    RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(20))
-                        .prefixCacheNameWith("store:"))
-                .build();
-    }
-
-    /**
-     * Parse duration string to minutes
-     */
     private long parseDuration(String duration) {
         if (duration.endsWith("m")) {
             return Long.parseLong(duration.substring(0, duration.length() - 1));
@@ -153,4 +83,4 @@ public class CacheConfig {
         }
         return Long.parseLong(duration);
     }
-} 
+}

@@ -9,7 +9,6 @@ export default {
       const protectedRoutes = [
         /\/checkout(\/.*)?/,
         /\/account(\/.*)?/,
-        /\/admin(\/.*)?/,
       ]
 
       const { pathName } = request.nextUrl

@@ -1,4 +1,4 @@
-import { IProduct } from '@/lib/db/models/product.model'
+import { IProduct } from '@/lib/catalog/store-product'
 import Link from 'next/link'
 import { colorSwatch, isLightSwatch } from '@/lib/search/filter-utils'
 import { Check } from 'lucide-react'

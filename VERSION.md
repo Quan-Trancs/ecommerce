@@ -1,5 +1,22 @@
 # Version History
 
+## v1.1.1 — 2026-07-24
+
+Dead-code cleanup: remove unused bookstore leftovers, stub pages/links, and unused catalog seed/model paths.
+
+### Removed / slimmed
+- **Backend** — bookstore Java stack already gone; exception handlers, book cache names, and Flyway V2 book indexes retired (V2 is a no-op; run `flyway repair` if checksum fails)
+- **Frontend** — Mongo `Product` model + product seed data; dead CSRF helpers/docs; unused `getAllCategories` / `sortProducts` / flat-category client; browsing-history POST; broken `/page/*` and `/admin` links
+- **Added** — `/account` and `/account/orders` list pages (Mongo orders)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.1.1` |
+| Store API | `store-backend/` | `1.1.1` (`store-api`) |
+
+---
+
 ## v1.1.0 — 2026-07-24
 
 Architecture upgrade: unify catalog types, harden checkout against live stock/price, add Spring orders/variants/admin, and retire bookstore controllers by default.
@@ -10,7 +27,6 @@ Architecture upgrade: unify catalog types, harden checkout against live stock/pr
 - **Variants** — `product_variants` SKUs (color/size/stock/price); seeded with catalog demo data
 - **Admin writes** — `POST/PATCH /v1/admin/products` (header `X-Admin-Key`)
 - **Auth helper** — `POST /v1/auth/token` + JWT support for BFF
-- **Bookstore leftover** — book/author/publisher/async/user controllers behind `@Profile("bookstore")` (off by default)
 - **Flyway** — `V3__commercial_orders_variants.sql`
 
 ### Frontend (`next-ecommerce`)
@@ -31,7 +47,6 @@ Architecture upgrade: unify catalog types, harden checkout against live stock/pr
 ### Ops notes
 - Admin key: `ADMIN_API_KEY` / `app.admin.api-key` (default `dev-admin-key`)
 - Prod catalog fallback: set `ALLOW_CATALOG_FALLBACK=true` only if intentional
-- Enable legacy bookstore APIs with Spring profile `bookstore`
 - Re-seed local DB (or wipe products) to pick up demo variants
 
 ---

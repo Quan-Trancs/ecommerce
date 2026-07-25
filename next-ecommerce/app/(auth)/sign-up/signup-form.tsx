@@ -156,9 +156,8 @@ export default function SignUpForm() {
             </Button>
           </div>
           <div className='text-xs mt-5'>
-            By creating an account, you agree to {APP_NAME}&apos;s{' '}
-            <Link href='/page/conditions-of-use'>Conditions of Use</Link> and{' '}
-            <Link href='/page/privacy-policy'> Privacy Notice. </Link>
+            By creating an account, you agree to {APP_NAME}&apos;s Conditions of
+            Use and Privacy Notice.
           </div>
           <Separator className='h-5 border-b my-5 border-gray-300' />
           <div className='text-xs mb-3'>

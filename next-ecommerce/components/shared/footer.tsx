@@ -6,28 +6,29 @@ import { APP_NAME } from '@/lib/constants'
 
 const columns = [
   {
-    title: 'Get to Know Us',
+    title: 'Shop',
     links: [
-      { label: 'About Us', href: '/page/about-us' },
-      { label: 'Careers', href: '/page/careers' },
-      { label: 'Press', href: '/page/press' },
+      { label: 'All products', href: '/search' },
+      { label: "Today's deals", href: '/search?tag=todays-deal' },
+      { label: 'New arrivals', href: '/search?tag=new-arrival' },
+      { label: 'Best sellers', href: '/search?tag=best-seller' },
     ],
   },
   {
-    title: 'Make Money with Us',
+    title: 'Your account',
     links: [
-      { label: 'Sell products', href: '/page/sell' },
-      { label: 'Become an Affiliate', href: '/page/affiliate' },
-      { label: 'Advertise', href: '/page/advertise' },
+      { label: 'Sign in', href: '/sign-in' },
+      { label: 'Cart', href: '/cart' },
+      { label: 'Checkout', href: '/checkout' },
     ],
   },
   {
-    title: 'Let Us Help You',
+    title: 'Explore',
     links: [
-      { label: 'Your Account', href: '/account' },
-      { label: 'Your Orders', href: '/account/orders' },
-      { label: 'Help', href: '/page/help' },
-      { label: 'Shipping & Returns', href: '/page/shipping' },
+      { label: 'Electronics', href: '/search?category=electronics' },
+      { label: 'Fashion', href: '/search?category=fashion' },
+      { label: 'Home', href: '/search?category=home' },
+      { label: 'Pets', href: '/search?category=pets' },
     ],
   },
 ]
@@ -74,17 +75,6 @@ export default function Footer() {
           >
             {APP_NAME}
           </Link>
-          <div className='flex flex-wrap justify-center gap-4 font-mono text-[11px] uppercase tracking-wider'>
-            <Link href='/page/conditions-of-use' className='hover:text-primary'>
-              Conditions of Use
-            </Link>
-            <Link href='/page/privacy-policy' className='hover:text-primary'>
-              Privacy Policy
-            </Link>
-            <Link href='/page/help' className='hover:text-primary'>
-              Help
-            </Link>
-          </div>
           <p className='text-white/50'>
             © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
           </p>
