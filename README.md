@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.43](./VERSION.md) — Playwright smoke tests. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.44](./VERSION.md) — buyer wishlist. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

@@ -13,9 +13,11 @@ import { getProductReviewsPanel } from '@/lib/actions/review.actions'
 import { Separator } from '@/components/ui/separator'
 import AddToBrowsingHistory from '@/components/shared/product/add-to-browsing-history'
 import AddToCart from '@/components/shared/product/add-to-cart'
+import WishlistToggleButton from '@/components/shared/product/wishlist-toggle-button'
 import { roundToTwoDecimals } from '@/lib/utils'
 import Link from 'next/link'
 import { auth } from '@/auth'
+import { getWishlistStatus } from '@/lib/actions/wishlist.actions'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -43,13 +45,14 @@ export default async function ProductDetails(props: {
   const { slug } = params
   const product = await getProductBySlug(slug)
   const session = await auth()
-  const [relatedProducts, reviewsPanel] = await Promise.all([
+  const [relatedProducts, reviewsPanel, wishlistStatus] = await Promise.all([
     getRelatedProductsByCategory({
       category: product.category,
       productId: product._id,
       page: Number(page || '1'),
     }),
     getProductReviewsPanel(product._id),
+    getWishlistStatus(product._id),
   ])
 
   const avgRating = reviewsPanel.numReviews
@@ -151,6 +154,11 @@ export default async function ProductDetails(props: {
                 }}
               />
             )}
+            <WishlistToggleButton
+              productId={product._id}
+              initialWishlisted={wishlistStatus.wishlisted}
+              signedIn={wishlistStatus.signedIn}
+            />
           </div>
         </aside>
       </section>

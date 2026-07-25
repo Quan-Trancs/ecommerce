@@ -16,6 +16,11 @@ export default async function AccountPage() {
       description: 'Track and view past purchases',
     },
     {
+      href: '/account/wishlist',
+      title: 'Wishlist',
+      description: 'Products you saved for later',
+    },
+    {
       href: '/account/notifications',
       title: 'Notifications',
       description: 'In-app alerts for order messages',

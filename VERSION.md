@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.44 — 2026-07-25
+
+Buyer wishlist / save for later.
+
+### Backend
+- Flyway `V24__wishlist.sql` — `wishlist_items` per account + product
+
+### Frontend
+- PDP buy box: Save for later / Saved toggle
+- `/account/wishlist` — saved products with remove
+- Account hub link
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.44` |
+| Store API | `store-backend/` | `1.3.44` (`store-api`) |
+
+---
+
 ## v1.3.43 — 2026-07-25
 
 Playwright E2E smoke tests for the storefront.
