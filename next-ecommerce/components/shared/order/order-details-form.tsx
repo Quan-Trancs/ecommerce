@@ -59,7 +59,7 @@ export default function OrderDetailsForm({
     paymentMethod === 'PayPal'
       ? 'Cancel & refund (PayPal)'
       : paymentMethod === 'Stripe'
-        ? 'Cancel (Stripe refund N/A)'
+        ? 'Cancel & refund (Stripe)'
         : 'Cancel (no auto-refund)'
 
   return (
@@ -202,8 +202,9 @@ export default function OrderDetailsForm({
                   orderId={order._id}
                   label={isPaid ? paidRefundLabel : 'Cancel order'}
                   confirmMessage={
-                    isPaid && paymentMethod === 'PayPal'
-                      ? 'Cancel this paid order and submit a PayPal refund? Stock will be restored.'
+                    isPaid &&
+                    (paymentMethod === 'PayPal' || paymentMethod === 'Stripe')
+                      ? `Cancel this paid order and submit a ${paymentMethod} refund? Stock will be restored.`
                       : isPaid
                         ? 'Cancel this paid order and restore stock? Automatic refund is not available for this payment method.'
                         : undefined
@@ -217,8 +218,8 @@ export default function OrderDetailsForm({
                 ) : null}
                 {isPaid && paymentMethod === 'Stripe' ? (
                   <p className='text-xs text-muted-foreground'>
-                    Stripe checkout is not enabled yet — cancel restores stock
-                    only; refund manually in Stripe if needed.
+                    Restores stock and refunds the Stripe PaymentIntent when
+                    credentials are configured.
                   </p>
                 ) : null}
               </div>

@@ -5,7 +5,10 @@ import { auth } from '@/auth'
 import { getOrderById } from '@/lib/actions/order.actions'
 import PaymentForm from './payment-form'
 import { hasAdminAccess } from '@/lib/auth/roles'
-//import Stripe from 'stripe'
+import {
+  createOrderPaymentIntent,
+  isStripeConfigured,
+} from '@/lib/stripe'
 
 export const metadata = {
   title: 'Payment',
@@ -25,21 +28,25 @@ const CheckoutPaymentPage = async (props: {
 
   const session = await auth()
 
-  /*let client_secret = null
-  if (order.paymentMethod === 'Stripe' && !order.isPaid) {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(order.totalPrice * 100),
-      currency: 'USD',
-      metadata: { orderId: order._id },
-    })
-    client_secret = paymentIntent.client_secret
-  }*/
+  let clientSecret: string | null = null
+  if (order.paymentMethod === 'Stripe' && !order.isPaid && isStripeConfigured()) {
+    try {
+      const paymentIntent = await createOrderPaymentIntent({
+        orderId: order._id,
+        amountCents: Math.round(order.totalPrice * 100),
+      })
+      clientSecret = paymentIntent.client_secret
+    } catch (e) {
+      console.error('Stripe PaymentIntent create failed', e)
+      clientSecret = null
+    }
+  }
+
   return (
     <PaymentForm
       order={order}
       paypalClientId={process.env.PAYPAL_CLIENT_ID || 'sb'}
-      clientSecret={''}
+      clientSecret={clientSecret}
       isAdmin={hasAdminAccess(session?.user?.role)}
     />
   )

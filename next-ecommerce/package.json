@@ -1,6 +1,6 @@
 {
   "name": "next-ecommerce",
-  "version": "1.3.10",
+  "version": "1.3.11",
   "private": true,
   "scripts": {
     "email": "email dev",
@@ -22,6 +22,8 @@
     "@radix-ui/react-separator": "^1.1.2",
     "@radix-ui/react-slot": "^1.2.0",
     "@react-email/components": "^0.0.36",
+    "@stripe/react-stripe-js": "^6.8.0",
+    "@stripe/stripe-js": "^9.12.0",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -39,6 +41,7 @@
     "react-medium-image-zoom": "^5.2.14",
     "resend": "^4.2.0",
     "sonner": "^2.0.2",
+    "stripe": "^22.3.2",
     "tailwind-merge": "^3.0.2",
     "tw-animate-css": "^1.2.4",
     "zod": "^3.24.2",

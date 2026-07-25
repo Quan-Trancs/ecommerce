@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.11 — 2026-07-25
+
+Enable Stripe Payment Element checkout and PaymentIntent refunds on cancel.
+
+### Frontend
+- Checkout creates a Stripe PaymentIntent when method is Stripe (keys required)
+- Payment Element form + `approveStripeOrder` marks order paid
+- Support/admin paid cancel refunds via Stripe when `pi_…` is stored
+- `env.example` documents `STRIPE_SECRET_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.11` |
+| Store API | `store-backend/` | `1.3.11` (`store-api`) |
+
+---
+
 ## v1.3.10 — 2026-07-25
 
 Buyer order list filters by status and date range.

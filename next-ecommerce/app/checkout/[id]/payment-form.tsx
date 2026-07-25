@@ -5,6 +5,8 @@ import {
   PayPalScriptProvider,
   usePayPalScriptReducer,
 } from '@paypal/react-paypal-js'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   approvePayPalOrder,
@@ -18,15 +20,18 @@ import { redirect, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import ProductPrice from '@/components/shared/product/product-price'
 import { toast } from 'sonner'
+import StripeForm from './stripe-form'
 
-// TODO: Add stripe
-/*const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string
-)*/
+const stripePublishableKey =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+const stripePromise = stripePublishableKey
+  ? loadStripe(stripePublishableKey)
+  : null
 
 export default function OrderDetailsForm({
   order,
   paypalClientId,
+  clientSecret,
 }: {
   order: IOrder
   paypalClientId: string
@@ -135,12 +140,9 @@ export default function OrderDetailsForm({
               </div>
             )}
 
-            {/* TODO: Add stripe */}
-            {/*!isPaid && paymentMethod === 'Stripe' && clientSecret && (
+            {!isPaid && paymentMethod === 'Stripe' && clientSecret && stripePromise ? (
               <Elements
-                options={{
-                  clientSecret,
-                }}
+                options={{ clientSecret }}
                 stripe={stripePromise}
               >
                 <StripeForm
@@ -148,7 +150,16 @@ export default function OrderDetailsForm({
                   orderId={order._id}
                 />
               </Elements>
-            )*/}
+            ) : null}
+
+            {!isPaid && paymentMethod === 'Stripe' && !clientSecret ? (
+              <p className='text-sm text-muted-foreground'>
+                Stripe is not configured. Set{' '}
+                <code className='text-xs'>STRIPE_SECRET_KEY</code> and{' '}
+                <code className='text-xs'>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>
+                , or choose PayPal at checkout.
+              </p>
+            ) : null}
 
             {!isPaid && paymentMethod === 'Cash On Delivery' && (
               <Button
@@ -168,7 +179,6 @@ export default function OrderDetailsForm({
     <main className='max-w-6xl mx-auto'>
       <div className='grid md:grid-cols-4 gap-6'>
         <div className='md:col-span-3'>
-          {/* Shipping Address */}
           <div>
             <div className='grid md:grid-cols-3 my-3 pb-3'>
               <div className='text-lg font-bold'>
@@ -184,7 +194,6 @@ export default function OrderDetailsForm({
             </div>
           </div>
 
-          {/* payment method */}
           <div className='border-y'>
             <div className='grid md:grid-cols-3 my-3 pb-3'>
               <div className='text-lg font-bold'>

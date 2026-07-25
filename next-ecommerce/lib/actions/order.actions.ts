@@ -18,6 +18,7 @@ import {
 } from '@/lib/catalog/client'
 import { hasSupportAccess } from '@/lib/auth/roles'
 import type { StoreTokenSubject } from '@/lib/auth/store-token'
+import { refundPaymentIntent, retrievePaymentIntent } from '@/lib/stripe'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -287,6 +288,51 @@ export async function approvePayPalOrder(
   }
 }
 
+export async function approveStripeOrder(
+  orderId: string,
+  data: { paymentIntentId: string }
+) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error('User not authenticated')
+    const subject = subjectFromSession(session)
+
+    const paymentIntent = await retrievePaymentIntent(data.paymentIntentId)
+    if (paymentIntent.status !== 'succeeded') {
+      throw new Error(`Stripe payment not completed (${paymentIntent.status})`)
+    }
+    if (paymentIntent.metadata?.orderId && paymentIntent.metadata.orderId !== orderId) {
+      throw new Error('PaymentIntent does not match this order')
+    }
+
+    const storeOrder = await fetchStoreOrder(orderId, subject)
+    if (!storeOrder) throw new Error('Order not found')
+
+    const amountPaid =
+      typeof paymentIntent.amount_received === 'number'
+        ? (paymentIntent.amount_received / 100).toFixed(2)
+        : undefined
+
+    await payStoreOrder(
+      orderId,
+      {
+        id: paymentIntent.id,
+        status: paymentIntent.status,
+        pricePaid: amountPaid,
+        paymentMethod: 'Stripe',
+      },
+      subject
+    )
+    revalidatePath(`/account/orders/${orderId}`)
+    return {
+      success: true as const,
+      message: 'Your order has been successfully paid by Stripe',
+    }
+  } catch (err) {
+    return { success: false as const, message: formatError(err) }
+  }
+}
+
 export async function cancelOrder(orderId: string) {
   try {
     const session = await auth()
@@ -334,10 +380,18 @@ export async function cancelOrder(orderId: string) {
           refundStatus: refund?.status || 'COMPLETED',
         }
       } else if (paymentMethod === 'stripe') {
+        const paymentIntentId = resolveStripePaymentIntentId(
+          storeOrder.paymentResultJson
+        )
+        if (!paymentIntentId) {
+          throw new Error(
+            'Cannot refund: Stripe PaymentIntent id missing. Cancel aborted — refund manually in Stripe, then retry.'
+          )
+        }
+        const refund = await refundPaymentIntent(paymentIntentId)
         refundMeta = {
-          refundSkipped: true,
-          refundNote:
-            'Stripe checkout is not enabled; cancel restored stock without processor refund',
+          refundId: refund.id,
+          refundStatus: refund.status || 'succeeded',
         }
       } else {
         refundMeta = {
@@ -352,11 +406,13 @@ export async function cancelOrder(orderId: string) {
     revalidatePath('/account/orders')
     revalidatePath('/seller/orders')
     revalidatePath('/support')
+    revalidatePath('/admin/orders')
 
     if (refundMeta?.refundId) {
+      const processor = paymentMethod === 'stripe' ? 'Stripe' : 'PayPal'
       return {
         success: true as const,
-        message: 'Order cancelled, stock restored, and PayPal refund submitted',
+        message: `Order cancelled, stock restored, and ${processor} refund submitted`,
       }
     }
     if (refundMeta?.refundSkipped) {
@@ -381,6 +437,25 @@ type PaymentResultShape = {
   captureId?: string
   price_paid?: string
   refund_id?: string
+  payment_intent_id?: string
+}
+
+function resolveStripePaymentIntentId(
+  paymentResultJson?: string | null
+): string | null {
+  if (!paymentResultJson) return null
+  let parsed: PaymentResultShape
+  try {
+    parsed = JSON.parse(paymentResultJson) as PaymentResultShape
+  } catch {
+    return null
+  }
+  if (parsed.refund_id) {
+    throw new Error('Order payment already has a refund recorded')
+  }
+  const id = parsed.payment_intent_id || parsed.id
+  if (id && String(id).startsWith('pi_')) return String(id)
+  return id ? String(id) : null
 }
 
 async function resolvePayPalCaptureId(
