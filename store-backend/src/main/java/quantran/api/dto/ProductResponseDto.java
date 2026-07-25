@@ -39,6 +39,7 @@ public class ProductResponseDto {
     private Integer numReviews;
     private Integer numSales;
     private Boolean isPublished;
+    private String sellerAccountId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

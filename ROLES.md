@@ -273,5 +273,7 @@ Flyway: `V4__accounts_roles_seller.sql`
 - ~~Seller order fulfillment join (order items × seller products)~~ (v1.2.2)
 - ~~Sync NextAuth role changes → store accounts~~ (v1.2.3 — admin UI + mint upsert)
 - ~~Seller product edit (price/stock form) beyond publish toggle~~ (v1.2.4)
-- Harden admin catalog page against `/v1/admin/products`
+- ~~Harden admin catalog page against `/v1/admin/products`~~ (v1.2.5)
 - Optional SUPPORT role if you need customer-service without full admin
+- Cart server revalidation / persistent cart (still client Zustand)
+- Unify Mongo vs store order history when both backends are used

@@ -31,6 +31,7 @@ public final class ProductMapper {
                 .numReviews(product.getNumReviews())
                 .numSales(product.getNumSales())
                 .isPublished(product.getIsPublished())
+                .sellerAccountId(product.getSellerAccountId())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt());
 

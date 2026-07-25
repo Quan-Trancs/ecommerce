@@ -1,5 +1,24 @@
 # Version History
 
+## v1.2.5 — 2026-07-24
+
+Admin catalog moderation: list/create/update platform products via `/v1/admin/products`.
+
+### Backend
+- `GET /v1/admin/products` (X-Admin-Key)
+- Product DTO includes `sellerAccountId`
+
+### Frontend
+- `/admin/catalog` — create form, publish toggle, price/stock edit
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.2.5` |
+| Store API | `store-backend/` | `1.2.5` (`store-api`) |
+
+---
+
 ## v1.2.4 — 2026-07-24
 
 Seller product inline price/stock editing on `/seller/products`.
