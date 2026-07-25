@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.12 — 2026-07-25
+
+Seller dashboard analytics: sales revenue and unshipped fulfillment counts.
+
+### Backend
+- `GET /v1/seller/analytics` — products, paid sales (seller lines only), needs-ship orders, unshipped units, last-30-day sales
+
+### Frontend
+- Seller overview shows sales / needs-shipping / product / order snapshot
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.12` |
+| Store API | `store-backend/` | `1.3.12` (`store-api`) |
+
+---
+
 ## v1.3.11 — 2026-07-25
 
 Enable Stripe Payment Element checkout and PaymentIntent refunds on cancel.

@@ -11,6 +11,7 @@ import quantran.api.dto.AdminProductCreateRequestDto;
 import quantran.api.dto.AdminProductUpdateRequestDto;
 import quantran.api.dto.OrderResponseDto;
 import quantran.api.dto.ProductResponseDto;
+import quantran.api.dto.SellerAnalyticsDto;
 import quantran.api.dto.UpdateOrderStatusRequestDto;
 import quantran.api.exception.BusinessLogicException;
 import quantran.api.exception.UnauthorizedException;
@@ -21,6 +22,8 @@ import quantran.api.service.SellerProductService;
 import quantran.api.entity.ProductEntity;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,6 +82,84 @@ public class SellerController {
                 .map(ProductEntity::getId)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(orderService.listContainingProducts(productIds));
+    }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<SellerAnalyticsDto> analytics(HttpServletRequest request) {
+        AccountEntity seller = requireSeller(request);
+        List<ProductEntity> products = productRepository.findBySellerAccountId(seller.getId());
+        List<String> productIds = products.stream()
+                .map(ProductEntity::getId)
+                .collect(Collectors.toList());
+        List<OrderResponseDto> orders = orderService.listContainingProducts(productIds);
+
+        int published = 0;
+        int lowStock = 0;
+        for (ProductEntity product : products) {
+            if (Boolean.TRUE.equals(product.getIsPublished())) {
+                published++;
+            }
+            int stock = product.getStockQuantity() == null ? 0 : product.getStockQuantity();
+            if (stock <= 5) {
+                lowStock++;
+            }
+        }
+
+        LocalDateTime since = LocalDateTime.now().minusDays(30);
+        int ordersPaid = 0;
+        int ordersNeedingShip = 0;
+        int unshippedUnits = 0;
+        BigDecimal salesRevenue = BigDecimal.ZERO;
+        BigDecimal salesLast30 = BigDecimal.ZERO;
+
+        for (OrderResponseDto order : orders) {
+            String status = order.getStatus() == null ? "" : order.getStatus().toUpperCase();
+            if ("CANCELLED".equals(status)) {
+                continue;
+            }
+            boolean paid = Boolean.TRUE.equals(order.getIsPaid())
+                    || "PAID".equals(status)
+                    || "SHIPPED".equals(status);
+            if (!paid) {
+                continue;
+            }
+            ordersPaid++;
+
+            BigDecimal sellerTotal = BigDecimal.ZERO;
+            boolean needsShip = false;
+            if (order.getItems() != null) {
+                for (OrderResponseDto.OrderItemDto item : order.getItems()) {
+                    BigDecimal line = item.getPrice() == null
+                            ? BigDecimal.ZERO
+                            : item.getPrice().multiply(BigDecimal.valueOf(
+                                    item.getQuantity() == null ? 0 : item.getQuantity()));
+                    sellerTotal = sellerTotal.add(line);
+                    if (!Boolean.TRUE.equals(item.getIsShipped())) {
+                        needsShip = true;
+                        unshippedUnits += item.getQuantity() == null ? 0 : item.getQuantity();
+                    }
+                }
+            }
+            salesRevenue = salesRevenue.add(sellerTotal);
+            if (order.getCreatedAt() != null && !order.getCreatedAt().isBefore(since)) {
+                salesLast30 = salesLast30.add(sellerTotal);
+            }
+            if (needsShip && !"SHIPPED".equals(status)) {
+                ordersNeedingShip++;
+            }
+        }
+
+        return ResponseEntity.ok(SellerAnalyticsDto.builder()
+                .productsTotal(products.size())
+                .productsPublished(published)
+                .productsLowStock(lowStock)
+                .ordersTotal(orders.size())
+                .ordersPaid(ordersPaid)
+                .ordersNeedingShip(ordersNeedingShip)
+                .unshippedUnits(unshippedUnits)
+                .salesRevenue(salesRevenue)
+                .salesRevenueLast30Days(salesLast30)
+                .build());
     }
 
     @PatchMapping("/orders/{id}/status")

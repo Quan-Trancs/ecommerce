@@ -165,6 +165,44 @@ export async function listSellerOrders(): Promise<SellerOrder[]> {
   }))
 }
 
+export type SellerAnalytics = {
+  productsTotal: number
+  productsPublished: number
+  productsLowStock: number
+  ordersTotal: number
+  ordersPaid: number
+  ordersNeedingShip: number
+  unshippedUnits: number
+  salesRevenue: number
+  salesRevenueLast30Days: number
+}
+
+export async function getSellerAnalytics(): Promise<SellerAnalytics> {
+  const subject = await requireSellerSubject()
+  const data = await sellerFetch<{
+    productsTotal: number
+    productsPublished: number
+    productsLowStock: number
+    ordersTotal: number
+    ordersPaid: number
+    ordersNeedingShip: number
+    unshippedUnits: number
+    salesRevenue: number
+    salesRevenueLast30Days: number
+  }>('/v1/seller/analytics', subject)
+  return {
+    productsTotal: Number(data.productsTotal) || 0,
+    productsPublished: Number(data.productsPublished) || 0,
+    productsLowStock: Number(data.productsLowStock) || 0,
+    ordersTotal: Number(data.ordersTotal) || 0,
+    ordersPaid: Number(data.ordersPaid) || 0,
+    ordersNeedingShip: Number(data.ordersNeedingShip) || 0,
+    unshippedUnits: Number(data.unshippedUnits) || 0,
+    salesRevenue: Number(data.salesRevenue) || 0,
+    salesRevenueLast30Days: Number(data.salesRevenueLast30Days) || 0,
+  }
+}
+
 export async function markSellerOrderShipped(orderId: string) {
   try {
     const subject = await requireSellerSubject()

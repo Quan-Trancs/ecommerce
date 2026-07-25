@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.11](./VERSION.md) — Stripe checkout + refunds. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.12](./VERSION.md) — seller analytics. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

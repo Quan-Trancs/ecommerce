@@ -266,7 +266,7 @@ store-backend/src/main/java/quantran/api/
   controller/
     AuthController.java      # mints JWT + upserts account (role claim)
     AccountController.java   # /v1/accounts/me, list, PATCH role (admin)
-    SellerController.java    # /v1/seller/me|products|orders (GET/POST/PATCH products; PATCH order status)
+    SellerController.java    # /v1/seller/me|products|orders|analytics; PATCH order status
     OrderController.java     # Bearer + owner checks; GET /me; assist/recent|by-email; POST /{id}/cancel
     ProductAdminController   # platform catalog writes (X-Admin-Key)
   entity/ProductEntity.java  # seller_account_id ownership
@@ -301,5 +301,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Admin order overview (platform-wide list beyond support assist)~~ (v1.3.9)
 - ~~Buyer order list filters (status / date)~~ (v1.3.10)
 - ~~Enable Stripe checkout + PaymentIntent refunds~~ (v1.3.11)
-- Seller analytics (sales / unshipped counts)
+- ~~Seller analytics (sales / unshipped counts)~~ (v1.3.12)
 - Webhook-driven payment confirmation (PayPal / Stripe) as backup to client approve
