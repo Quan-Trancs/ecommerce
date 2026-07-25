@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.59 — 2026-07-25
+
+Product Q&A on the PDP.
+
+### Backend
+- Flyway `V32__product_qa.sql` — questions with one seller/admin answer
+
+### Frontend
+- PDP Q&A panel under reviews
+- Signed-in buyers ask; product seller or admin answers
+- Asker can remove unanswered questions
+- In-app notify seller on ask / asker on answer
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.59` |
+| Store API | `store-backend/` | `1.3.59` (`store-api`) |
+
+---
+
 ## v1.3.58 — 2026-07-25
 
 Abandoned-cart email reminders for signed-in carts.

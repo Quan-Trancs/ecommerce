@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.58](./VERSION.md) — abandoned cart emails. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.59](./VERSION.md) — product Q&A. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

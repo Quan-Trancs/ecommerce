@@ -2,6 +2,7 @@ import ProductGallery from '@/components/shared/product/product-gallery'
 import ProductPrice from '@/components/shared/product/product-price'
 import ProductSlider from '@/components/shared/product/product-slider'
 import ProductReviewsPanel from '@/components/shared/product/product-reviews-panel'
+import ProductQaPanel from '@/components/shared/product/product-qa-panel'
 import Rating from '@/components/shared/product/rating'
 import SelectVariant from '@/components/shared/product/select-variant'
 import BrowsingHistoryList from '@/components/shared/browsing-history-list'
@@ -10,6 +11,7 @@ import {
   getRelatedProductsByCategory,
 } from '@/lib/actions/product.actions'
 import { getProductReviewsPanel } from '@/lib/actions/review.actions'
+import { getProductQaPanel } from '@/lib/actions/qa.actions'
 import { Separator } from '@/components/ui/separator'
 import AddToBrowsingHistory from '@/components/shared/product/add-to-browsing-history'
 import AddToCart from '@/components/shared/product/add-to-cart'
@@ -46,15 +48,17 @@ export default async function ProductDetails(props: {
   const { slug } = params
   const product = await getProductBySlug(slug)
   const session = await auth()
-  const [relatedProducts, reviewsPanel, wishlistStatus] = await Promise.all([
-    getRelatedProductsByCategory({
-      category: product.category,
-      productId: product._id,
-      page: Number(page || '1'),
-    }),
-    getProductReviewsPanel(product._id),
-    getWishlistStatus(product._id),
-  ])
+  const [relatedProducts, reviewsPanel, qaPanel, wishlistStatus] =
+    await Promise.all([
+      getRelatedProductsByCategory({
+        category: product.category,
+        productId: product._id,
+        page: Number(page || '1'),
+      }),
+      getProductReviewsPanel(product._id),
+      getProductQaPanel(product._id),
+      getWishlistStatus(product._id),
+    ])
   const relatedWishlist = await getWishlistStatusesForProducts(
     (relatedProducts.data || []).map((p) => p._id)
   )
@@ -186,6 +190,15 @@ export default async function ProductDetails(props: {
         avgRating={reviewsPanel.avgRating}
         numReviews={reviewsPanel.numReviews}
         ratingDistribution={reviewsPanel.ratingDistribution}
+      />
+
+      <ProductQaPanel
+        productId={product._id}
+        productSlug={product.slug}
+        signedIn={Boolean(session?.user?.id)}
+        canAnswer={qaPanel.canAnswer}
+        accountId={session?.user?.id}
+        questions={qaPanel.questions}
       />
 
       <section className='store-section'>
