@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import {
   hasAdminAccess,
   hasSellerAccess,
+  hasSupportAccess,
   homePathForRole,
   roleLabel,
 } from '@/lib/auth/roles'
@@ -66,6 +67,11 @@ export default async function UserButton() {
               {hasSellerAccess(session.user.role) && (
                 <Link className='w-full' href='/seller'>
                   <DropdownMenuItem>Seller dashboard</DropdownMenuItem>
+                </Link>
+              )}
+              {hasSupportAccess(session.user.role) && (
+                <Link className='w-full' href='/support'>
+                  <DropdownMenuItem>Support desk</DropdownMenuItem>
                 </Link>
               )}
               {hasAdminAccess(session.user.role) && (

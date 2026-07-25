@@ -53,6 +53,15 @@ const users: IUserInput[] = [
     paymentMethod: 'Stripe',
     emailVerified: false,
   },
+  {
+    name: 'Support Demo',
+    email: 'support@example.com',
+    password: bcrypt.hashSync('SupportPass123!', 5),
+    role: ROLES.SUPPORT,
+    address: { ...defaultAddress, fullName: 'Support Demo' },
+    paymentMethod: 'PayPal',
+    emailVerified: false,
+  },
 ]
 
 const data = {

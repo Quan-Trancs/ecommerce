@@ -5,20 +5,29 @@
 export const ROLES = {
   BUYER: 'BUYER',
   SELLER: 'SELLER',
+  SUPPORT: 'SUPPORT',
   ADMIN: 'ADMIN',
 } as const
 
 export type Role = (typeof ROLES)[keyof typeof ROLES]
 
-export const ALL_ROLES: Role[] = [ROLES.BUYER, ROLES.SELLER, ROLES.ADMIN]
+export const ALL_ROLES: Role[] = [
+  ROLES.BUYER,
+  ROLES.SELLER,
+  ROLES.SUPPORT,
+  ROLES.ADMIN,
+]
 
-/** Self-serve signup options (admin is invite-only / seeded). */
+/** Self-serve signup options (admin / support are invite-only). */
 export const SIGNUP_ROLES: Role[] = [ROLES.BUYER, ROLES.SELLER]
 
 const LEGACY_ROLE_MAP: Record<string, Role> = {
   user: ROLES.BUYER,
   buyer: ROLES.BUYER,
   seller: ROLES.SELLER,
+  support: ROLES.SUPPORT,
+  cs: ROLES.SUPPORT,
+  customer_service: ROLES.SUPPORT,
   admin: ROLES.ADMIN,
   moderator: ROLES.ADMIN,
 }
@@ -42,6 +51,11 @@ export function hasSellerAccess(role?: string | null) {
   return isRole(role, [ROLES.SELLER, ROLES.ADMIN])
 }
 
+/** Customer-service access: view any order without full admin. */
+export function hasSupportAccess(role?: string | null) {
+  return isRole(role, [ROLES.SUPPORT, ROLES.ADMIN])
+}
+
 export function hasAdminAccess(role?: string | null) {
   return isRole(role, ROLES.ADMIN)
 }
@@ -49,6 +63,7 @@ export function hasAdminAccess(role?: string | null) {
 export function homePathForRole(role?: string | null): string {
   const r = normalizeRole(role)
   if (r === ROLES.ADMIN) return '/admin'
+  if (r === ROLES.SUPPORT) return '/support'
   if (r === ROLES.SELLER) return '/seller'
   return '/account'
 }
@@ -57,6 +72,8 @@ export function roleLabel(role?: string | null): string {
   switch (normalizeRole(role)) {
     case ROLES.SELLER:
       return 'Seller'
+    case ROLES.SUPPORT:
+      return 'Support'
     case ROLES.ADMIN:
       return 'Admin'
     default:

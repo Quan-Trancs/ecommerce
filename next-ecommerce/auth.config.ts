@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextAuthConfig } from 'next-auth'
-import { hasAdminAccess, hasSellerAccess, normalizeRole } from '@/lib/auth/roles'
+import {
+  hasAdminAccess,
+  hasSellerAccess,
+  hasSupportAccess,
+  normalizeRole,
+} from '@/lib/auth/roles'
 
 export default {
   providers: [],
@@ -13,6 +18,7 @@ export default {
         /^\/checkout(\/.*)?$/.test(pathname) ||
         /^\/account(\/.*)?$/.test(pathname) ||
         /^\/seller(\/.*)?$/.test(pathname) ||
+        /^\/support(\/.*)?$/.test(pathname) ||
         /^\/admin(\/.*)?$/.test(pathname)
 
       if (!needsAuth) return true
@@ -21,6 +27,9 @@ export default {
       const role = normalizeRole(auth.user.role)
 
       if (/^\/seller(\/.*)?$/.test(pathname) && !hasSellerAccess(role)) {
+        return NextResponse.redirect(new URL('/account', request.url))
+      }
+      if (/^\/support(\/.*)?$/.test(pathname) && !hasSupportAccess(role)) {
         return NextResponse.redirect(new URL('/account', request.url))
       }
       if (/^\/admin(\/.*)?$/.test(pathname) && !hasAdminAccess(role)) {

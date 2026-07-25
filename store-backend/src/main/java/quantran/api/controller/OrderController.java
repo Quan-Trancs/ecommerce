@@ -39,14 +39,25 @@ public class OrderController {
         return ResponseEntity.ok(orderService.listByUser(userId));
     }
 
+    /** Recent orders for SUPPORT / ADMIN customer service. */
+    @GetMapping("/assist/recent")
+    public ResponseEntity<List<OrderResponseDto>> listRecentForAssist(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "40") int limit
+    ) {
+        requireAssist(request);
+        int capped = Math.max(1, Math.min(limit, 100));
+        return ResponseEntity.ok(orderService.listRecent(capped));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponseDto> getById(
             HttpServletRequest request,
             @PathVariable String id
     ) {
         String userId = requireUserId(request);
-        boolean admin = isAdmin(request);
-        return ResponseEntity.ok(orderService.getByIdForUser(id, userId, admin));
+        boolean elevate = canAssist(request);
+        return ResponseEntity.ok(orderService.getByIdForUser(id, userId, elevate));
     }
 
     @PostMapping("/{id}/pay")
@@ -65,7 +76,22 @@ public class OrderController {
                 .orElseThrow(() -> new UnauthorizedException("Bearer token required"));
     }
 
+    private Role requestRole(HttpServletRequest request) {
+        return Role.from(jwtAuthSupport.resolveRole(request).orElse(null));
+    }
+
     private boolean isAdmin(HttpServletRequest request) {
-        return Role.from(jwtAuthSupport.resolveRole(request).orElse(null)).isAdmin();
+        return requestRole(request).isAdmin();
+    }
+
+    private boolean canAssist(HttpServletRequest request) {
+        return requestRole(request).canAssist();
+    }
+
+    private void requireAssist(HttpServletRequest request) {
+        requireUserId(request);
+        if (!canAssist(request)) {
+            throw new UnauthorizedException("Support or admin role required");
+        }
     }
 }

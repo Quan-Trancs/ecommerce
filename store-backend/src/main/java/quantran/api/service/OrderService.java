@@ -154,6 +154,15 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrderResponseDto> listRecent(int limit) {
+        return orderRepository.findRecentDetailed(
+                        org.springframework.data.domain.PageRequest.of(0, Math.max(1, limit))
+                ).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public OrderResponseDto getByIdForUser(String id, String userId, boolean admin) {
         OrderEntity order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));

@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.4 — 2026-07-25
+
+SUPPORT role for customer service: view any order without full admin.
+
+### Backend
+- `Role.SUPPORT` with `canAssist()`
+- `GET /v1/orders/assist/recent` (SUPPORT/ADMIN)
+- Order get elevates for SUPPORT (pay remains owner/ADMIN)
+
+### Frontend
+- `/support` order lookup + recent list
+- Admin can assign SUPPORT; seed `support@example.com` / `SupportPass123!`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.4` |
+| Store API | `store-backend/` | `1.3.4` (`store-api`) |
+
+---
+
 ## v1.3.3 — 2026-07-25
 
 Seller can mark paid orders as shipped.

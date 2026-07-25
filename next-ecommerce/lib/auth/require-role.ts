@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import {
   hasAdminAccess,
   hasSellerAccess,
+  hasSupportAccess,
   normalizeRole,
   type Role,
   ROLES,
@@ -34,6 +35,14 @@ export async function requireSeller() {
   return session
 }
 
+export async function requireSupport() {
+  const session = await requireSession()
+  if (!hasSupportAccess(session.user.role)) {
+    redirect('/account')
+  }
+  return session
+}
+
 export async function requireAdmin() {
   const session = await requireSession()
   if (!hasAdminAccess(session.user.role)) {
@@ -44,6 +53,7 @@ export async function requireAdmin() {
 
 function homePathFallback(role: Role) {
   if (role === ROLES.ADMIN) return '/admin'
+  if (role === ROLES.SUPPORT) return '/support'
   if (role === ROLES.SELLER) return '/seller'
   return '/account'
 }

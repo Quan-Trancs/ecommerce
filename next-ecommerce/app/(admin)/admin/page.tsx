@@ -17,7 +17,7 @@ export default function AdminHomePage() {
           >
             <h2 className='font-semibold'>Users & roles</h2>
             <p className='text-sm text-muted-foreground'>
-              Buyer / seller / admin accounts
+              Buyer / seller / support / admin accounts
             </p>
           </Link>
         </li>

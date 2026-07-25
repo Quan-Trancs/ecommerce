@@ -5,6 +5,7 @@ import java.util.Locale;
 public enum Role {
     BUYER,
     SELLER,
+    SUPPORT,
     ADMIN;
 
     public static Role from(String value) {
@@ -14,6 +15,9 @@ public enum Role {
         String normalized = value.trim().toUpperCase(Locale.ROOT);
         if ("USER".equals(normalized) || "CUSTOMER".equals(normalized)) {
             return BUYER;
+        }
+        if ("CS".equals(normalized) || "CUSTOMER_SERVICE".equals(normalized)) {
+            return SUPPORT;
         }
         if ("MODERATOR".equals(normalized)) {
             return ADMIN;
@@ -27,6 +31,11 @@ public enum Role {
 
     public boolean canSell() {
         return this == SELLER || this == ADMIN;
+    }
+
+    /** View any order / assist buyers without full admin powers. */
+    public boolean canAssist() {
+        return this == SUPPORT || this == ADMIN;
     }
 
     public boolean isAdmin() {

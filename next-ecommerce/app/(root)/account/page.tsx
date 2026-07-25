@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { requireSession } from '@/lib/auth/require-role'
-import { hasAdminAccess, hasSellerAccess, roleLabel } from '@/lib/auth/roles'
+import { hasAdminAccess, hasSellerAccess, hasSupportAccess, roleLabel } from '@/lib/auth/roles'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const metadata = { title: 'Your Account' }
@@ -26,6 +26,15 @@ export default async function AccountPage() {
             href: '/seller',
             title: 'Seller dashboard',
             description: 'Manage listings and seller orders',
+          },
+        ]
+      : []),
+    ...(hasSupportAccess(role)
+      ? [
+          {
+            href: '/support',
+            title: 'Support desk',
+            description: 'Look up customer orders',
           },
         ]
       : []),

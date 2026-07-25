@@ -15,6 +15,12 @@ public interface OrderRepository extends JpaRepository<OrderEntity, String> {
     @Query("SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.id = :id")
     Optional<OrderEntity> findDetailedById(@Param("id") String id);
 
+    @Query(
+            value = "SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items ORDER BY o.createdAt DESC",
+            countQuery = "SELECT COUNT(o) FROM OrderEntity o"
+    )
+    List<OrderEntity> findRecentDetailed(org.springframework.data.domain.Pageable pageable);
+
     @Query("SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items " +
             "WHERE o.id IN (" +
             "  SELECT DISTINCT oi.order.id FROM OrderItemEntity oi WHERE oi.productId IN :productIds" +

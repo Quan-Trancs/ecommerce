@@ -6,6 +6,7 @@ Roles used across **storefront** (`next-ecommerce`) and **store API** (`store-ba
 |------|-----|--------------|--------------|
 | **BUYER** | Shoppers | `/account` | Browse, cart, checkout, own orders |
 | **SELLER** | Merchants | `/seller` | Buyer capabilities + seller workspace + seller APIs |
+| **SUPPORT** | Customer service | `/support` | Buyer capabilities + view any order (no catalog/user admin) |
 | **ADMIN** | Platform ops | `/admin` | All of the above + user/role admin + catalog override |
 
 Legacy strings `User` / `Admin` are normalized to `BUYER` / `ADMIN` on login.
@@ -71,7 +72,12 @@ flowchart LR
   SELLER --> SellerAPI["/v1/seller/*"]
   SELLER --> OwnListings["Own products"]
 
+  SUPPORT --> BUYER
+  SUPPORT --> SupportUI["/support"]
+  SUPPORT --> AnyOrderView["Any order (read)"]
+
   ADMIN --> SELLER
+  ADMIN --> SUPPORT
   ADMIN --> AdminUI["/admin"]
   ADMIN --> AccountsAPI["/v1/accounts"]
   ADMIN --> AdminProducts["/v1/admin/products"]
@@ -86,11 +92,14 @@ flowchart TD
 
   Role -->|BUYER| BuyerHome["/account · /checkout"]
   Role -->|SELLER| SellerHome["/seller + buyer routes"]
-  Role -->|ADMIN| AdminHome["/admin + seller + buyer"]
+  Role -->|SUPPORT| SupportHome["/support + buyer routes"]
+  Role -->|ADMIN| AdminHome["/admin + seller + support + buyer"]
 
   BuyerHome -.->|blocked| SellerBlock["/seller → redirect /account"]
+  BuyerHome -.->|blocked| SupportBlock["/support → redirect /account"]
   BuyerHome -.->|blocked| AdminBlock["/admin → redirect /account"]
   SellerHome -.->|blocked| AdminBlock
+  SupportHome -.->|blocked| AdminBlock
 ```
 
 ---
@@ -229,16 +238,18 @@ next-ecommerce/
     users.ts              # accounts CRUD for NextAuth
   app/(root)/account/     # Buyer hub + orders
   app/(seller)/seller/    # Seller overview, products, orders (shell)
+  app/(support)/support/  # Support order lookup + recent orders
   app/(admin)/admin/      # Admin overview, users, catalog (shell)
-  auth.config.ts          # Route guards for /account /seller /admin
+  auth.config.ts          # Route guards for /account /seller /support /admin
 ```
 
-Signup lets users choose **Buyer** or **Seller**. Admin is seeded only (`admin@example.com`).
+Signup lets users choose **Buyer** or **Seller**. Admin and support are invite-only / seeded.
 
 Demo seeds (after `npm run seed` with Postgres up):
 
 - `buyer@example.com` / `BuyerPass123!`
 - `seller@example.com` / `SellerPass123!`
+- `support@example.com` / `SupportPass123!`
 - `admin@example.com` / env `ADMIN_PASSWORD`
 
 ## Backend layout
@@ -256,7 +267,7 @@ store-backend/src/main/java/quantran/api/
     AuthController.java      # mints JWT + upserts account (role claim)
     AccountController.java   # /v1/accounts/me, list, PATCH role (admin)
     SellerController.java    # /v1/seller/me|products|orders (GET/POST/PATCH products; PATCH order status)
-    OrderController.java     # Bearer + owner checks; GET /me
+    OrderController.java     # Bearer + owner checks; GET /me; GET /assist/recent (SUPPORT/ADMIN)
     ProductAdminController   # platform catalog writes (X-Admin-Key)
   entity/ProductEntity.java  # seller_account_id ownership
 ```
@@ -267,8 +278,8 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 
 1. NextAuth owns login against Postgres `accounts` (`password_hash` + `role`).
 2. Server actions mint API JWT via `mintStoreAccessToken` → `POST /v1/auth/token` with `X-Admin-Key` (never from the browser).
-3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get/pay also enforce owner (or ADMIN).
-4. `GET /v1/orders/me` backs the buyer order list.
+3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get elevates for SUPPORT/ADMIN; pay stays owner or ADMIN.
+4. `GET /v1/orders/me` backs the buyer order list; `GET /v1/orders/assist/recent` for support.
 5. Signed-in carts persist via `GET/PUT/DELETE /v1/cart` (Zustand + localStorage for guests / offline UI).
 
 ## Next build steps
@@ -282,5 +293,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Cart server revalidation / persistent cart~~ (v1.3.1)
 - ~~Debounce cart PUT traffic / revalidate line prices against live catalog on hydrate~~ (v1.3.2)
 - ~~Seller order status updates (fulfill / ship) beyond list view~~ (v1.3.3)
-- Optional SUPPORT role if you need customer-service without full admin
+- ~~Optional SUPPORT role~~ (v1.3.4)
 - Per-seller line fulfillment for multi-seller orders (order-level SHIPPED is v1)
+- Buyer order cancel / refund flow

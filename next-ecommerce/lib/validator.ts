@@ -114,7 +114,7 @@ const UserPassword = z
   .regex(/^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/, {
     message: 'Password contains invalid characters'
   })
-const UserRole = z.enum(['BUYER', 'SELLER', 'ADMIN'])
+const UserRole = z.enum(['BUYER', 'SELLER', 'SUPPORT', 'ADMIN'])
 
 export const UserInputSchema = z.object({
   name: UserName,
