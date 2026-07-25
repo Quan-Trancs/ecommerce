@@ -1,5 +1,21 @@
 # Version History
 
+## v1.2.3 — 2026-07-24
+
+Admin users & roles: list Mongo users, change BUYER/SELLER/ADMIN, sync store account via token mint.
+
+### Frontend
+- `/admin/users` table with role select
+- Updates Mongo `User.role` and upserts store account (`mintStoreAccessToken`)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.2.3` |
+| Store API | `store-backend/` | `1.2.3` (`store-api`) |
+
+---
+
 ## v1.2.2 — 2026-07-24
 
 Seller order queue: list orders that include the seller’s products (line items filtered to owned SKUs).

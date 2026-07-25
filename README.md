@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.2.2](./VERSION.md) — roles + seller products + seller order queue. See [ROLES.md](./ROLES.md).
+**Version:** [v1.2.3](./VERSION.md) — roles, seller products/orders, admin role UI. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
