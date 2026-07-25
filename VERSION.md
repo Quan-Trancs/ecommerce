@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.57 — 2026-07-25
+
+Newsletter / marketing email signup.
+
+### Backend
+- Flyway `V30__newsletter_subscribers.sql` — email list with active flag + unsubscribe token
+
+### Frontend
+- Footer subscribe form
+- `/newsletter/unsubscribe?token=…`
+- `/admin/newsletter` list + CSV export
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.57` |
+| Store API | `store-backend/` | `1.3.57` (`store-api`) |
+
+---
+
 ## v1.3.56 — 2026-07-25
 
 Seller payout CSV export.

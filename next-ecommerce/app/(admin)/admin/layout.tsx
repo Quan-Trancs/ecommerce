@@ -16,6 +16,7 @@ export default async function AdminLayout({
     { href: '/admin/coupons', label: 'Coupons' },
     { href: '/admin/gift-cards', label: 'Gift cards' },
     { href: '/admin/payouts', label: 'Payouts' },
+    { href: '/admin/newsletter', label: 'Newsletter' },
     { href: '/admin/audit', label: 'Audit' },
     { href: '/account', label: 'Account' },
   ]

@@ -3,6 +3,7 @@
 import { ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { APP_NAME } from '@/lib/constants'
+import NewsletterSignupForm from '@/components/shared/newsletter-signup-form'
 
 const columns = [
   {
@@ -45,7 +46,7 @@ export default function Footer() {
         Back to top
       </button>
 
-      <div className='page-shell grid gap-8 px-4 py-10 md:grid-cols-3 md:px-6'>
+      <div className='page-shell grid gap-8 px-4 py-10 md:grid-cols-2 md:px-6 lg:grid-cols-4'>
         {columns.map((column) => (
           <div key={column.title}>
             <h3 className='mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-primary'>
@@ -65,6 +66,7 @@ export default function Footer() {
             </ul>
           </div>
         ))}
+        <NewsletterSignupForm source='footer' />
       </div>
 
       <div className='border-t border-white/10'>
