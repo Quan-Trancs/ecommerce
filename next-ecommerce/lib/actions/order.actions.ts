@@ -208,12 +208,16 @@ export async function getOrderById(orderId: string): Promise<IOrder> {
   return JSON.parse(JSON.stringify(storeOrderToClient(storeOrder)))
 }
 
-export async function getMyOrders(): Promise<IOrder[]> {
+export async function getMyOrders(filters?: {
+  status?: string
+  from?: string
+  to?: string
+}): Promise<IOrder[]> {
   const session = await auth()
   if (!session?.user?.id) throw new Error('User not authenticated')
 
   const subject = subjectFromSession(session)
-  const storeOrders = await fetchMyStoreOrders(subject)
+  const storeOrders = await fetchMyStoreOrders(subject, filters)
   return JSON.parse(
     JSON.stringify(storeOrders.map((order) => storeOrderToClient(order)))
   )

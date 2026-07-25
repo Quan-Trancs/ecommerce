@@ -1,5 +1,24 @@
 # Version History
 
+## v1.3.10 — 2026-07-25
+
+Buyer order list filters by status and date range.
+
+### Backend
+- `GET /v1/orders/me?status=&from=&to=` — optional filters; lists detailed line items
+
+### Frontend
+- `/account/orders` status chips, date presets (30/90/365), custom from/to dates
+- Order rows show status alongside paid/unpaid
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.10` |
+| Store API | `store-backend/` | `1.3.10` (`store-api`) |
+
+---
+
 ## v1.3.9 — 2026-07-25
 
 Admin platform order overview with email and status filters.

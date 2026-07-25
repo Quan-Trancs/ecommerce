@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.9](./VERSION.md) — admin order overview. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.10](./VERSION.md) — buyer order filters. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

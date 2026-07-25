@@ -35,9 +35,14 @@ public class OrderController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<List<OrderResponseDto>> listMine(HttpServletRequest request) {
+    public ResponseEntity<List<OrderResponseDto>> listMine(
+            HttpServletRequest request,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to
+    ) {
         String userId = requireUserId(request);
-        return ResponseEntity.ok(orderService.listByUser(userId));
+        return ResponseEntity.ok(orderService.listByUser(userId, status, from, to));
     }
 
     /** Recent orders for SUPPORT / ADMIN customer service. */

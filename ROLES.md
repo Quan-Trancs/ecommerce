@@ -279,7 +279,7 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 1. NextAuth owns login against Postgres `accounts` (`password_hash` + `role`).
 2. Server actions mint API JWT via `mintStoreAccessToken` → `POST /v1/auth/token` with `X-Admin-Key` (never from the browser).
 3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get elevates for SUPPORT/ADMIN; pay stays owner/ADMIN; cancel elevates for SUPPORT/ADMIN (PayPal refund from storefront when paid).
-4. `GET /v1/orders/me` backs the buyer order list; `GET /v1/orders/assist/recent` and `GET /v1/orders/assist/by-email` for support; `POST /v1/orders/{id}/cancel` restocks (optional refund metadata).
+4. `GET /v1/orders/me` backs the buyer order list (`status` / `from` / `to` filters); `GET /v1/orders/assist/recent` and `GET /v1/orders/assist/by-email` for support; `POST /v1/orders/{id}/cancel` restocks (optional refund metadata).
 5. Signed-in carts persist via `GET/PUT/DELETE /v1/cart` (Zustand + localStorage for guests / offline UI).
 
 ## Next build steps
@@ -299,5 +299,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Order search by email for support desk~~ (v1.3.7)
 - ~~PayPal / Stripe refund after paid cancel~~ (v1.3.8 — PayPal live; Stripe skipped until checkout enabled)
 - ~~Admin order overview (platform-wide list beyond support assist)~~ (v1.3.9)
-- Buyer order list filters (status / date)
+- ~~Buyer order list filters (status / date)~~ (v1.3.10)
 - Enable Stripe checkout + PaymentIntent refunds

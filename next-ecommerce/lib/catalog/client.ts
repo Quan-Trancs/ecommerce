@@ -238,14 +238,21 @@ export async function fetchStoreOrder(
 }
 
 export async function fetchMyStoreOrders(
-  subject: StoreTokenSubject
+  subject: StoreTokenSubject,
+  filters?: { status?: string; from?: string; to?: string }
 ): Promise<StoreOrder[]> {
   const authHeaders = await storeAuthHeaders(subject)
   if (!authHeaders.Authorization) return []
+  const query = new URLSearchParams()
+  if (filters?.status) query.set('status', filters.status)
+  if (filters?.from) query.set('from', filters.from)
+  if (filters?.to) query.set('to', filters.to)
+  const qs = query.toString()
   try {
-    return await catalogFetch<StoreOrder[]>('/v1/orders/me', {
-      headers: authHeaders,
-    })
+    return await catalogFetch<StoreOrder[]>(
+      `/v1/orders/me${qs ? `?${qs}` : ''}`,
+      { headers: authHeaders }
+    )
   } catch {
     return []
   }

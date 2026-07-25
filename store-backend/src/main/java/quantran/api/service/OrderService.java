@@ -151,8 +151,32 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponseDto> listByUser(String userId) {
-        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+    public List<OrderResponseDto> listByUser(
+            String userId,
+            String status,
+            java.time.LocalDate from,
+            java.time.LocalDate to
+    ) {
+        OrderEntity.Status statusFilter = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                statusFilter = OrderEntity.Status.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new BusinessLogicException("Invalid status: " + status);
+            }
+        }
+
+        java.time.LocalDateTime fromDt = from == null ? null : from.atStartOfDay();
+        // Inclusive end date: keep orders through end of `to` day
+        java.time.LocalDateTime toExclusive = to == null ? null : to.plusDays(1).atStartOfDay();
+
+        final OrderEntity.Status finalStatus = statusFilter;
+        return orderRepository.findDetailedByUserIdOrderByCreatedAtDesc(userId).stream()
+                .filter(order -> finalStatus == null || order.getStatus() == finalStatus)
+                .filter(order -> fromDt == null
+                        || (order.getCreatedAt() != null && !order.getCreatedAt().isBefore(fromDt)))
+                .filter(order -> toExclusive == null
+                        || (order.getCreatedAt() != null && order.getCreatedAt().isBefore(toExclusive)))
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
