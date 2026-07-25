@@ -15,6 +15,7 @@ import {
   fetchProductsByIds,
   fetchStoreOrder,
   fetchStoreOrderNotes,
+  partialRefundStoreOrder,
   payStoreOrder,
   type StoreOrder,
   type StoreOrderNote,
@@ -32,6 +33,7 @@ import {
   recordCouponRedemption,
 } from '@/lib/db/coupons'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
+import { recordOrderRefund, listOrderRefunds } from '@/lib/db/order-refunds'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -70,6 +72,7 @@ function storeOrderToClient(order: StoreOrder): IOrder {
     items: (order.items || []).map((item, index) => ({
       product: item.productId,
       clientId: `${item.productId}-${index}`,
+      id: item.id,
       name: item.name,
       slug: item.slug,
       image: item.image,
@@ -77,8 +80,10 @@ function storeOrderToClient(order: StoreOrder): IOrder {
       price: Number(item.price),
       countInStock: item.quantity,
       quantity: item.quantity,
+      refundedQuantity: Number(item.refundedQuantity) || 0,
       size: item.size,
       color: item.color,
+      isShipped: Boolean(item.isShipped),
     })),
     shippingAddress: {
       fullName: order.shipping?.fullName || '',
@@ -481,6 +486,176 @@ export async function cancelOrder(orderId: string) {
   }
 }
 
+/**
+ * SUPPORT/ADMIN: refund selected unshipped quantities (processor + restock).
+ */
+export async function partialRefundOrder(
+  orderId: string,
+  lines: Array<{ orderItemId: number; quantity: number }>
+) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error('User not authenticated')
+    if (!hasSupportAccess(session.user.role)) {
+      throw new Error('Support or admin role required')
+    }
+    const subject = subjectFromSession(session)
+    const storeOrder = await fetchStoreOrder(orderId, subject)
+    if (!storeOrder) throw new Error('Order not found')
+    if (String(storeOrder.status || '').toUpperCase() === 'CANCELLED') {
+      throw new Error('Order is already cancelled')
+    }
+    if (!storeOrder.isPaid) throw new Error('Order must be paid')
+
+    const requested = lines.filter((l) => l.quantity > 0)
+    if (!requested.length) throw new Error('Select quantities to refund')
+
+    const byId = new Map(
+      (storeOrder.items || [])
+        .filter((item) => item.id != null)
+        .map((item) => [Number(item.id), item])
+    )
+
+    let itemsGross = 0
+    const refundLines: Array<{
+      orderItemId: number
+      quantity: number
+      unitPrice: number
+      lineAmount: number
+    }> = []
+    const productIds: string[] = []
+
+    for (const line of requested) {
+      const item = byId.get(line.orderItemId)
+      if (!item) throw new Error(`Order item ${line.orderItemId} not found`)
+      if (item.isShipped) {
+        throw new Error(`Cannot refund shipped item: ${item.name}`)
+      }
+      const refunded = Number(item.refundedQuantity) || 0
+      const remaining = Math.max(0, Number(item.quantity) - refunded)
+      if (line.quantity > remaining) {
+        throw new Error(`Quantity exceeds remaining for ${item.name}`)
+      }
+      const unitPrice = Number(item.price) || 0
+      const lineAmount = roundToTwoDecimals(unitPrice * line.quantity)
+      itemsGross = roundToTwoDecimals(itemsGross + lineAmount)
+      refundLines.push({
+        orderItemId: line.orderItemId,
+        quantity: line.quantity,
+        unitPrice,
+        lineAmount,
+      })
+      if (item.productId) productIds.push(item.productId)
+    }
+
+    const orderItemsPrice = Number(storeOrder.itemsPrice) || 0
+    const orderTax = Number(storeOrder.taxPrice) || 0
+    const taxShare =
+      orderItemsPrice > 0
+        ? roundToTwoDecimals((itemsGross / orderItemsPrice) * orderTax)
+        : 0
+    const refundAmount = roundToTwoDecimals(itemsGross + taxShare)
+
+    const paymentMethod = (storeOrder.paymentMethod || '').toLowerCase()
+    let refundMeta: {
+      refundId?: string
+      refundStatus?: string
+      refundSkipped?: boolean
+      note?: string
+    } = {
+      note: `Partial refund $${refundAmount.toFixed(2)}`,
+    }
+
+    if (paymentMethod === 'paypal') {
+      const captureId = await resolvePayPalCaptureId(
+        storeOrder.paymentResultJson,
+        { allowPriorRefund: true }
+      )
+      if (!captureId) throw new Error('PayPal capture id missing')
+      const refund = await paypal.refundCapture(captureId, {
+        value: refundAmount.toFixed(2),
+      })
+      const refundStatus = String(refund?.status || '').toUpperCase()
+      if (refundStatus && !['COMPLETED', 'PENDING'].includes(refundStatus)) {
+        throw new Error(`PayPal refund failed with status ${refundStatus}`)
+      }
+      refundMeta = {
+        refundId: refund?.id,
+        refundStatus: refund?.status || 'COMPLETED',
+        note: refundMeta.note,
+      }
+    } else if (paymentMethod === 'stripe') {
+      const paymentIntentId = resolveStripePaymentIntentId(
+        storeOrder.paymentResultJson,
+        { allowPriorRefund: true }
+      )
+      if (!paymentIntentId) throw new Error('Stripe PaymentIntent id missing')
+      const refund = await refundPaymentIntent(paymentIntentId, refundAmount)
+      refundMeta = {
+        refundId: refund.id,
+        refundStatus: refund.status || 'succeeded',
+        note: refundMeta.note,
+      }
+    } else {
+      refundMeta = {
+        refundSkipped: true,
+        note: `Partial restock without processor refund (${storeOrder.paymentMethod || 'unknown'})`,
+      }
+    }
+
+    await partialRefundStoreOrder(orderId, subject, {
+      lines: refundLines.map((l) => ({
+        orderItemId: l.orderItemId,
+        quantity: l.quantity,
+      })),
+      refundId: refundMeta.refundId,
+      refundStatus: refundMeta.refundStatus,
+      amount: refundAmount,
+      note: refundMeta.note,
+      refundSkipped: refundMeta.refundSkipped,
+    })
+
+    await recordOrderRefund({
+      orderId,
+      processor:
+        paymentMethod === 'paypal'
+          ? 'PayPal'
+          : paymentMethod === 'stripe'
+            ? 'Stripe'
+            : storeOrder.paymentMethod || null,
+      refundId: refundMeta.refundId,
+      refundStatus: refundMeta.refundStatus,
+      amount: refundAmount,
+      recordedBy: session.user.id,
+      note: refundMeta.note,
+      lines: refundLines,
+    })
+
+    await checkAndNotifyLowStock(productIds)
+
+    revalidatePath(`/account/orders/${orderId}`)
+    revalidatePath('/account/orders')
+    revalidatePath('/seller/orders')
+    revalidatePath('/support')
+    revalidatePath('/admin/orders')
+    revalidatePath('/seller/earnings')
+
+    return {
+      success: true as const,
+      message: refundMeta.refundId
+        ? `Refunded $${refundAmount.toFixed(2)} and restocked selected units`
+        : `Restocked selected units ($${refundAmount.toFixed(2)} — processor refund skipped)`,
+      amount: refundAmount,
+    }
+  } catch (err) {
+    return { success: false as const, message: formatError(err) }
+  }
+}
+
+export async function getOrderRefundHistory(orderId: string) {
+  return listOrderRefunds(orderId)
+}
+
 type PaymentResultShape = {
   id?: string
   capture_id?: string
@@ -491,7 +666,8 @@ type PaymentResultShape = {
 }
 
 function resolveStripePaymentIntentId(
-  paymentResultJson?: string | null
+  paymentResultJson?: string | null,
+  options?: { allowPriorRefund?: boolean }
 ): string | null {
   if (!paymentResultJson) return null
   let parsed: PaymentResultShape
@@ -500,7 +676,7 @@ function resolveStripePaymentIntentId(
   } catch {
     return null
   }
-  if (parsed.refund_id) {
+  if (parsed.refund_id && !options?.allowPriorRefund) {
     throw new Error('Order payment already has a refund recorded')
   }
   const id = parsed.payment_intent_id || parsed.id
@@ -509,7 +685,8 @@ function resolveStripePaymentIntentId(
 }
 
 async function resolvePayPalCaptureId(
-  paymentResultJson?: string | null
+  paymentResultJson?: string | null,
+  options?: { allowPriorRefund?: boolean }
 ): Promise<string | null> {
   if (!paymentResultJson) return null
   let parsed: PaymentResultShape
@@ -518,7 +695,7 @@ async function resolvePayPalCaptureId(
   } catch {
     return null
   }
-  if (parsed.refund_id) {
+  if (parsed.refund_id && !options?.allowPriorRefund) {
     throw new Error('Order payment already has a refund recorded')
   }
   const direct = parsed.capture_id || parsed.captureId

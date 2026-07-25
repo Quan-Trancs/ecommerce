@@ -11,6 +11,7 @@ import quantran.api.dto.CreateOrderNoteRequestDto;
 import quantran.api.dto.CreateOrderRequestDto;
 import quantran.api.dto.OrderNoteDto;
 import quantran.api.dto.OrderResponseDto;
+import quantran.api.dto.PartialRefundRequestDto;
 import quantran.api.dto.PayOrderRequestDto;
 import quantran.api.exception.UnauthorizedException;
 import quantran.api.security.JwtAuthSupport;
@@ -114,6 +115,18 @@ public class OrderController {
         String userId = requireUserId(request);
         boolean elevate = canAssist(request);
         return ResponseEntity.ok(orderService.cancelForUser(id, userId, elevate, body));
+    }
+
+    /** SUPPORT / ADMIN: partial line refund + restock. */
+    @PostMapping("/{id}/partial-refund")
+    public ResponseEntity<OrderResponseDto> partialRefund(
+            HttpServletRequest request,
+            @PathVariable String id,
+            @RequestBody PartialRefundRequestDto body
+    ) {
+        String userId = requireUserId(request);
+        boolean elevate = canAssist(request);
+        return ResponseEntity.ok(orderService.partialRefundForUser(id, userId, elevate, body));
     }
 
     /** Buyer (owner), seller on the order, or SUPPORT/ADMIN: list notes. */

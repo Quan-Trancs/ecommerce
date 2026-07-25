@@ -41,6 +41,9 @@ export const OrderItemSchema = z.object({
   price: Price('Price'),
   color: z.string().optional(),
   size: z.string().optional(),
+  id: z.union([z.string(), z.number()]).optional(),
+  isShipped: z.boolean().optional(),
+  refundedQuantity: z.number().int().nonnegative().optional(),
 })
 
 export const OrderInputSchema = z.object({

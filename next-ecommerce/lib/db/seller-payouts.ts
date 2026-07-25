@@ -50,7 +50,7 @@ export async function getSellerGrossRevenue(
   sellerAccountId: string
 ): Promise<number> {
   const result = await query<{ gross: number | string | null }>(
-    `SELECT COALESCE(SUM(i.price * i.quantity), 0) AS gross
+    `SELECT COALESCE(SUM(i.price * (i.quantity - COALESCE(i.refunded_quantity, 0))), 0) AS gross
      FROM store_order_items i
      JOIN store_orders o ON o.id = i.order_id
      JOIN products p ON p.id = i.product_id
@@ -59,7 +59,8 @@ export async function getSellerGrossRevenue(
        AND (
          o.is_paid = TRUE
          OR UPPER(COALESCE(o.status, '')) IN ('PAID', 'SHIPPED')
-       )`,
+       )
+       AND (i.quantity - COALESCE(i.refunded_quantity, 0)) > 0`,
     [sellerAccountId]
   )
   return roundToTwoDecimals(Number(result.rows[0]?.gross) || 0)
@@ -144,7 +145,7 @@ export async function listRecentSellerEarningLines(
     `SELECT o.id AS order_id,
             i.name AS product_name,
             i.quantity,
-            (i.price * i.quantity) AS line_total,
+            (i.price * (i.quantity - COALESCE(i.refunded_quantity, 0))) AS line_total,
             o.paid_at,
             o.created_at
      FROM store_order_items i
@@ -156,6 +157,7 @@ export async function listRecentSellerEarningLines(
          o.is_paid = TRUE
          OR UPPER(COALESCE(o.status, '')) IN ('PAID', 'SHIPPED')
        )
+       AND (i.quantity - COALESCE(i.refunded_quantity, 0)) > 0
      ORDER BY COALESCE(o.paid_at, o.created_at) DESC
      LIMIT $2`,
     [sellerAccountId, limit]

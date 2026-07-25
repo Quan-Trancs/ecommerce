@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.38 — 2026-07-25
+
+Partial line-item refunds for support/admin.
+
+### Backend
+- Flyway `V21__partial_refunds.sql` — `refunded_quantity`, `order_refunds`, `order_refund_items`
+- Spring `POST /v1/orders/{id}/partial-refund` — restock selected unshipped units, update totals
+
+### Frontend
+- Order details: partial refund panel (qty per unshipped line)
+- PayPal/Stripe amount refunds + ledger rows; multiple partials allowed
+- Seller earnings exclude refunded units
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.38` |
+| Store API | `store-backend/` | `1.3.38` (`store-api`) |
+
+---
+
 ## v1.3.37 — 2026-07-25
 
 Low-stock alerts for sellers.

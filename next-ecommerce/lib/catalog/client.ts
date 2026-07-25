@@ -193,8 +193,10 @@ export type StoreOrderPayload = {
     quantity: number
     color?: string
     size?: string
+    id?: number
     isShipped?: boolean
     shippedAt?: string
+    refundedQuantity?: number
   }[]
 }
 
@@ -362,6 +364,35 @@ export async function cancelStoreOrder(
         ...authHeaders,
       },
       body: JSON.stringify(refund || {}),
+    }
+  )
+}
+
+export async function partialRefundStoreOrder(
+  orderId: string,
+  subject: StoreTokenSubject,
+  body: {
+    lines: Array<{ orderItemId: number; quantity: number }>
+    refundId?: string
+    refundStatus?: string
+    amount?: number
+    note?: string
+    refundSkipped?: boolean
+  }
+): Promise<StoreOrder> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) {
+    throw new Error('Unable to mint store API token for partial refund')
+  }
+  return catalogFetch<StoreOrder>(
+    `/v1/orders/${encodeURIComponent(orderId)}/partial-refund`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(body),
     }
   )
 }

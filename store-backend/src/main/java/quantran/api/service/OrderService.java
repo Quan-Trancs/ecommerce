@@ -297,6 +297,126 @@ public class OrderService {
         return toDto(orderRepository.save(order));
     }
 
+    /**
+     * Support/Admin: refund selected unshipped units, restock, and reduce remaining value.
+     * Order stays PAID unless every unit is refunded (then CANCELLED).
+     */
+    @Transactional
+    public OrderResponseDto partialRefundForUser(
+            String id,
+            String userId,
+            boolean elevate,
+            quantran.api.dto.PartialRefundRequestDto request
+    ) {
+        if (!elevate) {
+            throw new UnauthorizedException("Support or admin role required for partial refunds");
+        }
+        if (request == null || request.getLines() == null || request.getLines().isEmpty()) {
+            throw new BusinessLogicException("Select at least one line to refund");
+        }
+
+        OrderEntity order = orderRepository.findDetailedById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+        assertOwnerOrAdmin(order, userId, true);
+
+        if (order.getStatus() == OrderEntity.Status.CANCELLED) {
+            throw new BusinessLogicException("Order is already cancelled");
+        }
+        if (!Boolean.TRUE.equals(order.getIsPaid())
+                && order.getStatus() != OrderEntity.Status.PAID
+                && order.getStatus() != OrderEntity.Status.SHIPPED) {
+            throw new BusinessLogicException("Order must be paid before partial refund");
+        }
+
+        Map<Long, OrderItemEntity> byId = order.getItems() == null
+                ? java.util.Collections.emptyMap()
+                : order.getItems().stream()
+                .filter(item -> item.getId() != null)
+                .collect(Collectors.toMap(OrderItemEntity::getId, item -> item, (a, b) -> a));
+
+        BigDecimal lineRefundGross = BigDecimal.ZERO;
+        for (quantran.api.dto.PartialRefundRequestDto.Line line : request.getLines()) {
+            if (line.getOrderItemId() == null || line.getQuantity() == null || line.getQuantity() <= 0) {
+                throw new BusinessLogicException("Each refund line needs orderItemId and positive quantity");
+            }
+            OrderItemEntity item = byId.get(line.getOrderItemId());
+            if (item == null) {
+                throw new BusinessLogicException("Order item not found: " + line.getOrderItemId());
+            }
+            if (Boolean.TRUE.equals(item.getIsShipped())) {
+                throw new BusinessLogicException("Cannot refund a shipped line: " + item.getName());
+            }
+            int refunded = item.getRefundedQuantity() == null ? 0 : item.getRefundedQuantity();
+            int remaining = (item.getQuantity() == null ? 0 : item.getQuantity()) - refunded;
+            if (line.getQuantity() > remaining) {
+                throw new BusinessLogicException(
+                        "Refund quantity exceeds remaining units for " + item.getName()
+                );
+            }
+            restockUnits(item, line.getQuantity());
+            item.setRefundedQuantity(refunded + line.getQuantity());
+            BigDecimal unit = item.getPrice() == null ? BigDecimal.ZERO : item.getPrice();
+            lineRefundGross = lineRefundGross.add(unit.multiply(BigDecimal.valueOf(line.getQuantity())));
+        }
+
+        BigDecimal oldItems = nullToZero(order.getItemsPrice());
+        BigDecimal newItems = BigDecimal.ZERO;
+        boolean anyRemaining = false;
+        if (order.getItems() != null) {
+            for (OrderItemEntity item : order.getItems()) {
+                int refunded = item.getRefundedQuantity() == null ? 0 : item.getRefundedQuantity();
+                int qty = item.getQuantity() == null ? 0 : item.getQuantity();
+                int remaining = Math.max(0, qty - refunded);
+                if (remaining > 0) {
+                    anyRemaining = true;
+                    BigDecimal unit = item.getPrice() == null ? BigDecimal.ZERO : item.getPrice();
+                    newItems = newItems.add(unit.multiply(BigDecimal.valueOf(remaining)));
+                }
+            }
+        }
+        order.setItemsPrice(newItems);
+        BigDecimal oldTax = nullToZero(order.getTaxPrice());
+        BigDecimal newTax = oldItems.compareTo(BigDecimal.ZERO) > 0
+                ? oldTax.multiply(newItems).divide(oldItems, 2, java.math.RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        order.setTaxPrice(newTax);
+        order.setTotalPrice(newItems.add(nullToZero(order.getShippingPrice())).add(newTax));
+
+        if (!anyRemaining) {
+            order.setStatus(OrderEntity.Status.CANCELLED);
+        }
+
+        quantran.api.dto.CancelOrderRequestDto meta = new quantran.api.dto.CancelOrderRequestDto();
+        meta.setRefundId(request.getRefundId());
+        meta.setRefundStatus(request.getRefundStatus());
+        meta.setRefundSkipped(request.getRefundSkipped());
+        meta.setRefundNote(request.getNote() != null
+                ? request.getNote()
+                : "Partial refund " + lineRefundGross);
+        mergeRefundMetadata(order, meta);
+
+        return toDto(orderRepository.save(order));
+    }
+
+    private void restockUnits(OrderItemEntity item, int quantity) {
+        if (item.getProductId() == null || quantity <= 0) {
+            return;
+        }
+        productRepository.fetchVariantsForIds(java.util.Collections.singletonList(item.getProductId()))
+                .stream()
+                .findFirst()
+                .ifPresent(product -> {
+                    ProductVariantEntity variant = findMatchingVariant(product, item.getColor(), item.getSize());
+                    if (variant != null) {
+                        int current = variant.getStockQuantity() == null ? 0 : variant.getStockQuantity();
+                        variant.setStockQuantity(current + quantity);
+                    } else {
+                        int current = product.getStockQuantity() == null ? 0 : product.getStockQuantity();
+                        product.setStockQuantity(current + quantity);
+                    }
+                });
+    }
+
     private void mergeRefundMetadata(OrderEntity order, quantran.api.dto.CancelOrderRequestDto cancelRequest) {
         if (cancelRequest == null) {
             return;
@@ -593,6 +713,7 @@ public class OrderService {
                             .size(item.getSize())
                             .isShipped(Boolean.TRUE.equals(item.getIsShipped()))
                             .shippedAt(item.getShippedAt())
+                            .refundedQuantity(item.getRefundedQuantity() == null ? 0 : item.getRefundedQuantity())
                             .build())
                     .collect(Collectors.toList()));
         }

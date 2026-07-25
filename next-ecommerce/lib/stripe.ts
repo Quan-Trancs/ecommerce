@@ -43,8 +43,15 @@ export async function retrievePaymentIntent(paymentIntentId: string) {
   return getStripe().paymentIntents.retrieve(paymentIntentId)
 }
 
-export async function refundPaymentIntent(paymentIntentId: string) {
-  return getStripe().refunds.create({
+export async function refundPaymentIntent(
+  paymentIntentId: string,
+  amountUsd?: number
+) {
+  const payload: { payment_intent: string; amount?: number } = {
     payment_intent: paymentIntentId,
-  })
+  }
+  if (amountUsd != null && Number.isFinite(amountUsd) && amountUsd > 0) {
+    payload.amount = Math.round(amountUsd * 100)
+  }
+  return getStripe().refunds.create(payload)
 }

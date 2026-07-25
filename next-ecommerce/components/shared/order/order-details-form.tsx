@@ -18,6 +18,7 @@ import { cn, formatDateTime } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import ProductPrice from '../product/product-price'
 import CancelOrderButton from './cancel-order-button'
+import PartialRefundPanel from './partial-refund-panel'
 import OrderNotesThread from './order-notes-thread'
 import type { OrderNote } from '@/lib/actions/order.actions'
 
@@ -63,6 +64,8 @@ export default function OrderDetailsForm({
     statusUpper === 'PENDING'
   const staffCanCancel =
     canCancelElevated && !isCancelled && !hasShippedLines
+  const staffCanPartialRefund =
+    canCancelElevated && !isCancelled && Boolean(isPaid)
   const paidRefundLabel =
     paymentMethod === 'PayPal'
       ? 'Cancel & refund (PayPal)'
@@ -131,8 +134,11 @@ export default function OrderDetailsForm({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.slug}>
+                {items.map((item) => {
+                  const refunded = Number(item.refundedQuantity) || 0
+                  const remaining = Math.max(0, Number(item.quantity) - refunded)
+                  return (
+                  <TableRow key={`${item.slug}-${item.id || item.clientId}`}>
                     <TableCell>
                       <Link
                         href={`/product/${item.slug}`}
@@ -146,13 +152,27 @@ export default function OrderDetailsForm({
                         ></Image>
                         <span className='px-2'>{item.name}</span>
                       </Link>
+                      {item.isShipped ? (
+                        <p className='pl-14 text-xs text-muted-foreground'>
+                          Shipped
+                        </p>
+                      ) : null}
                     </TableCell>
                     <TableCell>
-                      <span className='px-2'>{item.quantity}</span>
+                      <span className='px-2'>
+                        {remaining}
+                        {refunded > 0 ? (
+                          <span className='text-xs text-muted-foreground'>
+                            {' '}
+                            ({refunded} refunded)
+                          </span>
+                        ) : null}
+                      </span>
                     </TableCell>
                     <TableCell className='text-right'>${item.price}</TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -245,6 +265,9 @@ export default function OrderDetailsForm({
                   </p>
                 ) : null}
               </div>
+            ) : null}
+            {staffCanPartialRefund ? (
+              <PartialRefundPanel order={order} />
             ) : null}
           </CardContent>
         </Card>

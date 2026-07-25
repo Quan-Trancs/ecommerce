@@ -57,4 +57,20 @@ public class OrderItemEntity {
 
     @Column(name = "shipped_at")
     private LocalDateTime shippedAt;
+
+    /** Units already refunded (restocked) on this line. */
+    @Column(name = "refunded_quantity", nullable = false)
+    @Builder.Default
+    private Integer refundedQuantity = 0;
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeRefundedQuantity() {
+        if (refundedQuantity == null) {
+            refundedQuantity = 0;
+        }
+        if (isShipped == null) {
+            isShipped = false;
+        }
+    }
 }

@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.37](./VERSION.md) — low-stock alerts for sellers. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.38](./VERSION.md) — partial line-item refunds. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

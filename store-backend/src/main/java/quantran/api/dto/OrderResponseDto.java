@@ -60,5 +60,6 @@ public class OrderResponseDto {
         private String size;
         private Boolean isShipped;
         private LocalDateTime shippedAt;
+        private Integer refundedQuantity;
     }
 }
