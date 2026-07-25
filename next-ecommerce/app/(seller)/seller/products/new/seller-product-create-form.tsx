@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createSellerProduct } from '@/lib/actions/seller.actions'
 import { uploadSellerProductImage } from '@/lib/actions/upload.actions'
+import { shouldUnoptimizeProductImage } from '@/lib/storage/product-image-url'
 
 export default function SellerProductCreateForm() {
   const router = useRouter()
@@ -144,13 +145,14 @@ export default function SellerProductCreateForm() {
           }}
         />
         <p className='text-xs text-muted-foreground'>
-          JPEG, PNG, WebP, or GIF up to 5MB. Or paste an external URL below.
+          JPEG, PNG, WebP, or GIF up to 5MB. Stored in S3 when configured,
+          otherwise under /uploads. Or paste an external URL below.
         </p>
         <Input
           id='imageUrl'
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder='/uploads/… or https://…'
+          placeholder='https://… or /uploads/…'
           disabled={busy}
         />
         {imageUrl ? (
@@ -160,7 +162,7 @@ export default function SellerProductCreateForm() {
               alt='Product preview'
               fill
               className='object-cover'
-              unoptimized={imageUrl.startsWith('/uploads/')}
+              unoptimized={shouldUnoptimizeProductImage(imageUrl)}
             />
           </div>
         ) : null}

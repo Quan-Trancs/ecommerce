@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.18 — 2026-07-25
+
+S3-compatible cloud storage for seller product images.
+
+### Frontend
+- Upload path uses AWS SDK when `S3_BUCKET` + credentials are set (S3, R2, MinIO, …)
+- Falls back to local `public/uploads/products/` when unset
+- `S3_PUBLIC_BASE_URL` for public object URLs + `next/image` remotePatterns
+- Documented in `env.example`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.18` |
+| Store API | `store-backend/` | `1.3.18` (`store-api`) |
+
+---
+
 ## v1.3.17 — 2026-07-25
 
 Order notes / support ticket thread on order detail.

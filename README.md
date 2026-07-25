@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.17](./VERSION.md) — order notes / support thread. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.18](./VERSION.md) — S3-compatible product image uploads. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

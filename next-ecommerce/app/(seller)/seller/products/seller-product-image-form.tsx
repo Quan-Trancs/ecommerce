@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { updateSellerProduct } from '@/lib/actions/seller.actions'
 import { uploadSellerProductImage } from '@/lib/actions/upload.actions'
+import { shouldUnoptimizeProductImage } from '@/lib/storage/product-image-url'
 
 export default function SellerProductImageForm({
   productId,
@@ -26,7 +27,7 @@ export default function SellerProductImageForm({
             alt='Product'
             fill
             className='object-cover'
-            unoptimized={imageUrl.startsWith('/uploads/')}
+            unoptimized={shouldUnoptimizeProductImage(imageUrl)}
           />
         ) : (
           <span className='flex h-full items-center justify-center text-[10px] text-muted-foreground'>

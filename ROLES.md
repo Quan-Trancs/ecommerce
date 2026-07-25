@@ -308,5 +308,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Rate-limit public catalog search abuse hardening~~ (v1.3.15)
 - ~~Product image upload for seller listings~~ (v1.3.16)
 - ~~Order notes / support ticket thread~~ (v1.3.17)
-- Cloud object storage for product images (S3-compatible) beyond local uploads
+- ~~Cloud object storage for product images (S3-compatible) beyond local uploads~~ (v1.3.18)
 - Private staff-only order notes (internal visibility)

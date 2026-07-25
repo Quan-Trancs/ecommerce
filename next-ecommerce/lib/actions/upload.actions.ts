@@ -1,10 +1,9 @@
 'use server'
 
 import { randomUUID } from 'crypto'
-import { mkdir, writeFile } from 'fs/promises'
-import path from 'path'
 import { auth } from '@/auth'
 import { hasSellerAccess } from '@/lib/auth/roles'
+import { storeProductImage } from '@/lib/storage/product-images'
 import { formatError } from '@/lib/utils'
 
 const MAX_BYTES = 5 * 1024 * 1024
@@ -40,12 +39,14 @@ export async function uploadSellerProductImage(formData: FormData): Promise<
 
     const ext = ALLOWED[file.type]
     const filename = `${randomUUID()}${ext}`
-    const dir = path.join(process.cwd(), 'public', 'uploads', 'products')
-    await mkdir(dir, { recursive: true })
     const buffer = Buffer.from(await file.arrayBuffer())
-    await writeFile(path.join(dir, filename), buffer)
+    const stored = await storeProductImage({
+      buffer,
+      filename,
+      contentType: file.type,
+    })
 
-    return { success: true, url: `/uploads/products/${filename}` }
+    return { success: true, url: stored.url }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
