@@ -33,7 +33,11 @@ const ProductPrice = ({
     </div>
   ) : isDeal ? (
     <div className='space-y-2'>
-      <div className='flex items-center justify-center gap-2'>
+      <div
+        className={`flex items-center gap-2 ${
+          forListing ? 'justify-center' : 'justify-start'
+        }`}
+      >
         <span className='bg-deal rounded-sm px-1.5 py-0.5 text-white text-sm font-semibold'>
           {discountPercent}% off
         </span>
@@ -42,7 +46,9 @@ const ProductPrice = ({
         </span>
       </div>
       <div
-        className={`flex ${forListing ? 'justify-start' : 'justify-start'} items-center gap-2`}
+        className={`flex items-center gap-2 ${
+          forListing ? 'justify-center' : 'justify-start'
+        }`}
       >
         <div className={cn('text-3xl', className)}>
           <span className='text-xs align-super'>$</span>
@@ -56,15 +62,23 @@ const ProductPrice = ({
     </div>
   ) : (
     <div className=''>
-      <div className='flex justify-start gap-3'>
-        <div className='text-deal text-2xl font-bold md:text-3xl'>-{discountPercent}%</div>
+      <div
+        className={`flex gap-3 ${forListing ? 'justify-center' : 'justify-start'}`}
+      >
+        <div className='text-deal text-2xl font-bold md:text-3xl'>
+          -{discountPercent}%
+        </div>
         <div className={cn('text-3xl', className)}>
           <span className='text-xs align-super'>$</span>
           {intValue}
           <span className='text-xs align-super'>{floatValue}</span>
         </div>
       </div>
-      <div className='text-muted-foreground text-xs py-2'>
+      <div
+        className={`text-muted-foreground text-xs py-2 ${
+          forListing ? 'text-center' : 'text-left'
+        }`}
+      >
         List Price:{' '}
         <span className='line-through'>{formatCurrency(listPrice)}</span>
       </div>

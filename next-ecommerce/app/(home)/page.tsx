@@ -6,6 +6,7 @@ import {
   getCategoryTree,
   getProductsByTag,
   getProductsForCard,
+  searchCatalog,
 } from '@/lib/actions/product.actions'
 import data from '@/lib/data'
 
@@ -17,7 +18,6 @@ export default async function Page() {
     bestSellers,
     todaysDeals,
     bestSellingProducts,
-    categoryProducts,
   ] = await Promise.all([
     getCategoryTree(),
     getProductsForCard({ tag: 'new-arrival', limit: 4 }),
@@ -25,22 +25,27 @@ export default async function Page() {
     getProductsForCard({ tag: 'best-seller', limit: 4 }),
     getProductsByTag({ tag: 'todays-deal' }),
     getProductsByTag({ tag: 'best-seller' }),
-    getProductsByTag({ tag: 'new-arrival', limit: 8 }),
   ])
 
   const topCategories = categoryTree.slice(0, 4)
-  const categoryItems = topCategories.map((category, index) => {
-    const match =
-      categoryProducts.find((product) =>
-        product.category.toLowerCase().includes(category.name.toLowerCase())
-      ) || categoryProducts[index % Math.max(categoryProducts.length, 1)]
+  const categoryItems = await Promise.all(
+    topCategories.map(async (category) => {
+      const { products } = await searchCatalog({
+        category: category.slug,
+        size: 1,
+      })
+      const image =
+        category.imageUrl ||
+        products[0]?.images?.[0] ||
+        '/icons/logo.svg'
 
-    return {
-      name: category.name,
-      image: match?.images?.[0] || '/icons/logo.svg',
-      href: `/search?category=${encodeURIComponent(category.slug)}`,
-    }
-  })
+      return {
+        name: category.name,
+        image,
+        href: `/search?category=${encodeURIComponent(category.slug)}`,
+      }
+    })
+  )
 
   const cards = [
     {

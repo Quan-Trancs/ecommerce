@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.0.0](./VERSION.md) — see release notes and migration details there.
+**Version:** [v1.0.1](./VERSION.md) — see release notes and migration details there.
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
