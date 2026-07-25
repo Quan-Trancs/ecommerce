@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.0](./VERSION.md) — single Postgres DB + roles marketplace. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.1](./VERSION.md) — single Postgres DB + persistent carts. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

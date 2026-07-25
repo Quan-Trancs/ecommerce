@@ -3,6 +3,10 @@ import { persist } from 'zustand/middleware'
 
 import { Cart, OrderItem, ShippingAddress } from '@/types'
 import { calculateDeliveryDateAndPrice } from '@/lib/actions/order.actions'
+import {
+  clearPersistedCart,
+  persistCartSnapshot,
+} from '@/lib/actions/cart.actions'
 
 const initialState: Cart = {
   items: [],
@@ -27,6 +31,13 @@ interface CartState {
   clearCart: () => void
 }
 
+function schedulePersist(cart: Cart) {
+  // Fire-and-forget; guests no-op inside the server action
+  void persistCartSnapshot(cart).catch((error) => {
+    console.warn('Cart persist failed:', error)
+  })
+}
+
 const useCartStore = create(
   persist<CartState>(
     (set, get) => ({
@@ -34,13 +45,12 @@ const useCartStore = create(
       isUpdating: false,
 
       addItem: async (item: OrderItem, quantity: number) => {
-        // Prevent concurrent updates
         if (get().isUpdating) {
           throw new Error('Cart is being updated, please try again')
         }
 
         set({ isUpdating: true })
-        
+
         try {
           const { items, shippingAddress } = get().cart
           const existItem = items.find(
@@ -75,14 +85,17 @@ const useCartStore = create(
             shippingAddress,
           })
 
+          const nextCart = {
+            ...get().cart,
+            items: updatedCartItems,
+            ...calculatedPrices,
+          }
+
           set({
-            cart: {
-              ...get().cart,
-              items: updatedCartItems,
-              ...calculatedPrices,
-            },
+            cart: nextCart,
             isUpdating: false,
           })
+          schedulePersist(nextCart)
 
           const addedItem = updatedCartItems.find(
             (x) =>
@@ -90,7 +103,7 @@ const useCartStore = create(
               x.size === item.size &&
               x.color === item.color
           )
-          
+
           return addedItem?.clientId || ''
         } catch (error) {
           set({ isUpdating: false })
@@ -104,7 +117,7 @@ const useCartStore = create(
         }
 
         set({ isUpdating: true })
-        
+
         try {
           const { items, shippingAddress } = get().cart
           const existItem = items.find(
@@ -136,14 +149,17 @@ const useCartStore = create(
             shippingAddress,
           })
 
+          const nextCart = {
+            ...get().cart,
+            items: updatedCartItems,
+            ...calculatedPrices,
+          }
+
           set({
-            cart: {
-              ...get().cart,
-              items: updatedCartItems,
-              ...calculatedPrices,
-            },
+            cart: nextCart,
             isUpdating: false,
           })
+          schedulePersist(nextCart)
         } catch (error) {
           set({ isUpdating: false })
           throw error
@@ -156,7 +172,7 @@ const useCartStore = create(
         }
 
         set({ isUpdating: true })
-        
+
         try {
           const { items, shippingAddress } = get().cart
           const updatedItems = items.filter(
@@ -171,14 +187,17 @@ const useCartStore = create(
             shippingAddress,
           })
 
+          const nextCart = {
+            ...get().cart,
+            items: updatedItems,
+            ...calculatedPrices,
+          }
+
           set({
-            cart: {
-              ...get().cart,
-              items: updatedItems,
-              ...calculatedPrices,
-            },
+            cart: nextCart,
             isUpdating: false,
           })
+          schedulePersist(nextCart)
         } catch (error) {
           set({ isUpdating: false })
           throw error
@@ -191,7 +210,7 @@ const useCartStore = create(
         }
 
         set({ isUpdating: true })
-        
+
         try {
           const { items } = get().cart
           const calculatedPrices = await calculateDeliveryDateAndPrice({
@@ -199,14 +218,17 @@ const useCartStore = create(
             shippingAddress,
           })
 
+          const nextCart = {
+            ...get().cart,
+            shippingAddress,
+            ...calculatedPrices,
+          }
+
           set({
-            cart: {
-              ...get().cart,
-              shippingAddress,
-              ...calculatedPrices,
-            },
+            cart: nextCart,
             isUpdating: false,
           })
+          schedulePersist(nextCart)
         } catch (error) {
           set({ isUpdating: false })
           throw error
@@ -214,12 +236,12 @@ const useCartStore = create(
       },
 
       setPaymentMethod: (paymentMethod: string) => {
-        set({
-          cart: {
-            ...get().cart,
-            paymentMethod,
-          },
-        })
+        const nextCart = {
+          ...get().cart,
+          paymentMethod,
+        }
+        set({ cart: nextCart })
+        schedulePersist(nextCart)
       },
 
       setDeliveryDateIndex: async (index: number) => {
@@ -228,7 +250,7 @@ const useCartStore = create(
         }
 
         set({ isUpdating: true })
-        
+
         try {
           const { items, shippingAddress } = get().cart
           const calculatedPrices = await calculateDeliveryDateAndPrice({
@@ -237,14 +259,17 @@ const useCartStore = create(
             deliveryDateIndex: index,
           })
 
+          const nextCart = {
+            ...get().cart,
+            ...calculatedPrices,
+            deliveryDateIndex: index,
+          }
+
           set({
-            cart: {
-              ...get().cart,
-              ...calculatedPrices,
-              deliveryDateIndex: index,
-            },
+            cart: nextCart,
             isUpdating: false,
           })
+          schedulePersist(nextCart)
         } catch (error) {
           set({ isUpdating: false })
           throw error
@@ -252,15 +277,17 @@ const useCartStore = create(
       },
 
       clearCart: () => {
-        set({
-          cart: {
-            ...get().cart,
-            items: [],
-            itemsPrice: 0,
-            taxPrice: undefined,
-            shippingPrice: undefined,
-            totalPrice: 0,
-          },
+        const nextCart = {
+          ...get().cart,
+          items: [],
+          itemsPrice: 0,
+          taxPrice: undefined,
+          shippingPrice: undefined,
+          totalPrice: 0,
+        }
+        set({ cart: nextCart })
+        void clearPersistedCart().catch((error) => {
+          console.warn('Cart clear persist failed:', error)
         })
       },
 

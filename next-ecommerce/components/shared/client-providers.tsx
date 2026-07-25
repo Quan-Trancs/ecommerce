@@ -2,6 +2,7 @@
 
 import { Toaster } from 'sonner'
 import CartSidebar from './cart-sidebar'
+import CartHydrator from './cart-hydrator'
 import useCartSidebar from '@/hooks/use-cart-sidebar'
 
 export default function ClientProviders({
@@ -13,6 +14,7 @@ export default function ClientProviders({
 
   return (
     <>
+      <CartHydrator />
       {isCartSidebarOpen ? (
         <div className='flex min-h-screen'>
           <div className='flex-1 overflow-hidden'>{children}</div>

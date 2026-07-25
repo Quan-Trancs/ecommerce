@@ -261,14 +261,15 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`
 
 ### Auth bridge (summary)
 
 1. NextAuth owns login against Postgres `accounts` (`password_hash` + `role`).
 2. Server actions mint API JWT via `mintStoreAccessToken` → `POST /v1/auth/token` with `X-Admin-Key` (never from the browser).
-3. Order + seller/admin APIs require `Authorization: Bearer …`; order get/pay also enforce owner (or ADMIN).
+3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get/pay also enforce owner (or ADMIN).
 4. `GET /v1/orders/me` backs the buyer order list.
+5. Signed-in carts persist via `GET/PUT/DELETE /v1/cart` (Zustand + localStorage for guests / offline UI).
 
 ## Next build steps
 
@@ -278,5 +279,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`
 - ~~Seller product edit (price/stock form) beyond publish toggle~~ (v1.2.4)
 - ~~Harden admin catalog page against `/v1/admin/products`~~ (v1.2.5)
 - ~~Single Postgres DB (drop Mongo users + order fallback)~~ (v1.3.0)
+- ~~Cart server revalidation / persistent cart~~ (v1.3.1)
 - Optional SUPPORT role if you need customer-service without full admin
-- Cart server revalidation / persistent cart (still client Zustand)
+- Debounce cart PUT traffic / revalidate line prices against live catalog on hydrate

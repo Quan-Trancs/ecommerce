@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.1 — 2026-07-25
+
+Persistent cart for signed-in users in Postgres (guests stay on localStorage).
+
+### Backend
+- Flyway `V6__persistent_carts.sql` — `carts` + `cart_items`
+- `GET/PUT/DELETE /v1/cart` (Bearer)
+
+### Frontend
+- Cart mutations sync via `persistCartSnapshot`
+- `CartHydrator` merges local + server cart on load
+- Checkout `clearCart` also clears the server cart
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.1` |
+| Store API | `store-backend/` | `1.3.1` (`store-api`) |
+
+---
+
 ## v1.3.0 — 2026-07-24
 
 Single database: Postgres only. NextAuth users and store accounts share `accounts`; MongoDB removed.

@@ -272,6 +272,91 @@ export async function payStoreOrder(
   })
 }
 
+export type StoreCartItem = {
+  clientId: string
+  productId: string
+  name: string
+  slug: string
+  image: string
+  category?: string
+  price: number
+  quantity: number
+  countInStock?: number
+  color?: string
+  size?: string
+}
+
+export type StoreCart = {
+  id?: string
+  userId?: string
+  paymentMethod?: string | null
+  deliveryDateIndex?: number | null
+  shipping?: {
+    fullName?: string
+    address?: string
+    city?: string
+    postalCode?: string
+    country?: string
+    phone?: string
+  } | null
+  items: StoreCartItem[]
+}
+
+export async function fetchStoreCart(
+  subject: StoreTokenSubject
+): Promise<StoreCart | null> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) return null
+  try {
+    return await catalogFetch<StoreCart>('/v1/cart', { headers: authHeaders })
+  } catch {
+    return null
+  }
+}
+
+export async function upsertStoreCart(
+  payload: {
+    paymentMethod?: string
+    deliveryDateIndex?: number
+    shipping?: StoreCart['shipping']
+    items: StoreCartItem[]
+  },
+  subject: StoreTokenSubject
+): Promise<StoreCart | null> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) return null
+  try {
+    return await catalogFetch<StoreCart>('/v1/cart', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(payload),
+    })
+  } catch (error) {
+    console.warn('Store cart upsert failed:', error)
+    return null
+  }
+}
+
+export async function clearStoreCart(
+  subject: StoreTokenSubject
+): Promise<boolean> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) return false
+  try {
+    await catalogFetch<void>('/v1/cart', {
+      method: 'DELETE',
+      headers: authHeaders,
+    })
+    return true
+  } catch (error) {
+    console.warn('Store cart clear failed:', error)
+    return false
+  }
+}
+
 function filterFallback(params: ProductSearchParams): ProductSearchResult {
   let products = [...FALLBACK_SEARCH.data]
 
