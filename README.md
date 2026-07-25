@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.13](./VERSION.md) — payment webhooks. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.14](./VERSION.md) — paid/shipped email receipts. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

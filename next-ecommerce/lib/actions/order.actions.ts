@@ -19,6 +19,7 @@ import {
 import { hasSupportAccess } from '@/lib/auth/roles'
 import type { StoreTokenSubject } from '@/lib/auth/store-token'
 import { refundPaymentIntent, retrievePaymentIntent } from '@/lib/stripe'
+import { notifyOrderPaid } from '@/lib/email/order-notifications'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -264,6 +265,7 @@ export async function approvePayPalOrder(
 
     const storeOrder = await fetchStoreOrder(orderId, subject)
     if (!storeOrder) throw new Error('Order not found')
+    const wasPaid = Boolean(storeOrder.isPaid)
 
     await payStoreOrder(
       orderId,
@@ -280,6 +282,9 @@ export async function approvePayPalOrder(
       },
       subject
     )
+    if (!wasPaid) {
+      await notifyOrderPaid(orderId)
+    }
     revalidatePath(`/account/orders/${orderId}`)
     return {
       success: true,
@@ -309,6 +314,7 @@ export async function approveStripeOrder(
 
     const storeOrder = await fetchStoreOrder(orderId, subject)
     if (!storeOrder) throw new Error('Order not found')
+    const wasPaid = Boolean(storeOrder.isPaid)
 
     const amountPaid =
       typeof paymentIntent.amount_received === 'number'
@@ -325,6 +331,9 @@ export async function approveStripeOrder(
       },
       subject
     )
+    if (!wasPaid) {
+      await notifyOrderPaid(orderId)
+    }
     revalidatePath(`/account/orders/${orderId}`)
     return {
       success: true as const,

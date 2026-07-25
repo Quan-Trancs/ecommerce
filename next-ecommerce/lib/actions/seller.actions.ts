@@ -9,6 +9,7 @@ import {
 } from '@/lib/auth/store-token'
 import { hasSellerAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
+import { notifyOrderShipped } from '@/lib/email/order-notifications'
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -217,6 +218,12 @@ export async function markSellerOrderShipped(orderId: string) {
     )
     revalidatePath('/seller/orders')
     revalidatePath(`/account/orders/${orderId}`)
+
+    const status = String(order.status || '').toUpperCase()
+    if (status === 'SHIPPED') {
+      await notifyOrderShipped(orderId)
+    }
+
     return { success: true as const, order }
   } catch (error) {
     return { success: false as const, message: formatError(error) }

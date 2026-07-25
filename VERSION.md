@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.14 — 2026-07-25
+
+Email receipts on paid and fully shipped orders (Resend).
+
+### Backend
+- `GET /v1/orders/{id}` accepts `X-Admin-Key` for system order lookup (email / webhooks)
+
+### Frontend
+- Purchase receipt after PayPal/Stripe pay (client + webhook) when newly paid
+- Shipped email when order status becomes `SHIPPED` after seller fulfill
+- Skips quietly when `RESEND_API_KEY` or buyer email is missing
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.14` |
+| Store API | `store-backend/` | `1.3.14` (`store-api`) |
+
+---
+
 ## v1.3.13 — 2026-07-25
 
 Webhook backup for payment confirmation (Stripe + PayPal).

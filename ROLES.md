@@ -304,5 +304,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Enable Stripe checkout + PaymentIntent refunds~~ (v1.3.11)
 - ~~Seller analytics (sales / unshipped counts)~~ (v1.3.12)
 - ~~Webhook-driven payment confirmation (PayPal / Stripe) as backup to client approve~~ (v1.3.13)
-- Email receipts on paid / shipped
+- ~~Email receipts on paid / shipped~~ (v1.3.14)
 - Rate-limit public catalog search abuse hardening

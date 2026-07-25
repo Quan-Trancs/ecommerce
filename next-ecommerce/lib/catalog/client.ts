@@ -237,6 +237,24 @@ export async function fetchStoreOrder(
   }
 }
 
+/** System fetch using X-Admin-Key (webhooks / email). */
+export async function fetchStoreOrderAsAdmin(
+  orderId: string
+): Promise<StoreOrder | null> {
+  try {
+    return await catalogFetch<StoreOrder>(
+      `/v1/orders/${encodeURIComponent(orderId)}`,
+      {
+        headers: {
+          'X-Admin-Key': getAdminApiKey(),
+        },
+      }
+    )
+  } catch {
+    return null
+  }
+}
+
 export async function fetchMyStoreOrders(
   subject: StoreTokenSubject,
   filters?: { status?: string; from?: string; to?: string }
