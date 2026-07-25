@@ -41,11 +41,25 @@ const fetchWithTimeout = async (url: string, options: RequestInit, timeout: numb
 }
 
 export const paypal = {
-  createOrder: async function createOrder(price: number) {
+  createOrder: async function createOrder(
+    price: number,
+    opts?: { customId?: string }
+  ) {
     return retryWithBackoff(async () => {
       const accessToken = await generateAccessToken()
       const url = `${base}/v2/checkout/orders`
-      
+
+      const purchaseUnit: Record<string, unknown> = {
+        amount: {
+          currency_code: 'USD',
+          value: price.toString(),
+        },
+      }
+      if (opts?.customId) {
+        purchaseUnit.custom_id = opts.customId
+        purchaseUnit.invoice_id = opts.customId
+      }
+
       const response = await fetchWithTimeout(url, {
         method: 'post',
         headers: {
@@ -54,17 +68,10 @@ export const paypal = {
         },
         body: JSON.stringify({
           intent: 'CAPTURE',
-          purchase_units: [
-            {
-              amount: {
-                currency_code: 'USD',
-                value: price.toString(), // Ensure price is string
-              },
-            },
-          ],
+          purchase_units: [purchaseUnit],
         }),
       })
-      
+
       return handleResponse(response)
     })
   },
@@ -128,11 +135,47 @@ export const paypal = {
       return handleResponse(response)
     })
   },
+
+  verifyWebhookSignature: async function verifyWebhookSignature(opts: {
+    transmissionId: string
+    transmissionTime: string
+    certUrl: string
+    authAlgo: string
+    transmissionSig: string
+    webhookId: string
+    webhookEvent: unknown
+  }) {
+    return retryWithBackoff(async () => {
+      const accessToken = await generateAccessToken()
+      const response = await fetchWithTimeout(
+        `${base}/v1/notifications/verify-webhook-signature`,
+        {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            transmission_id: opts.transmissionId,
+            transmission_time: opts.transmissionTime,
+            cert_url: opts.certUrl,
+            auth_algo: opts.authAlgo,
+            transmission_sig: opts.transmissionSig,
+            webhook_id: opts.webhookId,
+            webhook_event: opts.webhookEvent,
+          }),
+        }
+      )
+      return handleResponse(response) as Promise<{ verification_status?: string }>
+    })
+  },
 }
 
 async function generateAccessToken() {
-  const { PAYPAL_CLIENT_ID, PAYPAL_APP_SECRET } = process.env
-  
+  const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
+  const PAYPAL_APP_SECRET =
+    process.env.PAYPAL_APP_SECRET || process.env.PAYPAL_CLIENT_SECRET
+
   if (!PAYPAL_CLIENT_ID || !PAYPAL_APP_SECRET) {
     throw new Error('PayPal credentials not configured')
   }

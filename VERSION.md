@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.13 — 2026-07-25
+
+Webhook backup for payment confirmation (Stripe + PayPal).
+
+### Backend
+- `POST /v1/orders/{id}/pay` accepts `X-Admin-Key` for system/webhook mark-paid (idempotent)
+
+### Frontend
+- `/api/webhooks/stripe` — `payment_intent.succeeded` (signature via `STRIPE_WEBHOOK_SECRET`)
+- `/api/webhooks/paypal` — `PAYMENT.CAPTURE.COMPLETED` (verify via `PAYPAL_WEBHOOK_ID`)
+- PayPal create order sets `custom_id` / `invoice_id` to store order id
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.13` |
+| Store API | `store-backend/` | `1.3.13` (`store-api`) |
+
+---
+
 ## v1.3.12 — 2026-07-25
 
 Seller dashboard analytics: sales revenue and unshipped fulfillment counts.

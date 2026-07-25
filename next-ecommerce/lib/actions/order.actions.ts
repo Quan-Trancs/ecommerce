@@ -231,7 +231,9 @@ export async function createPayPalOrder(orderId: string) {
     const subject = subjectFromSession(session)
 
     const order = await getOrderById(orderId)
-    const paypalOrder = await paypal.createOrder(order.totalPrice)
+    const paypalOrder = await paypal.createOrder(order.totalPrice, {
+      customId: orderId,
+    })
 
     const storeOrder = await fetchStoreOrder(orderId, subject)
     if (!storeOrder) throw new Error('Order not found')

@@ -258,6 +258,10 @@ export async function fetchMyStoreOrders(
   }
 }
 
+function getAdminApiKey() {
+  return process.env.ADMIN_API_KEY || process.env.STORE_ADMIN_API_KEY || 'dev-admin-key'
+}
+
 export async function payStoreOrder(
   orderId: string,
   payment: {
@@ -279,6 +283,28 @@ export async function payStoreOrder(
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders,
+    },
+    body: JSON.stringify(payment),
+  })
+}
+
+/** System/webhook pay using X-Admin-Key (no buyer session). */
+export async function payStoreOrderAsAdmin(
+  orderId: string,
+  payment: {
+    id: string
+    captureId?: string
+    status: string
+    emailAddress?: string
+    pricePaid?: string
+    paymentMethod?: string
+  }
+): Promise<StoreOrder> {
+  return catalogFetch<StoreOrder>(`/v1/orders/${encodeURIComponent(orderId)}/pay`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Key': getAdminApiKey(),
     },
     body: JSON.stringify(payment),
   })

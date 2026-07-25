@@ -1,6 +1,7 @@
 package quantran.api.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,9 @@ public class OrderController {
 
     private final OrderService orderService;
     private final JwtAuthSupport jwtAuthSupport;
+
+    @Value("${app.admin.api-key:dev-admin-key}")
+    private String adminApiKey;
 
     @PostMapping
     public ResponseEntity<OrderResponseDto> create(
@@ -80,8 +84,13 @@ public class OrderController {
     public ResponseEntity<OrderResponseDto> markPaid(
             HttpServletRequest request,
             @PathVariable String id,
+            @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
             @RequestBody(required = false) PayOrderRequestDto payment
     ) {
+        // Webhooks / BFF system pay: admin key marks paid without buyer JWT.
+        if (adminKey != null && adminApiKey.equals(adminKey)) {
+            return ResponseEntity.ok(orderService.markPaid(id, payment));
+        }
         String userId = requireUserId(request);
         boolean admin = isAdmin(request);
         return ResponseEntity.ok(orderService.markPaidForUser(id, userId, admin, payment));
