@@ -297,3 +297,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Per-seller line fulfillment for multi-seller orders~~ (v1.3.5)
 - ~~Buyer order cancel / refund flow~~ (v1.3.6 — cancel + restock; no processor refund)
 - ~~Order search by email for support desk~~ (v1.3.7)
+- PayPal / Stripe refund after paid cancel
+- Admin order overview (platform-wide list beyond support assist)
+- Buyer order list filters (status / date)
