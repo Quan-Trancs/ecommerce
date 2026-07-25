@@ -69,6 +69,8 @@ public class OrderNoteService {
                 request == null ? null : request.getVisibility(),
                 elevate
         );
+        boolean urgent = Boolean.TRUE.equals(request == null ? null : request.getUrgent())
+                && visibility == OrderNoteEntity.Visibility.PUBLIC;
 
         Role effectiveRole = role == null ? Role.BUYER : role;
         OrderNoteEntity note = OrderNoteEntity.builder()
@@ -76,6 +78,7 @@ public class OrderNoteService {
                 .authorUserId(userId)
                 .authorRole(effectiveRole.name())
                 .visibility(visibility)
+                .urgent(urgent)
                 .body(body)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -141,6 +144,7 @@ public class OrderNoteService {
                 .authorRole(note.getAuthorRole())
                 .authorDisplayName(displayName)
                 .visibility(visibility.name())
+                .urgent(Boolean.TRUE.equals(note.getUrgent()))
                 .body(note.getBody())
                 .createdAt(note.getCreatedAt())
                 .build();

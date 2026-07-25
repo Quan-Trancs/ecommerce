@@ -23,6 +23,7 @@ import { hasSupportAccess } from '@/lib/auth/roles'
 import type { StoreTokenSubject } from '@/lib/auth/store-token'
 import { refundPaymentIntent, retrievePaymentIntent } from '@/lib/stripe'
 import { notifyOrderPaid, notifyPublicOrderNote } from '@/lib/email/order-notifications'
+import { notifyUrgentOrderNoteChannels } from '@/lib/notify/urgent-channels'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -555,6 +556,7 @@ export type OrderNote = {
   authorRole: string
   authorDisplayName?: string | null
   visibility: 'PUBLIC' | 'INTERNAL'
+  urgent: boolean
   body: string
   createdAt: string
 }
@@ -571,6 +573,7 @@ function noteToClient(note: StoreOrderNote): OrderNote {
     authorRole: note.authorRole,
     authorDisplayName: note.authorDisplayName,
     visibility,
+    urgent: Boolean(note.urgent),
     body: note.body,
     createdAt: note.createdAt,
   }
@@ -586,7 +589,7 @@ export async function getOrderNotes(orderId: string): Promise<OrderNote[]> {
 export async function addOrderNote(
   orderId: string,
   body: string,
-  options?: { visibility?: 'PUBLIC' | 'INTERNAL' }
+  options?: { visibility?: 'PUBLIC' | 'INTERNAL'; urgent?: boolean }
 ): Promise<{ success: boolean; message: string; note?: OrderNote }> {
   try {
     const session = await auth()
@@ -602,11 +605,12 @@ export async function addOrderNote(
         message: 'Only support or admin can post internal notes',
       }
     }
+    const urgent = visibility === 'PUBLIC' && Boolean(options?.urgent)
     const note = await createStoreOrderNote(
       orderId,
       trimmed,
       subjectFromSession(session),
-      { visibility }
+      { visibility, urgent }
     )
     revalidatePath(`/account/orders/${orderId}`)
     const clientNote = noteToClient(note)
@@ -619,10 +623,24 @@ export async function addOrderNote(
           note.authorDisplayName || session.user.name || session.user.email,
         body: trimmed,
       })
+      if (urgent) {
+        await notifyUrgentOrderNoteChannels({
+          orderId,
+          authorUserId: session.user.id,
+          authorRole: session.user.role || note.authorRole || 'BUYER',
+          authorDisplayName:
+            note.authorDisplayName || session.user.name || session.user.email,
+          body: trimmed,
+        })
+      }
     }
     return {
       success: true,
-      message: visibility === 'INTERNAL' ? 'Internal note saved' : 'Message sent',
+      message: visibility === 'INTERNAL'
+        ? 'Internal note saved'
+        : urgent
+          ? 'Urgent message sent'
+          : 'Message sent',
       note: clientNote,
     }
   } catch (err) {

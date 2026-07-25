@@ -16,6 +16,7 @@ public class OrderNoteDto {
     private String authorDisplayName;
     /** PUBLIC (buyer-visible) or INTERNAL (SUPPORT/ADMIN only). */
     private String visibility;
+    private Boolean urgent;
     private String body;
     private LocalDateTime createdAt;
 }

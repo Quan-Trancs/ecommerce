@@ -19,6 +19,48 @@ function browserTimezone() {
   }
 }
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64)
+  const output = new Uint8Array(raw.length)
+  for (let i = 0; i < raw.length; i += 1) {
+    output[i] = raw.charCodeAt(i)
+  }
+  return output
+}
+
+async function enableBrowserPush(vapidPublicKey: string) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    throw new Error('Push is not supported in this browser')
+  }
+  const permission = await Notification.requestPermission()
+  if (permission !== 'granted') {
+    throw new Error('Notification permission denied')
+  }
+  const registration = await navigator.serviceWorker.register('/sw.js')
+  await navigator.serviceWorker.ready
+  const existing = await registration.pushManager.getSubscription()
+  const subscription =
+    existing ||
+    (await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    }))
+  const json = subscription.toJSON()
+  const response = await fetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      endpoint: json.endpoint,
+      keys: json.keys,
+    }),
+  })
+  if (!response.ok) {
+    throw new Error('Could not save push subscription')
+  }
+}
+
 export default function NotificationPreferencesForm({
   notifyOrderNotes,
   orderNoteEmailMode,
@@ -26,6 +68,10 @@ export default function NotificationPreferencesForm({
   quietHoursStart,
   quietHoursEnd,
   quietHoursTimezone,
+  phoneE164,
+  notifyOrderNotesSms,
+  notifyOrderNotesPush,
+  vapidPublicKey,
 }: {
   notifyOrderNotes: boolean
   orderNoteEmailMode: OrderNoteEmailMode
@@ -33,6 +79,10 @@ export default function NotificationPreferencesForm({
   quietHoursStart: number
   quietHoursEnd: number
   quietHoursTimezone: string
+  phoneE164: string
+  notifyOrderNotesSms: boolean
+  notifyOrderNotesPush: boolean
+  vapidPublicKey: string | null
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -44,6 +94,9 @@ export default function NotificationPreferencesForm({
   const [timezone, setTimezone] = useState(
     quietHoursTimezone || browserTimezone()
   )
+  const [phone, setPhone] = useState(phoneE164)
+  const [smsEnabled, setSmsEnabled] = useState(notifyOrderNotesSms)
+  const [pushEnabled, setPushEnabled] = useState(notifyOrderNotesPush)
 
   const hourOptions = useMemo(
     () =>
@@ -61,19 +114,31 @@ export default function NotificationPreferencesForm({
       onSubmit={(e) => {
         e.preventDefault()
         startTransition(async () => {
-          const result = await setOrderNoteNotificationPreferences({
-            notifyOrderNotes: enabled,
-            orderNoteEmailMode: mode,
-            quietHoursEnabled: quietEnabled,
-            quietHoursStart: quietStart,
-            quietHoursEnd: quietEnd,
-            quietHoursTimezone: timezone,
-          })
-          if (result.success) {
-            toast.success(result.message)
-            router.refresh()
-          } else {
-            toast.error(result.message)
+          try {
+            if (pushEnabled && vapidPublicKey) {
+              await enableBrowserPush(vapidPublicKey)
+            }
+            const result = await setOrderNoteNotificationPreferences({
+              notifyOrderNotes: enabled,
+              orderNoteEmailMode: mode,
+              quietHoursEnabled: quietEnabled,
+              quietHoursStart: quietStart,
+              quietHoursEnd: quietEnd,
+              quietHoursTimezone: timezone,
+              phoneE164: phone,
+              notifyOrderNotesSms: smsEnabled,
+              notifyOrderNotesPush: pushEnabled,
+            })
+            if (result.success) {
+              toast.success(result.message)
+              router.refresh()
+            } else {
+              toast.error(result.message)
+            }
+          } catch (error) {
+            toast.error(
+              error instanceof Error ? error.message : 'Could not save preferences'
+            )
           }
         })
       }}
@@ -140,21 +205,17 @@ export default function NotificationPreferencesForm({
             onChange={(e) => {
               const next = e.target.checked
               setQuietEnabled(next)
-              if (next && !timezone) {
-                setTimezone(browserTimezone())
-              }
+              if (next && !timezone) setTimezone(browserTimezone())
             }}
             className='mt-1'
           />
           <span>
             <span className='font-medium'>Pause emails overnight</span>
             <span className='mt-0.5 block text-muted-foreground'>
-              Queue messages during quiet hours and deliver afterward (works
-              for both digest and immediate).
+              Queue email during quiet hours. Urgent SMS/push still deliver.
             </span>
           </span>
         </label>
-
         {quietEnabled ? (
           <div className='grid gap-3 sm:grid-cols-2'>
             <label className='text-sm'>
@@ -196,6 +257,55 @@ export default function NotificationPreferencesForm({
             </label>
           </div>
         ) : null}
+      </fieldset>
+
+      <fieldset disabled={pending} className='space-y-3 border-t pt-4'>
+        <legend className='text-sm font-medium'>Urgent channels</legend>
+        <p className='text-xs text-muted-foreground'>
+          Used when someone marks a public order note as urgent.
+        </p>
+        <label className='flex items-start gap-2 text-sm'>
+          <input
+            type='checkbox'
+            checked={smsEnabled}
+            onChange={(e) => setSmsEnabled(e.target.checked)}
+            className='mt-1'
+          />
+          <span>
+            <span className='font-medium'>SMS for urgent notes</span>
+            <span className='mt-0.5 block text-muted-foreground'>
+              Requires Twilio env vars on the server.
+            </span>
+          </span>
+        </label>
+        <label className='text-sm'>
+          <span className='mb-1 block text-muted-foreground'>
+            Mobile number (E.164)
+          </span>
+          <Input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder='+15551234567'
+            disabled={!smsEnabled}
+          />
+        </label>
+        <label className='flex items-start gap-2 text-sm'>
+          <input
+            type='checkbox'
+            checked={pushEnabled}
+            onChange={(e) => setPushEnabled(e.target.checked)}
+            disabled={!vapidPublicKey}
+            className='mt-1'
+          />
+          <span>
+            <span className='font-medium'>Browser push for urgent notes</span>
+            <span className='mt-0.5 block text-muted-foreground'>
+              {vapidPublicKey
+                ? 'Registers this browser when you save.'
+                : 'Set NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY to enable.'}
+            </span>
+          </span>
+        </label>
       </fieldset>
 
       <Button type='submit' disabled={pending}>

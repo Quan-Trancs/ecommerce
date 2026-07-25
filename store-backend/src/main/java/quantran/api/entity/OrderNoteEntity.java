@@ -39,6 +39,11 @@ public class OrderNoteEntity {
     @Builder.Default
     private Visibility visibility = Visibility.PUBLIC;
 
+    /** PUBLIC notes only: triggers SMS/push for opted-in parties. */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean urgent = false;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String body;
 

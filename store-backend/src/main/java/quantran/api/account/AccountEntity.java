@@ -62,6 +62,17 @@ public class AccountEntity {
     @Builder.Default
     private String quietHoursTimezone = "UTC";
 
+    @Column(name = "phone_e164", length = 20)
+    private String phoneE164;
+
+    @Column(name = "notify_order_notes_sms", nullable = false)
+    @Builder.Default
+    private boolean notifyOrderNotesSms = false;
+
+    @Column(name = "notify_order_notes_push", nullable = false)
+    @Builder.Default
+    private boolean notifyOrderNotesPush = false;
+
     @Column(length = 500)
     private String image;
 

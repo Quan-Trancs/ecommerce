@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.26](./VERSION.md) — quiet hours for order-note emails. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.27](./VERSION.md) — urgent SMS/push for order notes. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

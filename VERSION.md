@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.27 — 2026-07-25
+
+SMS / push channel for urgent order notes.
+
+### Backend
+- Flyway `V14__urgent_notes_sms_push.sql` — `urgent` on notes; phone/SMS/push prefs; `push_subscriptions`
+
+### Frontend
+- Public notes can be marked **Urgent (SMS / push)**
+- Account settings: SMS number + browser push opt-in
+- Twilio SMS + Web Push (VAPID) when configured
+- Service worker `public/sw.js`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.27` |
+| Store API | `store-backend/` | `1.3.27` (`store-api`) |
+
+---
+
 ## v1.3.26 — 2026-07-25
 
 Quiet hours for order-note emails.

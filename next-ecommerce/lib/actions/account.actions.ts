@@ -14,6 +14,7 @@ import {
   isInQuietHours,
   normalizeTimezone,
 } from '@/lib/email/quiet-hours'
+import { normalizePhoneE164 } from '@/lib/notify/sms'
 import { formatError } from '@/lib/utils'
 
 export async function getNotificationPreferences(): Promise<{
@@ -23,6 +24,10 @@ export async function getNotificationPreferences(): Promise<{
   quietHoursStart: number
   quietHoursEnd: number
   quietHoursTimezone: string
+  phoneE164: string
+  notifyOrderNotesSms: boolean
+  notifyOrderNotesPush: boolean
+  vapidPublicKey: string | null
 } | null> {
   const session = await auth()
   if (!session?.user?.id) return null
@@ -35,6 +40,10 @@ export async function getNotificationPreferences(): Promise<{
     quietHoursStart: user.quietHoursStart,
     quietHoursEnd: user.quietHoursEnd,
     quietHoursTimezone: user.quietHoursTimezone,
+    phoneE164: user.phoneE164 || '',
+    notifyOrderNotesSms: user.notifyOrderNotesSms,
+    notifyOrderNotesPush: user.notifyOrderNotesPush,
+    vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
 
@@ -45,6 +54,9 @@ export async function setOrderNoteNotificationPreferences(input: {
   quietHoursStart: number | string
   quietHoursEnd: number | string
   quietHoursTimezone: string
+  phoneE164?: string
+  notifyOrderNotesSms?: boolean
+  notifyOrderNotesPush?: boolean
 }): Promise<{ success: boolean; message: string }> {
   try {
     const session = await auth()
@@ -56,14 +68,20 @@ export async function setOrderNoteNotificationPreferences(input: {
     const quietHoursEnd = clampHour(input.quietHoursEnd, 8)
     const quietHoursTimezone = normalizeTimezone(input.quietHoursTimezone)
     const quietHoursEnabled = Boolean(input.quietHoursEnabled)
+    const notifyOrderNotesSms = Boolean(input.notifyOrderNotesSms)
+    const notifyOrderNotesPush = Boolean(input.notifyOrderNotesPush)
+    const phoneE164 = normalizePhoneE164(input.phoneE164 || '')
 
-    if (
-      quietHoursEnabled &&
-      quietHoursStart === quietHoursEnd
-    ) {
+    if (quietHoursEnabled && quietHoursStart === quietHoursEnd) {
       return {
         success: false,
         message: 'Quiet hours start and end must differ',
+      }
+    }
+    if (notifyOrderNotesSms && !phoneE164) {
+      return {
+        success: false,
+        message: 'Enter a valid phone number (E.164) to enable SMS',
       }
     }
 
@@ -76,6 +94,9 @@ export async function setOrderNoteNotificationPreferences(input: {
         quietHoursStart,
         quietHoursEnd,
         quietHoursTimezone,
+        phoneE164,
+        notifyOrderNotesSms,
+        notifyOrderNotesPush,
       }
     )
     if (!updated) {
@@ -89,7 +110,6 @@ export async function setOrderNoteNotificationPreferences(input: {
       timezone: updated.quietHoursTimezone,
     })
 
-    // Flush queued mail when leaving quiet hours or choosing immediate outside quiet.
     if (
       updated.notifyOrderNotes &&
       !inQuiet &&

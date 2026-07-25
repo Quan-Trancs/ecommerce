@@ -23,7 +23,7 @@ export default async function AccountSettingsPage() {
           Notification settings
         </h1>
         <p className='mt-2 text-muted-foreground'>
-          Choose which order emails you receive.
+          Email digests, quiet hours, and urgent SMS / push channels.
         </p>
       </div>
       <div className='max-w-lg rounded-lg border p-4'>
@@ -34,6 +34,10 @@ export default async function AccountSettingsPage() {
           quietHoursStart={prefs.quietHoursStart}
           quietHoursEnd={prefs.quietHoursEnd}
           quietHoursTimezone={prefs.quietHoursTimezone}
+          phoneE164={prefs.phoneE164}
+          notifyOrderNotesSms={prefs.notifyOrderNotesSms}
+          notifyOrderNotesPush={prefs.notifyOrderNotesPush}
+          vapidPublicKey={prefs.vapidPublicKey}
         />
       </div>
     </div>

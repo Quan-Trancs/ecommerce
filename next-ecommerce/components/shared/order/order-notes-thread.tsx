@@ -31,6 +31,7 @@ export default function OrderNotesThread({
   const [notes, setNotes] = useState(initialNotes)
   const [body, setBody] = useState('')
   const [internal, setInternal] = useState(false)
+  const [urgent, setUrgent] = useState(false)
   const [pending, startTransition] = useTransition()
 
   function onSubmit(event: FormEvent) {
@@ -43,10 +44,14 @@ export default function OrderNotesThread({
     const visibility =
       canPostInternal && internal ? 'INTERNAL' : 'PUBLIC'
     startTransition(async () => {
-      const result = await addOrderNote(orderId, trimmed, { visibility })
+      const result = await addOrderNote(orderId, trimmed, {
+        visibility,
+        urgent: visibility === 'PUBLIC' && urgent,
+      })
       if (result.success && result.note) {
         setNotes((prev) => [...prev, result.note!])
         setBody('')
+        setUrgent(false)
         toast.success(result.message)
         router.refresh()
       } else {
@@ -84,7 +89,9 @@ export default function OrderNotesThread({
                     'rounded-md border px-3 py-2 text-sm',
                     isInternal
                       ? 'border-amber-500/40 bg-amber-500/5'
-                      : 'bg-muted/30'
+                      : note.urgent
+                        ? 'border-red-500/40 bg-red-500/5'
+                        : 'bg-muted/30'
                   )}
                 >
                   <div className='mb-1 flex flex-wrap items-center gap-2'>
@@ -94,6 +101,9 @@ export default function OrderNotesThread({
                     <Badge variant='outline'>{roleLabel(note.authorRole)}</Badge>
                     {isInternal ? (
                       <Badge variant='secondary'>Internal</Badge>
+                    ) : null}
+                    {note.urgent ? (
+                      <Badge variant='destructive'>Urgent</Badge>
                     ) : null}
                     <span className='text-xs text-muted-foreground'>
                       {formatDateTime(new Date(note.createdAt)).dateTime}
@@ -121,7 +131,7 @@ export default function OrderNotesThread({
             disabled={pending}
           />
           <div className='flex flex-wrap items-center justify-between gap-2'>
-            <div className='flex items-center gap-3'>
+            <div className='flex flex-wrap items-center gap-3'>
               <span className='text-xs text-muted-foreground'>
                 {body.length}/2000
               </span>
@@ -130,10 +140,24 @@ export default function OrderNotesThread({
                   <input
                     type='checkbox'
                     checked={internal}
-                    onChange={(e) => setInternal(e.target.checked)}
+                    onChange={(e) => {
+                      setInternal(e.target.checked)
+                      if (e.target.checked) setUrgent(false)
+                    }}
                     disabled={pending}
                   />
                   Internal (staff only)
+                </label>
+              ) : null}
+              {!internal ? (
+                <label className='flex items-center gap-2 text-xs text-muted-foreground'>
+                  <input
+                    type='checkbox'
+                    checked={urgent}
+                    onChange={(e) => setUrgent(e.target.checked)}
+                    disabled={pending}
+                  />
+                  Urgent (SMS / push)
                 </label>
               ) : null}
             </div>
@@ -142,7 +166,9 @@ export default function OrderNotesThread({
                 ? 'Sending…'
                 : canPostInternal && internal
                   ? 'Save internal note'
-                  : 'Send message'}
+                  : urgent
+                    ? 'Send urgent'
+                    : 'Send message'}
             </Button>
           </div>
         </form>

@@ -24,6 +24,9 @@ export type DbUser = {
   quietHoursStart: number
   quietHoursEnd: number
   quietHoursTimezone: string
+  phoneE164: string | null
+  notifyOrderNotesSms: boolean
+  notifyOrderNotesPush: boolean
   image: string | null
   active: boolean
   createdAt: Date
@@ -43,6 +46,9 @@ type AccountRow = {
   quiet_hours_start: number
   quiet_hours_end: number
   quiet_hours_timezone: string | null
+  phone_e164: string | null
+  notify_order_notes_sms: boolean
+  notify_order_notes_push: boolean
   image: string | null
   active: boolean
   created_at: Date
@@ -80,6 +86,9 @@ function mapRow(row: AccountRow): DbUser {
     quietHoursStart: clampHour(row.quiet_hours_start, 22),
     quietHoursEnd: clampHour(row.quiet_hours_end, 8),
     quietHoursTimezone: normalizeTimezone(row.quiet_hours_timezone),
+    phoneE164: row.phone_e164 || null,
+    notifyOrderNotesSms: Boolean(row.notify_order_notes_sms),
+    notifyOrderNotesPush: Boolean(row.notify_order_notes_push),
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -95,6 +104,9 @@ const SELECT_COLS = `
   COALESCE(quiet_hours_start, 22) AS quiet_hours_start,
   COALESCE(quiet_hours_end, 8) AS quiet_hours_end,
   COALESCE(quiet_hours_timezone, 'UTC') AS quiet_hours_timezone,
+  phone_e164,
+  COALESCE(notify_order_notes_sms, FALSE) AS notify_order_notes_sms,
+  COALESCE(notify_order_notes_push, FALSE) AS notify_order_notes_push,
   image, active, created_at, updated_at
 `
 
@@ -188,6 +200,9 @@ export async function updateUser(
     quietHoursStart?: number
     quietHoursEnd?: number
     quietHoursTimezone?: string
+    phoneE164?: string | null
+    notifyOrderNotesSms?: boolean
+    notifyOrderNotesPush?: boolean
   }
 ): Promise<DbUser | null> {
   const existing = await findUserById(id)
@@ -221,6 +236,16 @@ export async function updateUser(
     patch.quietHoursTimezone === undefined
       ? existing.quietHoursTimezone
       : normalizeTimezone(patch.quietHoursTimezone)
+  const phoneE164 =
+    patch.phoneE164 === undefined ? existing.phoneE164 : patch.phoneE164
+  const notifyOrderNotesSms =
+    patch.notifyOrderNotesSms === undefined
+      ? existing.notifyOrderNotesSms
+      : Boolean(patch.notifyOrderNotesSms)
+  const notifyOrderNotesPush =
+    patch.notifyOrderNotesPush === undefined
+      ? existing.notifyOrderNotesPush
+      : Boolean(patch.notifyOrderNotesPush)
   const now = new Date()
 
   await withClient(async (client) => {
@@ -232,7 +257,9 @@ export async function updateUser(
              notify_order_notes = $5, order_note_email_mode = $6,
              quiet_hours_enabled = $7, quiet_hours_start = $8,
              quiet_hours_end = $9, quiet_hours_timezone = $10,
-             updated_at = $11
+             phone_e164 = $11, notify_order_notes_sms = $12,
+             notify_order_notes_push = $13,
+             updated_at = $14
          WHERE id = $1`,
         [
           id,
@@ -245,6 +272,9 @@ export async function updateUser(
           quietHoursStart,
           quietHoursEnd,
           quietHoursTimezone,
+          phoneE164,
+          notifyOrderNotesSms,
+          notifyOrderNotesPush,
           now,
         ]
       )
@@ -277,6 +307,9 @@ export async function updateOrderNoteNotificationPreferences(
     quietHoursStart: number
     quietHoursEnd: number
     quietHoursTimezone: string
+    phoneE164?: string | null
+    notifyOrderNotesSms?: boolean
+    notifyOrderNotesPush?: boolean
   }
 ): Promise<DbUser | null> {
   return updateUser(id, {
@@ -286,6 +319,9 @@ export async function updateOrderNoteNotificationPreferences(
     quietHoursStart: prefs.quietHoursStart,
     quietHoursEnd: prefs.quietHoursEnd,
     quietHoursTimezone: prefs.quietHoursTimezone,
+    phoneE164: prefs.phoneE164,
+    notifyOrderNotesSms: prefs.notifyOrderNotesSms,
+    notifyOrderNotesPush: prefs.notifyOrderNotesPush,
   })
 }
 
