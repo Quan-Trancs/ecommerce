@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.34 — 2026-07-25
+
+Product reviews & ratings for verified paid buyers.
+
+### Backend
+- Flyway `V17__product_reviews.sql` — one review per account/product; updates `products.avg_rating` / `num_reviews`
+
+### Frontend
+- `/product/[slug]` customer reviews panel (distribution, list, write/update/remove)
+- Purchase check against paid non-cancelled orders
+- Catalog mapper no longer fakes a 4.5 default rating
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.34` |
+| Store API | `store-backend/` | `1.3.34` (`store-api`) |
+
+---
+
 ## v1.3.33 — 2026-07-25
 
 Redis pub/sub fanout for live in-app notification SSE.

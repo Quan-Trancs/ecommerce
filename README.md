@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.33](./VERSION.md) — Redis SSE notification fanout. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.34](./VERSION.md) — product reviews & ratings. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

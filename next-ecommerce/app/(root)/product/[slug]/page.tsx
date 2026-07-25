@@ -1,6 +1,7 @@
 import ProductGallery from '@/components/shared/product/product-gallery'
 import ProductPrice from '@/components/shared/product/product-price'
 import ProductSlider from '@/components/shared/product/product-slider'
+import ProductReviewsPanel from '@/components/shared/product/product-reviews-panel'
 import Rating from '@/components/shared/product/rating'
 import SelectVariant from '@/components/shared/product/select-variant'
 import BrowsingHistoryList from '@/components/shared/browsing-history-list'
@@ -8,11 +9,13 @@ import {
   getProductBySlug,
   getRelatedProductsByCategory,
 } from '@/lib/actions/product.actions'
+import { getProductReviewsPanel } from '@/lib/actions/review.actions'
 import { Separator } from '@/components/ui/separator'
 import AddToBrowsingHistory from '@/components/shared/product/add-to-browsing-history'
 import AddToCart from '@/components/shared/product/add-to-cart'
 import { roundToTwoDecimals } from '@/lib/utils'
 import Link from 'next/link'
+import { auth } from '@/auth'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -39,11 +42,20 @@ export default async function ProductDetails(props: {
   const params = await props.params
   const { slug } = params
   const product = await getProductBySlug(slug)
-  const relatedProducts = await getRelatedProductsByCategory({
-    category: product.category,
-    productId: product._id,
-    page: Number(page || '1'),
-  })
+  const session = await auth()
+  const [relatedProducts, reviewsPanel] = await Promise.all([
+    getRelatedProductsByCategory({
+      category: product.category,
+      productId: product._id,
+      page: Number(page || '1'),
+    }),
+    getProductReviewsPanel(product._id),
+  ])
+
+  const avgRating = reviewsPanel.numReviews
+    ? reviewsPanel.avgRating
+    : product.avgRating
+  const numReviews = reviewsPanel.numReviews || product.numReviews
 
   return (
     <div className='page-shell space-y-8 p-4 md:space-y-10 md:p-6'>
@@ -71,11 +83,11 @@ export default async function ProductDetails(props: {
             <h1 className='brick-title text-2xl lg:text-3xl'>{product.name}</h1>
             <div className='flex flex-wrap items-center gap-2 text-sm'>
               <span className='font-bold text-chrome'>
-                {product.avgRating.toFixed(1)}
+                {numReviews ? avgRating.toFixed(1) : '—'}
               </span>
-              <Rating rating={product.avgRating} />
+              <Rating rating={numReviews ? avgRating : 0} />
               <span className='filter-count'>
-                ({product.numReviews} ratings)
+                ({numReviews} rating{numReviews === 1 ? '' : 's'})
               </span>
             </div>
             <Separator className='bg-slate-900/10' />
@@ -142,6 +154,18 @@ export default async function ProductDetails(props: {
           </div>
         </aside>
       </section>
+
+      <ProductReviewsPanel
+        productId={product._id}
+        productSlug={product.slug}
+        signedIn={Boolean(session?.user?.id)}
+        canReview={reviewsPanel.canReview}
+        myReview={reviewsPanel.myReview}
+        reviews={reviewsPanel.reviews}
+        avgRating={reviewsPanel.avgRating}
+        numReviews={reviewsPanel.numReviews}
+        ratingDistribution={reviewsPanel.ratingDistribution}
+      />
 
       <section className='store-section'>
         <ProductSlider
