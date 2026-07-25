@@ -239,7 +239,7 @@ next-ecommerce/
   app/(root)/account/     # Buyer hub + orders
   app/(seller)/seller/    # Seller overview, products, orders (shell)
   app/(support)/support/  # Support order lookup + recent orders
-  app/(admin)/admin/      # Admin overview, orders, users, catalog (shell)
+  app/(admin)/admin/      # Admin overview, orders, users, catalog, audit (shell)
   auth.config.ts          # Route guards for /account /seller /support /admin
 ```
 
@@ -330,3 +330,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Low-stock alerts for sellers~~ (v1.3.37)
 - ~~Partial line-item refunds (support/admin)~~ (v1.3.38)
 - ~~Support ticket queue UI (order-note threads)~~ (v1.3.39)
+- ~~Staff audit log for support/admin actions~~ (v1.3.40)

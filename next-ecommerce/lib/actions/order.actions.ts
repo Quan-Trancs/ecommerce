@@ -34,6 +34,7 @@ import {
 } from '@/lib/db/coupons'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 import { recordOrderRefund, listOrderRefunds } from '@/lib/db/order-refunds'
+import { logStaffAction } from '@/lib/audit/log-staff-action'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -457,11 +458,29 @@ export async function cancelOrder(orderId: string) {
     await notifyOrderCancelled(orderId, {
       excludeAccountId: session.user.id,
     })
+    if (elevate) {
+      await logStaffAction({
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: 'ORDER_CANCEL',
+        entityType: 'order',
+        entityId: orderId,
+        summary: `Cancelled order ${orderId}${
+          refundMeta?.refundId ? ` (refund ${refundMeta.refundId})` : ''
+        }`,
+        metadata: {
+          refundId: refundMeta?.refundId,
+          refundSkipped: refundMeta?.refundSkipped,
+          paymentMethod: storeOrder.paymentMethod,
+        },
+      })
+    }
     revalidatePath(`/account/orders/${orderId}`)
     revalidatePath('/account/orders')
     revalidatePath('/seller/orders')
     revalidatePath('/support')
     revalidatePath('/admin/orders')
+    revalidatePath('/admin/audit')
 
     if (refundMeta?.refundId) {
       const processor = paymentMethod === 'stripe' ? 'Stripe' : 'PayPal'
@@ -633,12 +652,30 @@ export async function partialRefundOrder(
 
     await checkAndNotifyLowStock(productIds)
 
+    await logStaffAction({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: 'ORDER_PARTIAL_REFUND',
+      entityType: 'order',
+      entityId: orderId,
+      summary: `Partial refund $${refundAmount.toFixed(2)} on order ${orderId}`,
+      metadata: {
+        amount: refundAmount,
+        refundId: refundMeta.refundId,
+        lines: refundLines.map((l) => ({
+          orderItemId: l.orderItemId,
+          quantity: l.quantity,
+        })),
+      },
+    })
+
     revalidatePath(`/account/orders/${orderId}`)
     revalidatePath('/account/orders')
     revalidatePath('/seller/orders')
     revalidatePath('/support')
     revalidatePath('/admin/orders')
     revalidatePath('/seller/earnings')
+    revalidatePath('/admin/audit')
 
     return {
       success: true as const,
@@ -861,7 +898,24 @@ export async function addOrderNote(
       subjectFromSession(session),
       { visibility, urgent }
     )
+    if (hasSupportAccess(session.user.role)) {
+      await logStaffAction({
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: 'ORDER_NOTE',
+        entityType: 'order',
+        entityId: orderId,
+        summary: `${visibility}${urgent ? ' urgent' : ''} note on order ${orderId}`,
+        metadata: {
+          visibility,
+          urgent,
+          noteId: note.id,
+          preview: trimmed.slice(0, 120),
+        },
+      })
+    }
     revalidatePath(`/account/orders/${orderId}`)
+    revalidatePath('/admin/audit')
     const clientNote = noteToClient(note)
     if (visibility === 'PUBLIC') {
       await notifyInAppOrderNote({

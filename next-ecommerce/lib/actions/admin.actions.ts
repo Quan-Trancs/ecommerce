@@ -7,6 +7,7 @@ import { mintStoreAccessToken } from '@/lib/auth/store-token'
 import { formatError } from '@/lib/utils'
 import { listUsers, updateUser } from '@/lib/db/users'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
+import { logStaffAction } from '@/lib/audit/log-staff-action'
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -72,7 +73,18 @@ export async function updateAdminUserRole(userId: string, role: Role) {
       role,
     })
 
+    await logStaffAction({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: 'USER_ROLE_CHANGE',
+      entityType: 'user',
+      entityId: userId,
+      summary: `Set role of ${user.email} to ${role}`,
+      metadata: { role, email: user.email },
+    })
+
     revalidatePath('/admin/users')
+    revalidatePath('/admin/audit')
     return { success: true as const }
   } catch (error) {
     return { success: false as const, message: formatError(error) }
@@ -134,6 +146,7 @@ export type AdminCatalogCreateInput = {
 
 export async function createAdminCatalogProduct(input: AdminCatalogCreateInput) {
   try {
+    const session = await requireAdmin()
     const images = input.imageUrl?.trim() ? [input.imageUrl.trim()] : []
     const product = await adminCatalogFetch<AdminCatalogProduct>('/v1/admin/products', {
       method: 'POST',
@@ -148,8 +161,18 @@ export async function createAdminCatalogProduct(input: AdminCatalogCreateInput) 
         tags: ['admin-listing'],
       }),
     })
+    await logStaffAction({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: 'CATALOG_CREATE',
+      entityType: 'product',
+      entityId: product.id,
+      summary: `Created product ${product.name}`,
+      metadata: { price: product.price, slug: product.slug },
+    })
     revalidatePath('/admin/catalog')
     revalidatePath('/search')
+    revalidatePath('/admin/audit')
     return { success: true as const, product }
   } catch (error) {
     return { success: false as const, message: formatError(error) }
@@ -161,6 +184,7 @@ export async function updateAdminCatalogProduct(
   patch: { price?: number; stockQuantity?: number; isPublished?: boolean }
 ) {
   try {
+    const session = await requireAdmin()
     const product = await adminCatalogFetch<AdminCatalogProduct>(
       `/v1/admin/products/${encodeURIComponent(id)}`,
       {
@@ -169,9 +193,19 @@ export async function updateAdminCatalogProduct(
         body: JSON.stringify(patch),
       }
     )
+    await logStaffAction({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: 'CATALOG_UPDATE',
+      entityType: 'product',
+      entityId: product.id,
+      summary: `Updated product ${product.name || id}`,
+      metadata: patch,
+    })
     revalidatePath('/admin/catalog')
     revalidatePath('/search')
     revalidatePath(`/product/${product.slug}`)
+    revalidatePath('/admin/audit')
     if (patch.stockQuantity !== undefined) {
       await checkAndNotifyLowStock([product.id])
     }

@@ -13,6 +13,7 @@ import {
   type CouponDiscountType,
 } from '@/lib/db/coupons'
 import { formatError, roundToTwoDecimals } from '@/lib/utils'
+import { logStaffAction } from '@/lib/audit/log-staff-action'
 
 export type { Coupon }
 
@@ -91,7 +92,17 @@ export async function adminCreateCoupon(input: {
           : Number(input.maxRedemptions),
       perUserLimit: Number(input.perUserLimit) || 1,
     })
+    await logStaffAction({
+      actorId: session?.user?.id,
+      actorRole: session?.user?.role,
+      action: 'COUPON_CREATE',
+      entityType: 'coupon',
+      entityId: input.code.trim().toUpperCase(),
+      summary: `Created coupon ${input.code.trim().toUpperCase()}`,
+      metadata: { discountType, discountValue },
+    })
     revalidatePath('/admin/coupons')
+    revalidatePath('/admin/audit')
     return { success: true, message: 'Coupon created' }
   } catch (error) {
     return { success: false, message: formatError(error) }
@@ -108,7 +119,16 @@ export async function adminToggleCoupon(
       return { success: false, message: 'Admin required' }
     }
     await setCouponActive(id, active)
+    await logStaffAction({
+      actorId: session?.user?.id,
+      actorRole: session?.user?.role,
+      action: active ? 'COUPON_ACTIVATE' : 'COUPON_DEACTIVATE',
+      entityType: 'coupon',
+      entityId: String(id),
+      summary: `${active ? 'Activated' : 'Deactivated'} coupon #${id}`,
+    })
     revalidatePath('/admin/coupons')
+    revalidatePath('/admin/audit')
     return {
       success: true,
       message: active ? 'Coupon activated' : 'Coupon deactivated',

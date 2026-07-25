@@ -1,5 +1,24 @@
 # Version History
 
+## v1.3.40 — 2026-07-25
+
+Staff audit log for support/admin actions.
+
+### Backend
+- Flyway `V22__staff_audit_log.sql` — append-only `staff_audit_log`
+
+### Frontend
+- `/admin/audit` — filterable recent staff actions
+- Logs cancels (staff), partial refunds, order notes, role changes, coupons, payouts, catalog create/update
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.40` |
+| Store API | `store-backend/` | `1.3.40` (`store-api`) |
+
+---
+
 ## v1.3.39 — 2026-07-25
 
 Support ticket queue for public order-note threads.

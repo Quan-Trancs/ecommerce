@@ -13,6 +13,7 @@ import {
   type SellerPayout,
 } from '@/lib/db/seller-payouts'
 import { formatError } from '@/lib/utils'
+import { logStaffAction } from '@/lib/audit/log-staff-action'
 
 export type { SellerPayout }
 
@@ -99,9 +100,19 @@ export async function adminRecordSellerPayout(input: {
       note: input.note,
       recordedBy: session.user.id,
     })
+    await logStaffAction({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: 'SELLER_PAYOUT',
+      entityType: 'seller',
+      entityId: input.sellerAccountId,
+      summary: `Recorded payout $${amount.toFixed(2)} for seller ${input.sellerAccountId}`,
+      metadata: { amount, note: input.note || null },
+    })
     revalidatePath('/admin/payouts')
     revalidatePath('/seller/earnings')
     revalidatePath('/seller')
+    revalidatePath('/admin/audit')
     return { success: true, message: 'Payout recorded' }
   } catch (error) {
     return { success: false, message: formatError(error) }

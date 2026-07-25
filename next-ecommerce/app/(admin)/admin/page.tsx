@@ -43,6 +43,17 @@ export default function AdminHomePage() {
             </p>
           </Link>
         </li>
+        <li>
+          <Link
+            href='/admin/audit'
+            className='block rounded-lg border p-4 transition hover:border-primary'
+          >
+            <h2 className='font-semibold'>Audit log</h2>
+            <p className='text-sm text-muted-foreground'>
+              Staff cancels, refunds, role changes, and more
+            </p>
+          </Link>
+        </li>
       </ul>
     </div>
   )
