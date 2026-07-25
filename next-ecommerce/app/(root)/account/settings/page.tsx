@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getNotificationPreferences } from '@/lib/actions/account.actions'
 import DesktopAlertsPreference from './desktop-alerts-preference'
 import LowStockPreferencesForm from './low-stock-preferences-form'
+import AbandonedCartPreferencesForm from './abandoned-cart-preferences-form'
 import NotificationPreferencesForm from './notification-preferences-form'
 
 export const metadata = { title: 'Notification settings' }
@@ -34,6 +35,9 @@ export default async function AccountSettingsPage() {
         <LowStockPreferencesForm
           notifyLowStock={prefs.notifyLowStock}
           lowStockThreshold={prefs.lowStockThreshold}
+        />
+        <AbandonedCartPreferencesForm
+          notifyAbandonedCart={prefs.notifyAbandonedCart}
         />
         <div className='rounded-lg border p-4'>
           <NotificationPreferencesForm

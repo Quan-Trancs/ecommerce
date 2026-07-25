@@ -8,8 +8,10 @@ import OrderNoteDigestEmail, {
 import OrderReturnEmail, {
   type OrderReturnEmailKind,
 } from './order-return'
+import AbandonedCartEmail from './abandoned-cart'
 import { SENDER_EMAIL, SENDER_NAME } from '@/lib/constants'
 import { IOrder } from '@/lib/types/order'
+import type { AbandonedCartItem } from '@/lib/db/abandoned-carts'
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
@@ -168,6 +170,37 @@ export const sendOrderReturnEmail = async (input: {
         reviewNote={input.reviewNote}
         refundAmount={input.refundAmount}
         lines={input.lines}
+      />
+    ),
+  })
+  return { sent: true as const }
+}
+
+export const sendAbandonedCartEmail = async (input: {
+  to: string
+  displayName?: string | null
+  items: AbandonedCartItem[]
+  itemsTotal: number
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to) {
+    console.warn(
+      'Skipping abandoned cart email:',
+      !resend ? 'RESEND_API_KEY missing' : 'buyer email missing'
+    )
+    return { sent: false as const }
+  }
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject: 'You left items in your cart',
+    react: (
+      <AbandonedCartEmail
+        displayName={input.displayName}
+        items={input.items}
+        itemsTotal={input.itemsTotal}
       />
     ),
   })

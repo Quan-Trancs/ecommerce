@@ -5,6 +5,7 @@ import { auth } from '@/auth'
 import {
   findUserById,
   normalizeOrderNoteEmailMode,
+  updateAbandonedCartPreferences,
   updateLowStockPreferences,
   updateOrderNoteNotificationPreferences,
   type OrderNoteEmailMode,
@@ -31,6 +32,7 @@ export async function getNotificationPreferences(): Promise<{
   notifyInAppOrderNotes: boolean
   notifyLowStock: boolean
   lowStockThreshold: number
+  notifyAbandonedCart: boolean
   vapidPublicKey: string | null
 } | null> {
   const session = await auth()
@@ -50,6 +52,7 @@ export async function getNotificationPreferences(): Promise<{
     notifyInAppOrderNotes: user.notifyInAppOrderNotes,
     notifyLowStock: user.notifyLowStock,
     lowStockThreshold: user.lowStockThreshold,
+    notifyAbandonedCart: user.notifyAbandonedCart,
     vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
@@ -167,6 +170,30 @@ export async function setLowStockPreferences(input: {
     revalidatePath('/account/settings')
     revalidatePath('/seller/products')
     return { success: true, message: 'Low-stock alert preferences saved' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function setAbandonedCartPreferences(input: {
+  notifyAbandonedCart: boolean
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    const updated = await updateAbandonedCartPreferences(session.user.id, {
+      notifyAbandonedCart: Boolean(input.notifyAbandonedCart),
+    })
+    if (!updated) return { success: false, message: 'Account not found' }
+    revalidatePath('/account/settings')
+    return {
+      success: true,
+      message: updated.notifyAbandonedCart
+        ? 'Abandoned cart emails enabled'
+        : 'Abandoned cart emails disabled',
+    }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }

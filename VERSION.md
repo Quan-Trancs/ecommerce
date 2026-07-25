@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.58 — 2026-07-25
+
+Abandoned-cart email reminders for signed-in carts.
+
+### Backend
+- Flyway `V31__abandoned_cart_reminders.sql` — `carts.last_abandoned_email_at`, `accounts.notify_abandoned_cart` (default on)
+
+### Frontend
+- Hourly cron `GET /api/cron/abandoned-carts` (CRON_SECRET; `ABANDONED_CART_HOURS` default 24)
+- Resend template with cart lines + link to `/cart`
+- Account settings toggle to opt out
+- Guests remain localStorage-only (no reminders)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.58` |
+| Store API | `store-backend/` | `1.3.58` (`store-api`) |
+
+---
+
 ## v1.3.57 — 2026-07-25
 
 Newsletter / marketing email signup.
