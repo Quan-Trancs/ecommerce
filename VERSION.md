@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.45 — 2026-07-25
+
+Buyer return / RMA requests with staff review.
+
+### Backend
+- Flyway `V25__order_returns.sql` — `order_return_requests` + line items
+
+### Frontend
+- Order details: request return on shipped units; buyer cancel; staff approve/reject
+- `/support/returns` queue of open requests
+- Approval posts an internal order note and staff audit entry (refunds still via existing tools)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.45` |
+| Store API | `store-backend/` | `1.3.45` (`store-api`) |
+
+---
+
 ## v1.3.44 — 2026-07-25
 
 Buyer wishlist / save for later.

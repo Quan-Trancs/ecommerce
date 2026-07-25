@@ -19,8 +19,10 @@ import { buttonVariants } from '@/components/ui/button'
 import ProductPrice from '../product/product-price'
 import CancelOrderButton from './cancel-order-button'
 import PartialRefundPanel from './partial-refund-panel'
+import OrderReturnsPanel from './order-returns-panel'
 import OrderNotesThread from './order-notes-thread'
 import type { OrderNote } from '@/lib/actions/order.actions'
+import type { OrderReturnRequest } from '@/lib/actions/return.actions'
 
 export default function OrderDetailsForm({
   order,
@@ -28,6 +30,9 @@ export default function OrderDetailsForm({
   notes = [],
   inAppMuted = false,
   coupon,
+  returns = [],
+  reservedByItemId = {},
+  isBuyer = false,
 }: {
   order: IOrder
   isAdmin: boolean
@@ -36,6 +41,9 @@ export default function OrderDetailsForm({
   notes?: OrderNote[]
   inAppMuted?: boolean
   coupon?: { code: string; discountAmount: number } | null
+  returns?: OrderReturnRequest[]
+  reservedByItemId?: Record<string, number>
+  isBuyer?: boolean
 }) {
   const {
     shippingAddress,
@@ -177,6 +185,13 @@ export default function OrderDetailsForm({
             </Table>
           </CardContent>
         </Card>
+        <OrderReturnsPanel
+          order={order}
+          returns={returns}
+          reservedByItemId={reservedByItemId}
+          isBuyer={isBuyer}
+          canReview={canCancelElevated}
+        />
         <OrderNotesThread
           orderId={order._id}
           initialNotes={notes}

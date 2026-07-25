@@ -8,6 +8,7 @@ import {
   getOrderCoupon,
 } from '@/lib/actions/order.actions'
 import { getOrderInAppMuteState } from '@/lib/actions/notification.actions'
+import { getOrderReturnContext } from '@/lib/actions/return.actions'
 import OrderDetailsForm from '@/components/shared/order/order-details-form'
 import Link from 'next/link'
 import { formatId } from '@/lib/utils'
@@ -41,6 +42,9 @@ export default async function OrderDetailsPage(props: {
     ? await getOrderInAppMuteState(id)
     : false
   const coupon = await getOrderCoupon(id)
+  const returnContext = session?.user?.id
+    ? await getOrderReturnContext(id)
+    : { returns: [], reservedByItemId: {} }
   const orderUserId =
     typeof order.user === 'string' ? order.user : undefined
   const isSellerViewer =
@@ -48,6 +52,7 @@ export default async function OrderDetailsPage(props: {
     !hasSupportAccess(session?.user?.role) &&
     Boolean(session?.user?.id) &&
     session?.user?.id !== orderUserId
+  const isBuyer = Boolean(session?.user?.id && session.user.id === orderUserId)
 
   return (
     <>
@@ -78,6 +83,9 @@ export default async function OrderDetailsPage(props: {
         notes={notes}
         inAppMuted={inAppMuted}
         coupon={coupon}
+        returns={returnContext.returns}
+        reservedByItemId={returnContext.reservedByItemId}
+        isBuyer={isBuyer}
       />
     </>
   )

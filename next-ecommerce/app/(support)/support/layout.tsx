@@ -11,6 +11,7 @@ export default async function SupportLayout({
   const nav = [
     { href: '/support', label: 'Orders' },
     { href: '/support/tickets', label: 'Tickets' },
+    { href: '/support/returns', label: 'Returns' },
     { href: '/account', label: 'Account' },
   ]
 
