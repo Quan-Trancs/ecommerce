@@ -19,6 +19,7 @@ import quantran.api.repository.OrderRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,10 +31,16 @@ public class OrderNoteService {
     private final OrderRepository orderRepository;
     private final OrderNoteRepository orderNoteRepository;
     private final AccountRepository accountRepository;
+    private final OrderService orderService;
 
     @Transactional(readOnly = true)
-    public List<OrderNoteDto> listForUser(String orderId, String userId, boolean elevate) {
-        OrderEntity order = requireAccessibleOrder(orderId, userId, elevate);
+    public List<OrderNoteDto> listForUser(
+            String orderId,
+            String userId,
+            boolean elevate,
+            boolean canSell
+    ) {
+        OrderEntity order = requireAccessibleOrder(orderId, userId, elevate, canSell);
         return orderNoteRepository.findByOrderIdOrderByCreatedAtAsc(order.getId()).stream()
                 .filter(note -> elevate || isPublic(note))
                 .map(this::toDto)
@@ -46,9 +53,10 @@ public class OrderNoteService {
             String userId,
             Role role,
             boolean elevate,
+            boolean canSell,
             CreateOrderNoteRequestDto request
     ) {
-        OrderEntity order = requireAccessibleOrder(orderId, userId, elevate);
+        OrderEntity order = requireAccessibleOrder(orderId, userId, elevate, canSell);
         String body = request == null || request.getBody() == null ? "" : request.getBody().trim();
         if (body.isEmpty()) {
             throw new BusinessLogicException("Note body is required");
@@ -96,16 +104,27 @@ public class OrderNoteService {
                 || note.getVisibility() == OrderNoteEntity.Visibility.PUBLIC;
     }
 
-    private OrderEntity requireAccessibleOrder(String orderId, String userId, boolean elevate) {
-        OrderEntity order = orderRepository.findById(orderId)
+    private OrderEntity requireAccessibleOrder(
+            String orderId,
+            String userId,
+            boolean elevate,
+            boolean canSell
+    ) {
+        OrderEntity order = orderRepository.findDetailedById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
         if (elevate) {
             return order;
         }
-        if (order.getUserId() == null || !order.getUserId().equals(userId)) {
-            throw new UnauthorizedException("Not allowed to access this order");
+        if (order.getUserId() != null && order.getUserId().equals(userId)) {
+            return order;
         }
-        return order;
+        if (canSell) {
+            Set<String> owned = orderService.productIdsOwnedBySeller(userId);
+            if (orderService.orderContainsAnyProduct(order, owned)) {
+                return order;
+            }
+        }
+        throw new UnauthorizedException("Not allowed to access this order");
     }
 
     private OrderNoteDto toDto(OrderNoteEntity note) {

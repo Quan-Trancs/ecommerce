@@ -85,7 +85,8 @@ public class OrderController {
         }
         String userId = requireUserId(request);
         boolean elevate = canAssist(request);
-        return ResponseEntity.ok(orderService.getByIdForUser(id, userId, elevate));
+        boolean canSell = requestRole(request).canSell();
+        return ResponseEntity.ok(orderService.getByIdForUser(id, userId, elevate, canSell));
     }
 
     @PostMapping("/{id}/pay")
@@ -115,18 +116,19 @@ public class OrderController {
         return ResponseEntity.ok(orderService.cancelForUser(id, userId, elevate, body));
     }
 
-    /** Buyer (owner) or SUPPORT/ADMIN: list notes on an order thread. */
+    /** Buyer (owner), seller on the order, or SUPPORT/ADMIN: list notes. */
     @GetMapping("/{id}/notes")
     public ResponseEntity<List<OrderNoteDto>> listNotes(
             HttpServletRequest request,
             @PathVariable String id
     ) {
         String userId = requireUserId(request);
+        Role role = requestRole(request);
         boolean elevate = canAssist(request);
-        return ResponseEntity.ok(orderNoteService.listForUser(id, userId, elevate));
+        return ResponseEntity.ok(orderNoteService.listForUser(id, userId, elevate, role.canSell()));
     }
 
-    /** Buyer (owner) or SUPPORT/ADMIN: post a note on an order thread. */
+    /** Buyer (owner), seller on the order, or SUPPORT/ADMIN: post a note. */
     @PostMapping("/{id}/notes")
     public ResponseEntity<OrderNoteDto> createNote(
             HttpServletRequest request,
@@ -136,7 +138,8 @@ public class OrderController {
         String userId = requireUserId(request);
         Role role = requestRole(request);
         boolean elevate = canAssist(request);
-        OrderNoteDto created = orderNoteService.createForUser(id, userId, role, elevate, body);
+        OrderNoteDto created = orderNoteService.createForUser(
+                id, userId, role, elevate, role.canSell(), body);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 

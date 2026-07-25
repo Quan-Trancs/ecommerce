@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.20 — 2026-07-25
+
+Seller participation in order notes (product-scoped).
+
+### Backend
+- `GET /v1/orders/{id}` allows sellers when the order includes their products (items filtered to theirs)
+- `GET/POST /v1/orders/{id}/notes` same product-scoped access; sellers see/post **PUBLIC** only (not INTERNAL)
+
+### Frontend
+- Seller orders list links to order detail + support thread
+- Seller breadcrumb when viewing a buyer’s order they fulfill
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.20` |
+| Store API | `store-backend/` | `1.3.20` (`store-api`) |
+
+---
+
 ## v1.3.19 — 2026-07-25
 
 Private staff-only order notes (internal visibility).

@@ -211,11 +211,41 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderResponseDto getByIdForUser(String id, String userId, boolean admin) {
+    public OrderResponseDto getByIdForUser(String id, String userId, boolean assist, boolean canSell) {
         OrderEntity order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
-        assertOwnerOrAdmin(order, userId, admin);
-        return toDto(order);
+        if (assist) {
+            return toDto(order);
+        }
+        if (order.getUserId() != null && order.getUserId().equals(userId)) {
+            return toDto(order);
+        }
+        if (canSell) {
+            Set<String> owned = productIdsOwnedBySeller(userId);
+            if (orderContainsAnyProduct(order, owned)) {
+                return toDtoFiltered(order, owned);
+            }
+        }
+        throw new UnauthorizedException("Not allowed to access this order");
+    }
+
+    /** Product ids listed under this seller account. */
+    public Set<String> productIdsOwnedBySeller(String sellerAccountId) {
+        if (sellerAccountId == null || sellerAccountId.trim().isEmpty()) {
+            return new HashSet<>();
+        }
+        return productRepository.findBySellerAccountId(sellerAccountId).stream()
+                .map(ProductEntity::getId)
+                .filter(pid -> pid != null && !pid.isEmpty())
+                .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    public boolean orderContainsAnyProduct(OrderEntity order, Set<String> productIds) {
+        if (order == null || productIds == null || productIds.isEmpty() || order.getItems() == null) {
+            return false;
+        }
+        return order.getItems().stream()
+                .anyMatch(item -> item.getProductId() != null && productIds.contains(item.getProductId()));
     }
 
     @Transactional

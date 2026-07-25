@@ -6,7 +6,7 @@ import { getOrderById, getOrderNotes } from '@/lib/actions/order.actions'
 import OrderDetailsForm from '@/components/shared/order/order-details-form'
 import Link from 'next/link'
 import { formatId } from '@/lib/utils'
-import { hasAdminAccess, hasSupportAccess } from '@/lib/auth/roles'
+import { hasAdminAccess, hasSellerAccess, hasSupportAccess } from '@/lib/auth/roles'
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>
@@ -32,15 +32,34 @@ export default async function OrderDetailsPage(props: {
 
   const session = await auth()
   const notes = session?.user?.id ? await getOrderNotes(id) : []
+  const orderUserId =
+    typeof order.user === 'string' ? order.user : undefined
+  const isSellerViewer =
+    hasSellerAccess(session?.user?.role) &&
+    !hasSupportAccess(session?.user?.role) &&
+    Boolean(session?.user?.id) &&
+    session?.user?.id !== orderUserId
 
   return (
     <>
       <div className='flex gap-2'>
-        <Link href='/account'>Your Account</Link>
-        <span>›</span>
-        <Link href='/account/orders'>Your Orders</Link>
-        <span>›</span>
-        <span>Order {formatId(order._id)}</span>
+        {isSellerViewer ? (
+          <>
+            <Link href='/seller'>Seller</Link>
+            <span>›</span>
+            <Link href='/seller/orders'>Orders</Link>
+            <span>›</span>
+            <span>Order {formatId(order._id)}</span>
+          </>
+        ) : (
+          <>
+            <Link href='/account'>Your Account</Link>
+            <span>›</span>
+            <Link href='/account/orders'>Your Orders</Link>
+            <span>›</span>
+            <span>Order {formatId(order._id)}</span>
+          </>
+        )}
       </div>
       <h1 className='h1-bold py-4'>Order {formatId(order._id)}</h1>
       <OrderDetailsForm

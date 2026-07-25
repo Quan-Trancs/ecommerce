@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.19](./VERSION.md) — internal staff order notes. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.20](./VERSION.md) — seller order notes (product-scoped). See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

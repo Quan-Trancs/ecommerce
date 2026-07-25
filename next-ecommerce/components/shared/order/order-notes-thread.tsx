@@ -63,7 +63,7 @@ export default function OrderNotesThread({
           <p className='text-sm text-muted-foreground'>
             {canPostInternal
               ? 'Buyer-visible messages and optional internal staff notes.'
-              : 'Messages between you and support about this order.'}
+              : 'Messages about this order with the buyer, sellers, and support.'}
           </p>
         </div>
 
