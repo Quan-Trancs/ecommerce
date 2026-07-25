@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/order-note-digests",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

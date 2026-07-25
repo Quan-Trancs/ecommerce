@@ -2,6 +2,9 @@ import { Resend } from 'resend'
 import PurchaseReceiptEmail from './purchase-receipt'
 import OrderShippedEmail from './order-shipped'
 import OrderNoteEmail from './order-note'
+import OrderNoteDigestEmail, {
+  type DigestNoteItem,
+} from './order-note-digest'
 import { SENDER_EMAIL, SENDER_NAME } from '@/lib/constants'
 import { IOrder } from '@/lib/types/order'
 
@@ -89,6 +92,33 @@ export const sendOrderNoteEmail = async (input: {
         orderUrl={input.orderUrl}
       />
     ),
+  })
+  return { sent: true as const }
+}
+
+export const sendOrderNoteDigestEmail = async (input: {
+  to: string
+  notes: DigestNoteItem[]
+}) => {
+  const resend = getResend()
+  if (!resend) {
+    console.warn('Skipping order note digest: RESEND_API_KEY missing')
+    return { sent: false as const }
+  }
+  const to = input.to.trim()
+  if (!to || !input.notes.length) {
+    return { sent: false as const }
+  }
+
+  const count = input.notes.length
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject:
+      count === 1
+        ? `New message on order ${input.notes[0].orderId}`
+        : `${count} new order messages`,
+    react: <OrderNoteDigestEmail notes={input.notes} />,
   })
   return { sent: true as const }
 }

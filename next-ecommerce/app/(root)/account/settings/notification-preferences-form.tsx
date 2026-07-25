@@ -45,8 +45,9 @@ export default function NotificationPreferencesForm({
         <span>
           <span className='font-medium'>Order note emails</span>
           <span className='mt-1 block text-muted-foreground'>
-            Email me when someone posts a public message on an order I buy or
-            sell. Internal staff notes are never emailed.
+            Email me about public messages on orders I buy or sell. Messages are
+            batched into digests (about every 15 minutes) instead of one email
+            per reply. Internal staff notes are never emailed.
           </span>
         </span>
       </label>

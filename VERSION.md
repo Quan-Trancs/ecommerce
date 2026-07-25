@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.24 — 2026-07-25
+
+Digest / batch order-note emails instead of per-message.
+
+### Backend
+- Flyway `V11__order_note_email_queue.sql` — pending note email queue
+
+### Frontend
+- Public notes enqueue per recipient; digests flush by age/batch or cron
+- `GET/POST /api/cron/order-note-digests` (CRON_SECRET) + `vercel.json` */15
+- `ORDER_NOTE_DIGEST_MINUTES=0` restores immediate emails
+- Digest React email template
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.24` |
+| Store API | `store-backend/` | `1.3.24` (`store-api`) |
+
+---
+
 ## v1.3.23 — 2026-07-25
 
 Buyer/seller email preferences for order-note notifications.
