@@ -319,4 +319,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Quiet hours for order-note emails~~ (v1.3.26)
 - ~~SMS / push channel for urgent order notes~~ (v1.3.27)
 - ~~In-app notification center for order notes~~ (v1.3.28)
-- Real-time notification refresh (SSE / websocket)
+- ~~Real-time notification refresh (SSE / websocket)~~ (v1.3.29)

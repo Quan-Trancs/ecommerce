@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.29 — 2026-07-25
+
+Real-time notification refresh via Server-Sent Events.
+
+### Frontend
+- `GET /api/notifications/stream` — SSE summary stream (pub/sub + 12s poll fallback)
+- Header bell badge/list updates live; toast on new publish
+- `/account/notifications` refreshes on live publish
+- In-process notification bus wakes SSE when inbox rows change
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.29` |
+| Store API | `store-backend/` | `1.3.29` (`store-api`) |
+
+---
+
 ## v1.3.28 — 2026-07-25
 
 In-app notification center for order notes.

@@ -1,4 +1,5 @@
 import { query } from '@/lib/db/postgres'
+import { publishInAppNotification } from '@/lib/notify/notification-bus'
 
 export type InAppNotification = {
   id: number
@@ -69,6 +70,7 @@ export async function createInAppNotification(input: {
       Boolean(input.urgent),
     ]
   )
+  publishInAppNotification(input.accountId)
 }
 
 export async function listInAppNotifications(
@@ -111,7 +113,9 @@ export async function markInAppNotificationRead(
      WHERE id = $1 AND account_id = $2 AND read_at IS NULL`,
     [notificationId, accountId]
   )
-  return (result.rowCount || 0) > 0
+  const updated = (result.rowCount || 0) > 0
+  if (updated) publishInAppNotification(accountId)
+  return updated
 }
 
 export async function markAllInAppNotificationsRead(
@@ -123,5 +127,7 @@ export async function markAllInAppNotificationsRead(
      WHERE account_id = $1 AND read_at IS NULL`,
     [accountId]
   )
-  return result.rowCount || 0
+  const count = result.rowCount || 0
+  if (count > 0) publishInAppNotification(accountId)
+  return count
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import {
   markNotificationRead,
   type InAppNotification,
 } from '@/lib/actions/notification.actions'
+import { useNotificationStream } from '@/hooks/use-notification-stream'
 import { cn, formatDateTime } from '@/lib/utils'
 
 export default function NotificationsList({
@@ -20,13 +21,24 @@ export default function NotificationsList({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const { summary } = useNotificationStream(true, {
+    unreadCount: notifications.filter((n) => !n.readAt).length,
+    recent: notifications.slice(0, 8),
+  })
+
+  useEffect(() => {
+    if (summary.reason === 'publish') {
+      router.refresh()
+    }
+  }, [summary.latestId, summary.unreadCount, summary.reason, router])
+
   const unread = notifications.filter((n) => !n.readAt).length
 
   return (
     <div className='space-y-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <p className='text-sm text-muted-foreground'>
-          {unread ? `${unread} unread` : 'All caught up'}
+          {unread ? `${unread} unread` : 'All caught up'} · live
         </p>
         {unread > 0 ? (
           <Button
