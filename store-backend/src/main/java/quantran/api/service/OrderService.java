@@ -205,10 +205,16 @@ public class OrderService {
     /**
      * Cancel an order and restock reserved inventory.
      * Buyer: unpaid PENDING only.
-     * Support/Admin (elevate): unpaid or paid, but not SHIPPED — cancel-only, no payment refund.
+     * Support/Admin (elevate): unpaid or paid, but not SHIPPED.
+     * Paid cancels may include processor refund metadata from the storefront.
      */
     @Transactional
-    public OrderResponseDto cancelForUser(String id, String userId, boolean elevate) {
+    public OrderResponseDto cancelForUser(
+            String id,
+            String userId,
+            boolean elevate,
+            quantran.api.dto.CancelOrderRequestDto cancelRequest
+    ) {
         OrderEntity order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
         assertOwnerOrAdmin(order, userId, elevate);
@@ -233,7 +239,52 @@ public class OrderService {
 
         restockOrderItems(order);
         order.setStatus(OrderEntity.Status.CANCELLED);
+        mergeRefundMetadata(order, cancelRequest);
         return toDto(orderRepository.save(order));
+    }
+
+    private void mergeRefundMetadata(OrderEntity order, quantran.api.dto.CancelOrderRequestDto cancelRequest) {
+        if (cancelRequest == null) {
+            return;
+        }
+        boolean hasRefund = cancelRequest.getRefundId() != null && !cancelRequest.getRefundId().trim().isEmpty();
+        boolean skipped = Boolean.TRUE.equals(cancelRequest.getRefundSkipped());
+        String note = cancelRequest.getRefundNote();
+        if (!hasRefund && !skipped && (note == null || note.isEmpty())) {
+            return;
+        }
+
+        StringBuilder json = new StringBuilder("{");
+        String existing = order.getPaymentResultJson();
+        boolean hasPrior = false;
+        if (existing != null) {
+            String trimmed = existing.trim();
+            if (trimmed.startsWith("{") && trimmed.endsWith("}") && trimmed.length() > 2) {
+                json.append(trimmed, 1, trimmed.length() - 1);
+                hasPrior = true;
+            }
+        }
+        if (hasRefund) {
+            if (hasPrior) json.append(",");
+            json.append("\"refund_id\":\"").append(escapeJson(cancelRequest.getRefundId().trim())).append("\"");
+            hasPrior = true;
+        }
+        if (cancelRequest.getRefundStatus() != null && !cancelRequest.getRefundStatus().isEmpty()) {
+            if (hasPrior) json.append(",");
+            json.append("\"refund_status\":\"").append(escapeJson(cancelRequest.getRefundStatus())).append("\"");
+            hasPrior = true;
+        }
+        if (skipped) {
+            if (hasPrior) json.append(",");
+            json.append("\"refund_skipped\":true");
+            hasPrior = true;
+        }
+        if (note != null && !note.isEmpty()) {
+            if (hasPrior) json.append(",");
+            json.append("\"refund_note\":\"").append(escapeJson(note)).append("\"");
+        }
+        json.append("}");
+        order.setPaymentResultJson(json.toString());
     }
 
     private void restockOrderItems(OrderEntity order) {
@@ -306,6 +357,11 @@ public class OrderService {
                     json.append("\"id\":\"").append(escapeJson(payment.getId())).append("\"");
                     first = false;
                 }
+                if (payment.getCaptureId() != null) {
+                    if (!first) json.append(",");
+                    json.append("\"capture_id\":\"").append(escapeJson(payment.getCaptureId())).append("\"");
+                    first = false;
+                }
                 if (payment.getStatus() != null) {
                     if (!first) json.append(",");
                     json.append("\"status\":\"").append(escapeJson(payment.getStatus())).append("\"");
@@ -314,6 +370,11 @@ public class OrderService {
                 if (payment.getEmailAddress() != null) {
                     if (!first) json.append(",");
                     json.append("\"email_address\":\"").append(escapeJson(payment.getEmailAddress())).append("\"");
+                    first = false;
+                }
+                if (payment.getPricePaid() != null) {
+                    if (!first) json.append(",");
+                    json.append("\"price_paid\":\"").append(escapeJson(payment.getPricePaid())).append("\"");
                 }
                 json.append("}");
                 order.setPaymentResultJson(json.toString());

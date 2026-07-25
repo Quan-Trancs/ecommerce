@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.8 — 2026-07-25
+
+PayPal refund on support/admin paid cancel; capture id stored at pay time.
+
+### Backend
+- Pay payload stores `capture_id` / `price_paid` in `payment_result_json`
+- `POST /v1/orders/{id}/cancel` accepts optional refund metadata (`refundId`, `refundSkipped`, …)
+
+### Frontend
+- `paypal.refundCapture` + resolve capture from stored JSON or PayPal order lookup
+- Elevated paid cancel refunds PayPal before cancel; Stripe skipped (checkout not enabled)
+- Support UI: Cancel & refund for PayPal
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.8` |
+| Store API | `store-backend/` | `1.3.8` (`store-api`) |
+
+---
+
 ## v1.3.7 — 2026-07-25
 
 Support desk: find orders by buyer account email.

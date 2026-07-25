@@ -198,6 +198,7 @@ export type StoreOrder = {
   totalPrice: number
   isPaid?: boolean
   paidAt?: string
+  paymentResultJson?: string
   items: StoreOrderPayload['items']
   shipping: StoreOrderPayload['shipping']
   createdAt?: string
@@ -254,9 +255,11 @@ export async function payStoreOrder(
   orderId: string,
   payment: {
     id: string
+    captureId?: string
     status: string
     emailAddress?: string
     pricePaid?: string
+    paymentMethod?: string
   },
   subject: StoreTokenSubject
 ): Promise<StoreOrder> {
@@ -276,7 +279,13 @@ export async function payStoreOrder(
 
 export async function cancelStoreOrder(
   orderId: string,
-  subject: StoreTokenSubject
+  subject: StoreTokenSubject,
+  refund?: {
+    refundId?: string
+    refundStatus?: string
+    refundSkipped?: boolean
+    refundNote?: string
+  }
 ): Promise<StoreOrder> {
   const authHeaders = await storeAuthHeaders(subject)
   if (!authHeaders.Authorization) {
@@ -286,7 +295,11 @@ export async function cancelStoreOrder(
     `/v1/orders/${encodeURIComponent(orderId)}/cancel`,
     {
       method: 'POST',
-      headers: authHeaders,
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(refund || {}),
     }
   )
 }

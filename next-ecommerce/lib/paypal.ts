@@ -85,6 +85,49 @@ export const paypal = {
       return handleResponse(response)
     })
   },
+
+  getOrder: async function getOrder(paypalOrderId: string) {
+    return retryWithBackoff(async () => {
+      const accessToken = await generateAccessToken()
+      const url = `${base}/v2/checkout/orders/${paypalOrderId}`
+      const response = await fetchWithTimeout(url, {
+        method: 'get',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      return handleResponse(response)
+    })
+  },
+
+  /** Full refund of a captured payment. */
+  refundCapture: async function refundCapture(
+    captureId: string,
+    amount?: { currency_code?: string; value: string }
+  ) {
+    return retryWithBackoff(async () => {
+      const accessToken = await generateAccessToken()
+      const url = `${base}/v2/payments/captures/${encodeURIComponent(captureId)}/refund`
+      const response = await fetchWithTimeout(url, {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(
+          amount
+            ? {
+                amount: {
+                  currency_code: amount.currency_code || 'USD',
+                  value: amount.value,
+                },
+              }
+            : {}
+        ),
+      })
+      return handleResponse(response)
+    })
+  },
 }
 
 async function generateAccessToken() {

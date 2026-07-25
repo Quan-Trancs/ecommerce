@@ -25,7 +25,7 @@ export default function OrderDetailsForm({
 }: {
   order: IOrder
   isAdmin: boolean
-  /** Support/admin may cancel paid (non-shipped) orders without refund. */
+  /** Support/admin may cancel paid (non-shipped) orders; PayPal refunds when possible. */
   canCancelElevated?: boolean
 }) {
   const {
@@ -55,6 +55,12 @@ export default function OrderDetailsForm({
     statusUpper === 'PENDING'
   const staffCanCancel =
     canCancelElevated && !isCancelled && !hasShippedLines
+  const paidRefundLabel =
+    paymentMethod === 'PayPal'
+      ? 'Cancel & refund (PayPal)'
+      : paymentMethod === 'Stripe'
+        ? 'Cancel (Stripe refund N/A)'
+        : 'Cancel (no auto-refund)'
 
   return (
     <div className='grid md:grid-cols-3 md:gap-5'>
@@ -194,12 +200,25 @@ export default function OrderDetailsForm({
               <div className='space-y-2'>
                 <CancelOrderButton
                   orderId={order._id}
-                  label={isPaid ? 'Cancel (no refund)' : 'Cancel order'}
+                  label={isPaid ? paidRefundLabel : 'Cancel order'}
+                  confirmMessage={
+                    isPaid && paymentMethod === 'PayPal'
+                      ? 'Cancel this paid order and submit a PayPal refund? Stock will be restored.'
+                      : isPaid
+                        ? 'Cancel this paid order and restore stock? Automatic refund is not available for this payment method.'
+                        : undefined
+                  }
                 />
-                {isPaid ? (
+                {isPaid && paymentMethod === 'PayPal' ? (
                   <p className='text-xs text-muted-foreground'>
-                    Cancels fulfillment and restores stock. Does not refund
-                    payment processors.
+                    Restores stock and refunds the PayPal capture when credentials
+                    are configured.
+                  </p>
+                ) : null}
+                {isPaid && paymentMethod === 'Stripe' ? (
+                  <p className='text-xs text-muted-foreground'>
+                    Stripe checkout is not enabled yet — cancel restores stock
+                    only; refund manually in Stripe if needed.
                   </p>
                 ) : null}
               </div>

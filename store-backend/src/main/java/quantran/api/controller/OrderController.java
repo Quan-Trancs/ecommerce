@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import quantran.api.account.Role;
+import quantran.api.dto.CancelOrderRequestDto;
 import quantran.api.dto.CreateOrderRequestDto;
 import quantran.api.dto.OrderResponseDto;
 import quantran.api.dto.PayOrderRequestDto;
@@ -84,11 +85,12 @@ public class OrderController {
     @PostMapping("/{id}/cancel")
     public ResponseEntity<OrderResponseDto> cancel(
             HttpServletRequest request,
-            @PathVariable String id
+            @PathVariable String id,
+            @RequestBody(required = false) CancelOrderRequestDto body
     ) {
         String userId = requireUserId(request);
         boolean elevate = canAssist(request);
-        return ResponseEntity.ok(orderService.cancelForUser(id, userId, elevate));
+        return ResponseEntity.ok(orderService.cancelForUser(id, userId, elevate, body));
     }
 
     private String requireUserId(HttpServletRequest request) {

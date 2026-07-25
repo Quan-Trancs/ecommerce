@@ -16,6 +16,7 @@ import {
   payStoreOrder,
   type StoreOrder,
 } from '@/lib/catalog/client'
+import { hasSupportAccess } from '@/lib/auth/roles'
 import type { StoreTokenSubject } from '@/lib/auth/store-token'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
@@ -261,11 +262,14 @@ export async function approvePayPalOrder(
       orderId,
       {
         id: captureData.id,
+        captureId:
+          captureData.purchase_units?.[0]?.payments?.captures?.[0]?.id,
         status: captureData.status,
         emailAddress: captureData.payer?.email_address,
         pricePaid:
           captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount
             ?.value,
+        paymentMethod: 'PayPal',
       },
       subject
     )
@@ -285,11 +289,79 @@ export async function cancelOrder(orderId: string) {
     if (!session?.user?.id) throw new Error('User not authenticated')
     const subject = subjectFromSession(session)
 
-    await cancelStoreOrder(orderId, subject)
+    const storeOrder = await fetchStoreOrder(orderId, subject)
+    if (!storeOrder) throw new Error('Order not found')
+
+    if (String(storeOrder.status || '').toUpperCase() === 'CANCELLED') {
+      return {
+        success: true as const,
+        message: 'Order already cancelled',
+      }
+    }
+
+    const isPaid = Boolean(storeOrder.isPaid)
+    const paymentMethod = (storeOrder.paymentMethod || '').toLowerCase()
+    const elevate = hasSupportAccess(session.user.role)
+
+    let refundMeta:
+      | {
+          refundId?: string
+          refundStatus?: string
+          refundSkipped?: boolean
+          refundNote?: string
+        }
+      | undefined
+
+    if (isPaid && elevate) {
+      if (paymentMethod === 'paypal') {
+        const captureId = await resolvePayPalCaptureId(storeOrder.paymentResultJson)
+        if (!captureId) {
+          throw new Error(
+            'Cannot refund: PayPal capture id missing. Cancel aborted — refund manually in PayPal, then retry or ask an admin.'
+          )
+        }
+        const refund = await paypal.refundCapture(captureId)
+        const refundStatus = String(refund?.status || '').toUpperCase()
+        if (refundStatus && !['COMPLETED', 'PENDING'].includes(refundStatus)) {
+          throw new Error(`PayPal refund failed with status ${refundStatus}`)
+        }
+        refundMeta = {
+          refundId: refund?.id,
+          refundStatus: refund?.status || 'COMPLETED',
+        }
+      } else if (paymentMethod === 'stripe') {
+        refundMeta = {
+          refundSkipped: true,
+          refundNote:
+            'Stripe checkout is not enabled; cancel restored stock without processor refund',
+        }
+      } else {
+        refundMeta = {
+          refundSkipped: true,
+          refundNote: `No automatic refund for payment method ${storeOrder.paymentMethod || 'unknown'}`,
+        }
+      }
+    }
+
+    await cancelStoreOrder(orderId, subject, refundMeta)
     revalidatePath(`/account/orders/${orderId}`)
     revalidatePath('/account/orders')
     revalidatePath('/seller/orders')
     revalidatePath('/support')
+
+    if (refundMeta?.refundId) {
+      return {
+        success: true as const,
+        message: 'Order cancelled, stock restored, and PayPal refund submitted',
+      }
+    }
+    if (refundMeta?.refundSkipped) {
+      return {
+        success: true as const,
+        message:
+          'Order cancelled and stock restored (payment refund skipped — see order payment notes)',
+      }
+    }
     return {
       success: true as const,
       message: 'Order cancelled and stock restored',
@@ -297,6 +369,42 @@ export async function cancelOrder(orderId: string) {
   } catch (err) {
     return { success: false as const, message: formatError(err) }
   }
+}
+
+type PaymentResultShape = {
+  id?: string
+  capture_id?: string
+  captureId?: string
+  price_paid?: string
+  refund_id?: string
+}
+
+async function resolvePayPalCaptureId(
+  paymentResultJson?: string | null
+): Promise<string | null> {
+  if (!paymentResultJson) return null
+  let parsed: PaymentResultShape
+  try {
+    parsed = JSON.parse(paymentResultJson) as PaymentResultShape
+  } catch {
+    return null
+  }
+  if (parsed.refund_id) {
+    throw new Error('Order payment already has a refund recorded')
+  }
+  const direct = parsed.capture_id || parsed.captureId
+  if (direct) return direct
+  if (!parsed.id) return null
+
+  try {
+    const paypalOrder = await paypal.getOrder(parsed.id)
+    const fromOrder =
+      paypalOrder?.purchase_units?.[0]?.payments?.captures?.[0]?.id
+    if (fromOrder) return String(fromOrder)
+  } catch {
+    // Legacy rows may have stored the capture id in `id`.
+  }
+  return parsed.id
 }
 
 export const calculateDeliveryDateAndPrice = async ({

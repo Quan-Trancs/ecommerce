@@ -9,9 +9,11 @@ import { cancelOrder } from '@/lib/actions/order.actions'
 export default function CancelOrderButton({
   orderId,
   label = 'Cancel order',
+  confirmMessage = 'Cancel this order? Reserved stock will be restored.',
 }: {
   orderId: string
   label?: string
+  confirmMessage?: string
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -23,7 +25,7 @@ export default function CancelOrderButton({
       className='w-full'
       disabled={pending}
       onClick={() => {
-        if (!window.confirm('Cancel this order? Reserved stock will be restored.')) {
+        if (!window.confirm(confirmMessage)) {
           return
         }
         startTransition(async () => {
