@@ -68,7 +68,7 @@ public class ProductSearchService {
         );
 
         int safePage = Math.max(page, 0);
-        int safeSize = Math.max(size, 1);
+        int safeSize = Math.max(1, Math.min(size, 48));
         int from = safePage * safeSize;
         List<ProductResponseDto> pageData = filtered.stream()
                 .skip(from)

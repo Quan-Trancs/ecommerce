@@ -59,6 +59,12 @@ async function catalogFetch<T>(
     ...init,
   })
   if (!response.ok) {
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After') || '60'
+      throw new Error(
+        `Catalog API rate limited (429). Retry after ${retryAfter}s (${url})`
+      )
+    }
     throw new Error(
       `Catalog API ${response.status}: ${response.statusText} (${url})`
     )
@@ -70,7 +76,7 @@ async function catalogFetch<T>(
 
 function buildSearchQuery(params: ProductSearchParams): string {
   const query = new URLSearchParams()
-  if (params.q) query.set('q', params.q)
+  if (params.q) query.set('q', params.q.slice(0, 120))
   if (params.category && params.category.toLowerCase() !== 'all') {
     query.set('category', params.category)
   }
@@ -80,8 +86,10 @@ function buildSearchQuery(params: ProductSearchParams): string {
   if (params.maxPrice != null) query.set('maxPrice', String(params.maxPrice))
   if (params.price) query.set('price', params.price)
   if (params.sort && params.sort !== 'featured') query.set('sort', params.sort)
-  query.set('page', String(params.page ?? 0))
-  query.set('size', String(params.size ?? 20))
+  const page = Math.max(0, Math.min(params.page ?? 0, 100))
+  const size = Math.max(1, Math.min(params.size ?? 20, 48))
+  query.set('page', String(page))
+  query.set('size', String(size))
   if (params.attributes) {
     for (const [key, values] of Object.entries(params.attributes)) {
       if (values?.length) query.set(key, values.join(','))
@@ -107,7 +115,10 @@ export async function searchProducts(
 export async function fetchProductsByIds(
   ids: string[]
 ): Promise<CatalogProduct[]> {
-  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))]
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))].slice(
+    0,
+    50
+  )
   if (!unique.length) return []
   try {
     return await catalogFetch<CatalogProduct[]>(

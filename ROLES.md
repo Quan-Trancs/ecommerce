@@ -305,4 +305,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller analytics (sales / unshipped counts)~~ (v1.3.12)
 - ~~Webhook-driven payment confirmation (PayPal / Stripe) as backup to client approve~~ (v1.3.13)
 - ~~Email receipts on paid / shipped~~ (v1.3.14)
-- Rate-limit public catalog search abuse hardening
+- ~~Rate-limit public catalog search abuse hardening~~ (v1.3.15)
+- Product image upload for seller listings
+- Order notes / support ticket thread

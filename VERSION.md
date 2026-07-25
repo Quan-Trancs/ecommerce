@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.15 — 2026-07-25
+
+Harden public catalog search against scraping / abuse.
+
+### Backend
+- Rate limiter: per-IP buckets; stricter **search** bucket for `/v1/products` list, batch, and `/v1/categories`
+- Fixed `@Value` injection (was broken on static fields); scheduled counter cleanup; JSON 429 body
+- Cap search `q` (120 chars), `page` (≤100), `size` (≤48), batch ids (≤50)
+
+### Frontend
+- Mirror search caps in catalog client; clearer 429 errors
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.15` |
+| Store API | `store-backend/` | `1.3.15` (`store-api`) |
+
+---
+
 ## v1.3.14 — 2026-07-25
 
 Email receipts on paid and fully shipped orders (Resend).

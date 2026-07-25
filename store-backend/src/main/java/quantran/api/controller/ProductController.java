@@ -41,6 +41,13 @@ public class ProductController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam Map<String, String> allParams
     ) {
+        if (q != null && q.length() > 120) {
+            q = q.substring(0, 120);
+        }
+        // Guard expensive unbounded pages from scrapers.
+        page = Math.max(0, Math.min(page, 100));
+        size = Math.max(1, Math.min(size, 48));
+
         if (price != null && !price.isEmpty() && minPrice == null && maxPrice == null) {
             String[] parts = price.split("-", -1);
             if (parts.length >= 1 && !parts[0].isEmpty()) {
@@ -99,6 +106,12 @@ public class ProductController {
                     if (!part.trim().isEmpty()) {
                         resolved.add(part.trim());
                     }
+                    if (resolved.size() >= 50) {
+                        break;
+                    }
+                }
+                if (resolved.size() >= 50) {
+                    break;
                 }
             }
         }
