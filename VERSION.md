@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.54 — 2026-07-25
+
+Order invoice PDF download.
+
+### Frontend
+- `GET /api/orders/[id]/invoice` — PDF via pdfkit (owner / seller / support / admin via existing order auth)
+- Download button on order detail Order Summary
+- Includes lines, promo/gift card, tax, shipping, payment status
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.54` |
+| Store API | `store-backend/` | `1.3.54` (`store-api`) |
+
+---
+
 ## v1.3.53 — 2026-07-25
 
 Seller product CSV import.

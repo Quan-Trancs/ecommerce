@@ -250,6 +250,13 @@ export default function OrderDetailsForm({
               </div>
             </div>
 
+            <a
+              className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
+              href={`/api/orders/${order._id}/invoice`}
+            >
+              Download invoice (PDF)
+            </a>
+
             {!isPaid &&
               !isCancelled &&
               ['Stripe', 'PayPal'].includes(paymentMethod) && (
