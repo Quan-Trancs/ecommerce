@@ -16,6 +16,11 @@ export default async function AccountPage() {
       description: 'Track and view past purchases',
     },
     {
+      href: '/account/settings',
+      title: 'Notification settings',
+      description: 'Email preferences for order messages',
+    },
+    {
       href: '/search',
       title: 'Continue shopping',
       description: 'Browse the catalog',

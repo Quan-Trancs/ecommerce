@@ -9,6 +9,8 @@ export type DbUser = {
   passwordHash: string | null
   role: Role
   emailVerified: boolean
+  /** Opt-in (default true): email on public order-note notifications. */
+  notifyOrderNotes: boolean
   image: string | null
   active: boolean
   createdAt: Date
@@ -22,6 +24,7 @@ type AccountRow = {
   password_hash: string | null
   role: string
   email_verified: boolean
+  notify_order_notes: boolean
   image: string | null
   active: boolean
   created_at: Date
@@ -36,6 +39,7 @@ function mapRow(row: AccountRow): DbUser {
     passwordHash: row.password_hash,
     role: normalizeRole(row.role),
     emailVerified: Boolean(row.email_verified),
+    notifyOrderNotes: row.notify_order_notes !== false,
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -44,7 +48,9 @@ function mapRow(row: AccountRow): DbUser {
 }
 
 const SELECT_COLS = `
-  id, email, display_name, password_hash, role, email_verified, image, active, created_at, updated_at
+  id, email, display_name, password_hash, role, email_verified,
+  COALESCE(notify_order_notes, TRUE) AS notify_order_notes,
+  image, active, created_at, updated_at
 `
 
 export async function findUserByEmail(email: string): Promise<DbUser | null> {
@@ -87,8 +93,9 @@ export async function createUser(input: {
     try {
       await client.query(
         `INSERT INTO accounts (
-           id, email, display_name, password_hash, role, email_verified, image, active, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, NULL, TRUE, $7, $7)`,
+           id, email, display_name, password_hash, role, email_verified,
+           notify_order_notes, image, active, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, NULL, TRUE, $7, $7)`,
         [
           id,
           input.email.trim(),
@@ -124,7 +131,12 @@ export async function createUser(input: {
 
 export async function updateUser(
   id: string,
-  patch: { name?: string; role?: Role; emailVerified?: boolean }
+  patch: {
+    name?: string
+    role?: Role
+    emailVerified?: boolean
+    notifyOrderNotes?: boolean
+  }
 ): Promise<DbUser | null> {
   const existing = await findUserById(id)
   if (!existing) return null
@@ -133,6 +145,10 @@ export async function updateUser(
   const role = patch.role ? normalizeRole(patch.role) : existing.role
   const emailVerified =
     patch.emailVerified === undefined ? existing.emailVerified : patch.emailVerified
+  const notifyOrderNotes =
+    patch.notifyOrderNotes === undefined
+      ? existing.notifyOrderNotes
+      : Boolean(patch.notifyOrderNotes)
   const now = new Date()
 
   await withClient(async (client) => {
@@ -140,9 +156,10 @@ export async function updateUser(
     try {
       await client.query(
         `UPDATE accounts
-         SET display_name = $2, role = $3, email_verified = $4, updated_at = $5
+         SET display_name = $2, role = $3, email_verified = $4,
+             notify_order_notes = $5, updated_at = $6
          WHERE id = $1`,
-        [id, name, role, emailVerified, now]
+        [id, name, role, emailVerified, notifyOrderNotes, now]
       )
 
       if (role === 'SELLER' || role === 'ADMIN') {
@@ -162,6 +179,13 @@ export async function updateUser(
   })
 
   return findUserById(id)
+}
+
+export async function updateNotifyOrderNotes(
+  id: string,
+  notifyOrderNotes: boolean
+): Promise<DbUser | null> {
+  return updateUser(id, { notifyOrderNotes })
 }
 
 /** Seed helper: wipe auth rows (keeps catalog/orders). */

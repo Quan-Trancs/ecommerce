@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.23 — 2026-07-25
+
+Buyer/seller email preferences for order-note notifications.
+
+### Backend
+- Flyway `V10__account_notify_order_notes.sql` — `accounts.notify_order_notes` (default true)
+
+### Frontend
+- `/account/settings` toggle for order-note emails
+- `notifyPublicOrderNote` skips accounts that opted out
+- Optional support inbox still receives notes when configured
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.23` |
+| Store API | `store-backend/` | `1.3.23` (`store-api`) |
+
+---
+
 ## v1.3.22 — 2026-07-25
 
 Email parties when a public order note is posted.

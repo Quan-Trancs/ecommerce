@@ -135,9 +135,9 @@ export async function notifyPublicOrderNote(input: {
     const emails = new Set<string>()
     for (const userId of recipientIds) {
       const account = await findUserById(userId)
-      if (account?.email) {
-        emails.add(account.email.trim().toLowerCase())
-      }
+      if (!account?.email) continue
+      if (!account.notifyOrderNotes) continue
+      emails.add(account.email.trim().toLowerCase())
     }
     if (supportInbox) {
       emails.add(supportInbox.toLowerCase())

@@ -272,7 +272,7 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`
 
 ### Auth bridge (summary)
 
@@ -313,4 +313,5 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller participation in order notes (product-scoped)~~ (v1.3.20)
 - ~~Product image delete / replace cleanup in object storage~~ (v1.3.21)
 - ~~Notify parties by email when a public order note is posted~~ (v1.3.22)
-- Buyer/seller email preferences for order-note notifications
+- ~~Buyer/seller email preferences for order-note notifications~~ (v1.3.23)
+- Digest / batch order-note emails instead of per-message

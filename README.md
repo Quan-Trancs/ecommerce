@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.22](./VERSION.md) — email on public order notes. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.23](./VERSION.md) — order-note email preferences. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

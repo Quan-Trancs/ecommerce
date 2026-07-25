@@ -36,6 +36,11 @@ public class AccountEntity {
     @Builder.Default
     private boolean emailVerified = false;
 
+    /** Email when a PUBLIC order-note is posted on an order they are party to. */
+    @Column(name = "notify_order_notes", nullable = false)
+    @Builder.Default
+    private boolean notifyOrderNotes = true;
+
     @Column(length = 500)
     private String image;
 
