@@ -10,11 +10,14 @@ import { revalidatePath } from 'next/cache'
 import {
   cancelStoreOrder,
   createStoreOrder,
+  createStoreOrderNote,
   fetchMyStoreOrders,
   fetchProductsByIds,
   fetchStoreOrder,
+  fetchStoreOrderNotes,
   payStoreOrder,
   type StoreOrder,
+  type StoreOrderNote,
 } from '@/lib/catalog/client'
 import { hasSupportAccess } from '@/lib/auth/roles'
 import type { StoreTokenSubject } from '@/lib/auth/store-token'
@@ -542,5 +545,61 @@ export const calculateDeliveryDateAndPrice = async ({
     shippingPrice,
     taxPrice,
     totalPrice,
+  }
+}
+
+export type OrderNote = {
+  id: number
+  orderId: string
+  authorUserId: string
+  authorRole: string
+  authorDisplayName?: string | null
+  body: string
+  createdAt: string
+}
+
+function noteToClient(note: StoreOrderNote): OrderNote {
+  return {
+    id: note.id,
+    orderId: note.orderId,
+    authorUserId: note.authorUserId,
+    authorRole: note.authorRole,
+    authorDisplayName: note.authorDisplayName,
+    body: note.body,
+    createdAt: note.createdAt,
+  }
+}
+
+export async function getOrderNotes(orderId: string): Promise<OrderNote[]> {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('User not authenticated')
+  const notes = await fetchStoreOrderNotes(orderId, subjectFromSession(session))
+  return JSON.parse(JSON.stringify(notes.map(noteToClient)))
+}
+
+export async function addOrderNote(
+  orderId: string,
+  body: string
+): Promise<{ success: boolean; message: string; note?: OrderNote }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error('User not authenticated')
+    const trimmed = body.trim()
+    if (!trimmed) {
+      return { success: false, message: 'Message is required' }
+    }
+    const note = await createStoreOrderNote(
+      orderId,
+      trimmed,
+      subjectFromSession(session)
+    )
+    revalidatePath(`/account/orders/${orderId}`)
+    return {
+      success: true,
+      message: 'Message sent',
+      note: noteToClient(note),
+    }
+  } catch (err) {
+    return { success: false, message: formatError(err) }
   }
 }

@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.17 — 2026-07-25
+
+Order notes / support ticket thread on order detail.
+
+### Backend
+- Flyway `V8__order_notes.sql` → `store_order_notes`
+- `GET/POST /v1/orders/{id}/notes` — buyer (owner) or SUPPORT/ADMIN
+
+### Frontend
+- Support thread on `/account/orders/[id]` (buyer + support/admin via assist links)
+- List messages + composer (≤2000 chars)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.17` |
+| Store API | `store-backend/` | `1.3.17` (`store-api`) |
+
+---
+
 ## v1.3.16 — 2026-07-25
 
 Seller product image upload for listings.

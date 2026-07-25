@@ -267,18 +267,18 @@ store-backend/src/main/java/quantran/api/
     AuthController.java      # mints JWT + upserts account (role claim)
     AccountController.java   # /v1/accounts/me, list, PATCH role (admin)
     SellerController.java    # /v1/seller/me|products|orders|analytics; PATCH order status
-    OrderController.java     # Bearer + owner checks; GET /me; assist/recent|by-email; POST /{id}/cancel
+    OrderController.java     # Bearer + owner checks; GET /me; assist/recent|by-email; POST /{id}/cancel; GET/POST /{id}/notes
     ProductAdminController   # platform catalog writes (X-Admin-Key)
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`
 
 ### Auth bridge (summary)
 
 1. NextAuth owns login against Postgres `accounts` (`password_hash` + `role`).
 2. Server actions mint API JWT via `mintStoreAccessToken` → `POST /v1/auth/token` with `X-Admin-Key` (never from the browser).
-3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get elevates for SUPPORT/ADMIN; pay stays owner/ADMIN **or** `X-Admin-Key` (webhooks); cancel elevates for SUPPORT/ADMIN (PayPal/Stripe refund from storefront when paid).
+3. Order + seller/admin/cart APIs require `Authorization: Bearer …`; order get elevates for SUPPORT/ADMIN; pay stays owner/ADMIN **or** `X-Admin-Key` (webhooks); cancel elevates for SUPPORT/ADMIN (PayPal/Stripe refund from storefront when paid); order notes (`GET/POST /v1/orders/{id}/notes`) elevate for SUPPORT/ADMIN.
 4. `GET /v1/orders/me` backs the buyer order list (`status` / `from` / `to` filters); `GET /v1/orders/assist/recent` and `GET /v1/orders/assist/by-email` for support; `POST /v1/orders/{id}/cancel` restocks (optional refund metadata).
 5. Signed-in carts persist via `GET/PUT/DELETE /v1/cart` (Zustand + localStorage for guests / offline UI).
 6. Payment webhooks at `/api/webhooks/stripe` and `/api/webhooks/paypal` mark orders paid when client approve is missed.
@@ -307,5 +307,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Email receipts on paid / shipped~~ (v1.3.14)
 - ~~Rate-limit public catalog search abuse hardening~~ (v1.3.15)
 - ~~Product image upload for seller listings~~ (v1.3.16)
-- Order notes / support ticket thread
+- ~~Order notes / support ticket thread~~ (v1.3.17)
 - Cloud object storage for product images (S3-compatible) beyond local uploads
+- Private staff-only order notes (internal visibility)

@@ -18,15 +18,19 @@ import { cn, formatDateTime } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import ProductPrice from '../product/product-price'
 import CancelOrderButton from './cancel-order-button'
+import OrderNotesThread from './order-notes-thread'
+import type { OrderNote } from '@/lib/actions/order.actions'
 
 export default function OrderDetailsForm({
   order,
   canCancelElevated = false,
+  notes = [],
 }: {
   order: IOrder
   isAdmin: boolean
   /** Support/admin may cancel paid (non-shipped) orders; PayPal refunds when possible. */
   canCancelElevated?: boolean
+  notes?: OrderNote[]
 }) {
   const {
     shippingAddress,
@@ -149,6 +153,7 @@ export default function OrderDetailsForm({
             </Table>
           </CardContent>
         </Card>
+        <OrderNotesThread orderId={order._id} initialNotes={notes} />
       </div>
       <div>
         <Card>

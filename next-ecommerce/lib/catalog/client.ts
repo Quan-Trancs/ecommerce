@@ -366,6 +366,54 @@ export async function cancelStoreOrder(
   )
 }
 
+export type StoreOrderNote = {
+  id: number
+  orderId: string
+  authorUserId: string
+  authorRole: string
+  authorDisplayName?: string | null
+  body: string
+  createdAt: string
+}
+
+export async function fetchStoreOrderNotes(
+  orderId: string,
+  subject: StoreTokenSubject
+): Promise<StoreOrderNote[]> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) return []
+  try {
+    return await catalogFetch<StoreOrderNote[]>(
+      `/v1/orders/${encodeURIComponent(orderId)}/notes`,
+      { headers: authHeaders }
+    )
+  } catch {
+    return []
+  }
+}
+
+export async function createStoreOrderNote(
+  orderId: string,
+  body: string,
+  subject: StoreTokenSubject
+): Promise<StoreOrderNote> {
+  const authHeaders = await storeAuthHeaders(subject)
+  if (!authHeaders.Authorization) {
+    throw new Error('Unable to mint store API token for order notes')
+  }
+  return catalogFetch<StoreOrderNote>(
+    `/v1/orders/${encodeURIComponent(orderId)}/notes`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ body }),
+    }
+  )
+}
+
 export type StoreCartItem = {
   clientId: string
   productId: string

@@ -7,11 +7,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import quantran.api.account.Role;
 import quantran.api.dto.CancelOrderRequestDto;
+import quantran.api.dto.CreateOrderNoteRequestDto;
 import quantran.api.dto.CreateOrderRequestDto;
+import quantran.api.dto.OrderNoteDto;
 import quantran.api.dto.OrderResponseDto;
 import quantran.api.dto.PayOrderRequestDto;
 import quantran.api.exception.UnauthorizedException;
 import quantran.api.security.JwtAuthSupport;
+import quantran.api.service.OrderNoteService;
 import quantran.api.service.OrderService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +26,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderNoteService orderNoteService;
     private final JwtAuthSupport jwtAuthSupport;
 
     @Value("${app.admin.api-key:dev-admin-key}")
@@ -109,6 +113,31 @@ public class OrderController {
         String userId = requireUserId(request);
         boolean elevate = canAssist(request);
         return ResponseEntity.ok(orderService.cancelForUser(id, userId, elevate, body));
+    }
+
+    /** Buyer (owner) or SUPPORT/ADMIN: list notes on an order thread. */
+    @GetMapping("/{id}/notes")
+    public ResponseEntity<List<OrderNoteDto>> listNotes(
+            HttpServletRequest request,
+            @PathVariable String id
+    ) {
+        String userId = requireUserId(request);
+        boolean elevate = canAssist(request);
+        return ResponseEntity.ok(orderNoteService.listForUser(id, userId, elevate));
+    }
+
+    /** Buyer (owner) or SUPPORT/ADMIN: post a note on an order thread. */
+    @PostMapping("/{id}/notes")
+    public ResponseEntity<OrderNoteDto> createNote(
+            HttpServletRequest request,
+            @PathVariable String id,
+            @RequestBody(required = false) CreateOrderNoteRequestDto body
+    ) {
+        String userId = requireUserId(request);
+        Role role = requestRole(request);
+        boolean elevate = canAssist(request);
+        OrderNoteDto created = orderNoteService.createForUser(id, userId, role, elevate, body);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     private String requireUserId(HttpServletRequest request) {
