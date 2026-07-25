@@ -18,7 +18,7 @@ export default function SellerHomePage() {
           >
             <h2 className='font-semibold'>Products</h2>
             <p className='text-sm text-muted-foreground'>
-              List, edit, and publish SKUs you own
+              List, create, and publish SKUs you own
             </p>
           </Link>
         </li>

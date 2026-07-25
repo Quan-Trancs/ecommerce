@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.2.0](./VERSION.md) — role-based buyer / seller / admin marketplace scaffold. See [ROLES.md](./ROLES.md) for diagrams and the role matrix.
+**Version:** [v1.2.1](./VERSION.md) — role-based marketplace + seller product create/list. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

@@ -252,7 +252,7 @@ store-backend/src/main/java/quantran/api/
   controller/
     AuthController.java      # mints JWT + upserts account (role claim)
     AccountController.java   # /v1/accounts/me, list, PATCH role (admin)
-    SellerController.java    # /v1/seller/me|products|orders
+    SellerController.java    # /v1/seller/me|products|orders (GET/POST/PATCH products)
     OrderController.java     # Bearer + owner checks; GET /me
     ProductAdminController   # platform catalog writes (X-Admin-Key)
   entity/ProductEntity.java  # seller_account_id ownership
@@ -267,9 +267,9 @@ Flyway: `V4__accounts_roles_seller.sql`
 3. Order + seller/admin APIs require `Authorization: Bearer …`; order get/pay also enforce owner (or ADMIN).
 4. `GET /v1/orders/me` backs the buyer order list when the store API is up.
 
-## Next build steps (not in this scaffold)
+## Next build steps
 
-- Connect storefront seller UI to `/v1/seller/products` create/update
+- ~~Connect storefront seller UI to `/v1/seller/products` create/update~~ (done in v1.2.1)
 - Seller order fulfillment join (order items × seller products)
 - Sync NextAuth role changes → `PATCH /v1/accounts/{id}/role`
 - Optional SUPPORT role if you need customer-service without full admin

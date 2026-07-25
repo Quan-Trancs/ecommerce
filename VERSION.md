@@ -1,5 +1,24 @@
 # Version History
 
+## v1.2.1 — 2026-07-24
+
+Seller product loop: create/list/publish owned listings end-to-end.
+
+### Backend
+- `POST /v1/seller/products`, `PATCH /v1/seller/products/{id}` with `seller_account_id` ownership (`SellerProductService`)
+
+### Frontend
+- `/seller/products` list + publish toggle
+- `/seller/products/new` create form (`lib/actions/seller.actions.ts`)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.2.1` |
+| Store API | `store-backend/` | `1.2.1` (`store-api`) |
+
+---
+
 ## v1.2.0 — 2026-07-24
 
 Role-based marketplace structure: **BUYER / SELLER / ADMIN** across storefront and store API.

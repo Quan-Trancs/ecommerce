@@ -1,21 +1,22 @@
 package quantran.api.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import quantran.api.account.AccountEntity;
 import quantran.api.account.AccountService;
 import quantran.api.account.Role;
+import quantran.api.dto.AdminProductCreateRequestDto;
+import quantran.api.dto.AdminProductUpdateRequestDto;
 import quantran.api.dto.ProductResponseDto;
 import quantran.api.exception.UnauthorizedException;
-import quantran.api.repository.ProductRepository;
 import quantran.api.security.JwtAuthSupport;
-import quantran.api.service.ProductMapper;
+import quantran.api.service.SellerProductService;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Seller-scoped catalog endpoints.
@@ -28,7 +29,7 @@ public class SellerController {
 
     private final AccountService accountService;
     private final JwtAuthSupport jwtAuthSupport;
-    private final ProductRepository productRepository;
+    private final SellerProductService sellerProductService;
 
     @GetMapping("/me")
     public ResponseEntity<?> me(HttpServletRequest request) {
@@ -39,11 +40,27 @@ public class SellerController {
     @GetMapping("/products")
     public ResponseEntity<List<ProductResponseDto>> myProducts(HttpServletRequest request) {
         AccountEntity seller = requireSeller(request);
-        List<ProductResponseDto> products = productRepository.findBySellerAccountId(seller.getId())
-                .stream()
-                .map(ProductMapper::toDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(products);
+        return ResponseEntity.ok(sellerProductService.listForSeller(seller.getId()));
+    }
+
+    @PostMapping("/products")
+    public ResponseEntity<ProductResponseDto> createProduct(
+            HttpServletRequest request,
+            @RequestBody AdminProductCreateRequestDto body
+    ) {
+        AccountEntity seller = requireSeller(request);
+        ProductResponseDto created = sellerProductService.create(seller.getId(), body);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PatchMapping("/products/{id}")
+    public ResponseEntity<ProductResponseDto> updateProduct(
+            HttpServletRequest request,
+            @PathVariable String id,
+            @RequestBody AdminProductUpdateRequestDto body
+    ) {
+        AccountEntity seller = requireSeller(request);
+        return ResponseEntity.ok(sellerProductService.update(seller.getId(), id, body));
     }
 
     @GetMapping("/orders")
