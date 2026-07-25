@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.31 — 2026-07-25
+
+In-app mute preferences for order-note notifications.
+
+### Backend
+- Flyway `V16__in_app_mute_prefs.sql` — `accounts.notify_in_app_order_notes` + `order_in_app_mutes`
+
+### Frontend
+- Settings: toggle in-app inbox globally; mute live toasts per browser
+- Order support thread: mute / unmute in-app alerts for that order
+- Inbox creation skips muted accounts (email / SMS / push unchanged)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.31` |
+| Store API | `store-backend/` | `1.3.31` (`store-api`) |
+
+---
+
 ## v1.3.30 — 2026-07-25
 
 Desktop OS notifications when the signed-in tab is backgrounded.

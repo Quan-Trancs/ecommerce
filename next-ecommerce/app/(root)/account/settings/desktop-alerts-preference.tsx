@@ -8,30 +8,35 @@ import {
   isDesktopAlertsEnabled,
   setDesktopAlertsEnabled,
 } from '@/lib/notify/desktop-notification'
+import {
+  areLiveToastsEnabled,
+  setLiveToastsEnabled,
+} from '@/lib/notify/live-toast-preference'
 
 /**
- * Per-browser opt-in for OS notifications while the storefront tab is open
- * but backgrounded (complements SSE live updates).
+ * Per-browser live alert controls (toasts + desktop while tab backgrounded).
  */
 export default function DesktopAlertsPreference() {
   const [pending, startTransition] = useTransition()
-  const [enabled, setEnabled] = useState(false)
+  const [desktopEnabled, setDesktopEnabled] = useState(false)
+  const [toastsEnabled, setToastsEnabled] = useState(true)
   const [permission, setPermission] = useState<
     NotificationPermission | 'unsupported'
   >('default')
 
   useEffect(() => {
-    setEnabled(isDesktopAlertsEnabled())
+    setDesktopEnabled(isDesktopAlertsEnabled())
+    setToastsEnabled(areLiveToastsEnabled())
     setPermission(getNotificationPermission())
   }, [])
 
   return (
     <div className='space-y-3 rounded-lg border p-4'>
       <div>
-        <p className='text-sm font-medium'>Desktop alerts (this browser)</p>
+        <p className='text-sm font-medium'>Live alerts (this browser)</p>
         <p className='mt-1 text-sm text-muted-foreground'>
-          When this tab is open in the background, show an OS notification for
-          new in-app messages. Does not require VAPID push setup.
+          Control toasts and OS notifications while you are signed in with a
+          live connection.
         </p>
       </div>
 
@@ -39,7 +44,28 @@ export default function DesktopAlertsPreference() {
         <input
           type='checkbox'
           className='mt-1'
-          checked={enabled}
+          checked={toastsEnabled}
+          disabled={pending}
+          onChange={(e) => {
+            const next = e.target.checked
+            setLiveToastsEnabled(next)
+            setToastsEnabled(next)
+            toast.success(next ? 'Live toasts on' : 'Live toasts muted')
+          }}
+        />
+        <span>
+          <span className='font-medium'>Show live toasts</span>
+          <span className='mt-0.5 block text-muted-foreground'>
+            Pop-up toast when a new message arrives while this tab is visible.
+          </span>
+        </span>
+      </label>
+
+      <label className='flex items-start gap-2 text-sm'>
+        <input
+          type='checkbox'
+          className='mt-1'
+          checked={desktopEnabled}
           disabled={pending || permission === 'unsupported'}
           onChange={(e) => {
             const next = e.target.checked
@@ -55,7 +81,7 @@ export default function DesktopAlertsPreference() {
                 }
                 setPermission(nextPermission)
                 if (nextPermission !== 'granted') {
-                  setEnabled(false)
+                  setDesktopEnabled(false)
                   setDesktopAlertsEnabled(false)
                   toast.error(
                     nextPermission === 'denied'
@@ -66,26 +92,26 @@ export default function DesktopAlertsPreference() {
                 }
               }
               setDesktopAlertsEnabled(next)
-              setEnabled(next)
+              setDesktopEnabled(next)
               toast.success(next ? 'Desktop alerts on' : 'Desktop alerts off')
             })
           }}
         />
         <span>
-          <span className='font-medium'>Alert me while browsing</span>
+          <span className='font-medium'>Desktop alerts while browsing</span>
           <span className='mt-0.5 block text-muted-foreground'>
             {permission === 'unsupported'
               ? 'Not supported in this browser.'
               : permission === 'denied'
                 ? 'Blocked — allow notifications for this site in browser settings.'
                 : permission === 'granted'
-                  ? 'Permission granted.'
+                  ? 'Permission granted. Fires when this tab is in the background.'
                   : 'Will ask for permission when enabled.'}
           </span>
         </span>
       </label>
 
-      {enabled && permission === 'granted' ? (
+      {desktopEnabled && permission === 'granted' ? (
         <Button
           type='button'
           variant='outline'

@@ -1,12 +1,13 @@
 'use client'
 
-import { FormEvent, useState, useTransition } from 'react'
+import { FormEvent, useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { addOrderNote, type OrderNote } from '@/lib/actions/order.actions'
+import { setOrderInAppMute } from '@/lib/actions/notification.actions'
 import { cn, formatDateTime } from '@/lib/utils'
 
 function roleLabel(role: string) {
@@ -21,18 +22,26 @@ export default function OrderNotesThread({
   orderId,
   initialNotes,
   canPostInternal = false,
+  inAppMuted = false,
 }: {
   orderId: string
   initialNotes: OrderNote[]
   /** SUPPORT/ADMIN may post and see INTERNAL notes. */
   canPostInternal?: boolean
+  /** Current user muted in-app alerts for this order. */
+  inAppMuted?: boolean
 }) {
   const router = useRouter()
   const [notes, setNotes] = useState(initialNotes)
   const [body, setBody] = useState('')
   const [internal, setInternal] = useState(false)
   const [urgent, setUrgent] = useState(false)
+  const [muted, setMuted] = useState(inAppMuted)
   const [pending, startTransition] = useTransition()
+
+  useEffect(() => {
+    setMuted(inAppMuted)
+  }, [inAppMuted])
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -63,14 +72,44 @@ export default function OrderNotesThread({
   return (
     <Card>
       <CardContent className='space-y-4 p-4'>
-        <div>
-          <h2 className='text-xl pb-1'>Support thread</h2>
-          <p className='text-sm text-muted-foreground'>
-            {canPostInternal
-              ? 'Buyer-visible messages and optional internal staff notes.'
-              : 'Messages about this order with the buyer, sellers, and support.'}
-          </p>
+        <div className='flex flex-wrap items-start justify-between gap-2'>
+          <div>
+            <h2 className='text-xl pb-1'>Support thread</h2>
+            <p className='text-sm text-muted-foreground'>
+              {canPostInternal
+                ? 'Buyer-visible messages and optional internal staff notes.'
+                : 'Messages about this order with the buyer, sellers, and support.'}
+            </p>
+          </div>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            disabled={pending}
+            onClick={() => {
+              const next = !muted
+              startTransition(async () => {
+                const result = await setOrderInAppMute(orderId, next)
+                if (result.success) {
+                  setMuted(next)
+                  toast.success(result.message)
+                  router.refresh()
+                } else {
+                  toast.error(result.message)
+                }
+              })
+            }}
+          >
+            {muted ? 'Unmute in-app alerts' : 'Mute in-app alerts'}
+          </Button>
         </div>
+
+        {muted ? (
+          <p className='rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground'>
+            In-app notifications for this order are muted. Email / SMS / push
+            preferences are unchanged.
+          </p>
+        ) : null}
 
         {notes.length === 0 ? (
           <p className='text-sm text-muted-foreground'>

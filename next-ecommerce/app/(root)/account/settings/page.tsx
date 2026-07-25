@@ -40,6 +40,7 @@ export default async function AccountSettingsPage() {
             phoneE164={prefs.phoneE164}
             notifyOrderNotesSms={prefs.notifyOrderNotesSms}
             notifyOrderNotesPush={prefs.notifyOrderNotesPush}
+            notifyInAppOrderNotes={prefs.notifyInAppOrderNotes}
             vapidPublicKey={prefs.vapidPublicKey}
           />
         </div>

@@ -27,6 +27,7 @@ export async function getNotificationPreferences(): Promise<{
   phoneE164: string
   notifyOrderNotesSms: boolean
   notifyOrderNotesPush: boolean
+  notifyInAppOrderNotes: boolean
   vapidPublicKey: string | null
 } | null> {
   const session = await auth()
@@ -43,6 +44,7 @@ export async function getNotificationPreferences(): Promise<{
     phoneE164: user.phoneE164 || '',
     notifyOrderNotesSms: user.notifyOrderNotesSms,
     notifyOrderNotesPush: user.notifyOrderNotesPush,
+    notifyInAppOrderNotes: user.notifyInAppOrderNotes,
     vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
@@ -57,6 +59,7 @@ export async function setOrderNoteNotificationPreferences(input: {
   phoneE164?: string
   notifyOrderNotesSms?: boolean
   notifyOrderNotesPush?: boolean
+  notifyInAppOrderNotes?: boolean
 }): Promise<{ success: boolean; message: string }> {
   try {
     const session = await auth()
@@ -70,6 +73,10 @@ export async function setOrderNoteNotificationPreferences(input: {
     const quietHoursEnabled = Boolean(input.quietHoursEnabled)
     const notifyOrderNotesSms = Boolean(input.notifyOrderNotesSms)
     const notifyOrderNotesPush = Boolean(input.notifyOrderNotesPush)
+    const notifyInAppOrderNotes =
+      input.notifyInAppOrderNotes === undefined
+        ? true
+        : Boolean(input.notifyInAppOrderNotes)
     const phoneE164 = normalizePhoneE164(input.phoneE164 || '')
 
     if (quietHoursEnabled && quietHoursStart === quietHoursEnd) {
@@ -97,6 +104,7 @@ export async function setOrderNoteNotificationPreferences(input: {
         phoneE164,
         notifyOrderNotesSms,
         notifyOrderNotesPush,
+        notifyInAppOrderNotes,
       }
     )
     if (!updated) {

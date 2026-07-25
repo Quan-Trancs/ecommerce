@@ -27,6 +27,8 @@ export type DbUser = {
   phoneE164: string | null
   notifyOrderNotesSms: boolean
   notifyOrderNotesPush: boolean
+  /** Opt-in (default true): create in-app inbox rows for public order notes. */
+  notifyInAppOrderNotes: boolean
   image: string | null
   active: boolean
   createdAt: Date
@@ -49,6 +51,7 @@ type AccountRow = {
   phone_e164: string | null
   notify_order_notes_sms: boolean
   notify_order_notes_push: boolean
+  notify_in_app_order_notes: boolean
   image: string | null
   active: boolean
   created_at: Date
@@ -89,6 +92,7 @@ function mapRow(row: AccountRow): DbUser {
     phoneE164: row.phone_e164 || null,
     notifyOrderNotesSms: Boolean(row.notify_order_notes_sms),
     notifyOrderNotesPush: Boolean(row.notify_order_notes_push),
+    notifyInAppOrderNotes: row.notify_in_app_order_notes !== false,
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -107,6 +111,7 @@ const SELECT_COLS = `
   phone_e164,
   COALESCE(notify_order_notes_sms, FALSE) AS notify_order_notes_sms,
   COALESCE(notify_order_notes_push, FALSE) AS notify_order_notes_push,
+  COALESCE(notify_in_app_order_notes, TRUE) AS notify_in_app_order_notes,
   image, active, created_at, updated_at
 `
 
@@ -203,6 +208,7 @@ export async function updateUser(
     phoneE164?: string | null
     notifyOrderNotesSms?: boolean
     notifyOrderNotesPush?: boolean
+    notifyInAppOrderNotes?: boolean
   }
 ): Promise<DbUser | null> {
   const existing = await findUserById(id)
@@ -246,6 +252,10 @@ export async function updateUser(
     patch.notifyOrderNotesPush === undefined
       ? existing.notifyOrderNotesPush
       : Boolean(patch.notifyOrderNotesPush)
+  const notifyInAppOrderNotes =
+    patch.notifyInAppOrderNotes === undefined
+      ? existing.notifyInAppOrderNotes
+      : Boolean(patch.notifyInAppOrderNotes)
   const now = new Date()
 
   await withClient(async (client) => {
@@ -259,7 +269,8 @@ export async function updateUser(
              quiet_hours_end = $9, quiet_hours_timezone = $10,
              phone_e164 = $11, notify_order_notes_sms = $12,
              notify_order_notes_push = $13,
-             updated_at = $14
+             notify_in_app_order_notes = $14,
+             updated_at = $15
          WHERE id = $1`,
         [
           id,
@@ -275,6 +286,7 @@ export async function updateUser(
           phoneE164,
           notifyOrderNotesSms,
           notifyOrderNotesPush,
+          notifyInAppOrderNotes,
           now,
         ]
       )
@@ -310,6 +322,7 @@ export async function updateOrderNoteNotificationPreferences(
     phoneE164?: string | null
     notifyOrderNotesSms?: boolean
     notifyOrderNotesPush?: boolean
+    notifyInAppOrderNotes?: boolean
   }
 ): Promise<DbUser | null> {
   return updateUser(id, {
@@ -322,6 +335,7 @@ export async function updateOrderNoteNotificationPreferences(
     phoneE164: prefs.phoneE164,
     notifyOrderNotesSms: prefs.notifyOrderNotesSms,
     notifyOrderNotesPush: prefs.notifyOrderNotesPush,
+    notifyInAppOrderNotes: prefs.notifyInAppOrderNotes,
   })
 }
 

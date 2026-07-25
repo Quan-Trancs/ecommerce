@@ -1,5 +1,6 @@
 import { findUserById } from '@/lib/db/users'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
+import { listMutedOrderIdsForAccounts } from '@/lib/db/order-in-app-mutes'
 import { roleLabel } from '@/lib/auth/roles'
 import { resolveOrderPartyAccounts } from '@/lib/notify/order-parties'
 
@@ -11,6 +12,7 @@ function truncate(text: string, max: number) {
 
 /**
  * Create in-app inbox rows for parties on a PUBLIC order note.
+ * Honors global notify_in_app_order_notes and per-order mutes.
  */
 export async function notifyInAppOrderNote(input: {
   orderId: string
@@ -32,6 +34,16 @@ export async function notifyInAppOrderNote(input: {
       orderId: input.orderId,
       authorUserId: input.authorUserId,
     })
+    const muted = await listMutedOrderIdsForAccounts(
+      parties.map((p) => p.id),
+      input.orderId
+    )
+    const recipients = parties.filter(
+      (account) =>
+        account.notifyInAppOrderNotes !== false && !muted.has(account.id)
+    )
+    if (recipients.length === 0) return
+
     const title = input.urgent
       ? 'Urgent order message'
       : 'New order message'
@@ -42,7 +54,7 @@ export async function notifyInAppOrderNote(input: {
     const href = `/account/orders/${input.orderId}`
 
     await Promise.all(
-      parties.map((account) =>
+      recipients.map((account) =>
         createInAppNotification({
           accountId: account.id,
           type: 'ORDER_NOTE',

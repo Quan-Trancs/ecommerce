@@ -71,6 +71,7 @@ export default function NotificationPreferencesForm({
   phoneE164,
   notifyOrderNotesSms,
   notifyOrderNotesPush,
+  notifyInAppOrderNotes,
   vapidPublicKey,
 }: {
   notifyOrderNotes: boolean
@@ -82,11 +83,13 @@ export default function NotificationPreferencesForm({
   phoneE164: string
   notifyOrderNotesSms: boolean
   notifyOrderNotesPush: boolean
+  notifyInAppOrderNotes: boolean
   vapidPublicKey: string | null
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [enabled, setEnabled] = useState(notifyOrderNotes)
+  const [inAppEnabled, setInAppEnabled] = useState(notifyInAppOrderNotes)
   const [mode, setMode] = useState<OrderNoteEmailMode>(orderNoteEmailMode)
   const [quietEnabled, setQuietEnabled] = useState(quietHoursEnabled)
   const [quietStart, setQuietStart] = useState(quietHoursStart)
@@ -128,6 +131,7 @@ export default function NotificationPreferencesForm({
               phoneE164: phone,
               notifyOrderNotesSms: smsEnabled,
               notifyOrderNotesPush: pushEnabled,
+              notifyInAppOrderNotes: inAppEnabled,
             })
             if (result.success) {
               toast.success(result.message)
@@ -143,6 +147,23 @@ export default function NotificationPreferencesForm({
         })
       }}
     >
+      <label className='flex items-start gap-3 text-sm'>
+        <input
+          type='checkbox'
+          checked={inAppEnabled}
+          onChange={(e) => setInAppEnabled(e.target.checked)}
+          disabled={pending}
+          className='mt-1'
+        />
+        <span>
+          <span className='font-medium'>In-app inbox for order notes</span>
+          <span className='mt-1 block text-muted-foreground'>
+            Add public order messages to your notification center. You can also
+            mute a single order from its support thread.
+          </span>
+        </span>
+      </label>
+
       <label className='flex items-start gap-3 text-sm'>
         <input
           type='checkbox'

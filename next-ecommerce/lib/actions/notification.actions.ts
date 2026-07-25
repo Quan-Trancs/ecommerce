@@ -9,6 +9,10 @@ import {
   markInAppNotificationRead,
   type InAppNotification,
 } from '@/lib/db/in-app-notifications'
+import {
+  isOrderInAppMuted,
+  setOrderInAppMuted,
+} from '@/lib/db/order-in-app-mutes'
 import { formatError } from '@/lib/utils'
 
 export type { InAppNotification }
@@ -65,6 +69,40 @@ export async function markAllNotificationsRead(): Promise<{
     return {
       success: true,
       message: count ? `Marked ${count} read` : 'No unread notifications',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function getOrderInAppMuteState(
+  orderId: string
+): Promise<boolean> {
+  const session = await auth()
+  if (!session?.user?.id || !orderId) return false
+  return isOrderInAppMuted(session.user.id, orderId)
+}
+
+export async function setOrderInAppMute(
+  orderId: string,
+  muted: boolean
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    if (!orderId?.trim()) {
+      return { success: false, message: 'Order required' }
+    }
+    await setOrderInAppMuted(session.user.id, orderId.trim(), Boolean(muted))
+    revalidatePath(`/account/orders/${orderId}`)
+    revalidatePath('/account/settings')
+    return {
+      success: true,
+      message: muted
+        ? 'Muted in-app alerts for this order'
+        : 'Unmuted in-app alerts for this order',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }

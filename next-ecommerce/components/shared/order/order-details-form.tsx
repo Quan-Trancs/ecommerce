@@ -25,12 +25,14 @@ export default function OrderDetailsForm({
   order,
   canCancelElevated = false,
   notes = [],
+  inAppMuted = false,
 }: {
   order: IOrder
   isAdmin: boolean
   /** Support/admin may cancel paid (non-shipped) orders; PayPal refunds when possible. */
   canCancelElevated?: boolean
   notes?: OrderNote[]
+  inAppMuted?: boolean
 }) {
   const {
     shippingAddress,
@@ -157,6 +159,7 @@ export default function OrderDetailsForm({
           orderId={order._id}
           initialNotes={notes}
           canPostInternal={canCancelElevated}
+          inAppMuted={inAppMuted}
         />
       </div>
       <div>

@@ -3,6 +3,7 @@ import React from 'react'
 
 import { auth } from '@/auth'
 import { getOrderById, getOrderNotes } from '@/lib/actions/order.actions'
+import { getOrderInAppMuteState } from '@/lib/actions/notification.actions'
 import OrderDetailsForm from '@/components/shared/order/order-details-form'
 import Link from 'next/link'
 import { formatId } from '@/lib/utils'
@@ -32,6 +33,9 @@ export default async function OrderDetailsPage(props: {
 
   const session = await auth()
   const notes = session?.user?.id ? await getOrderNotes(id) : []
+  const inAppMuted = session?.user?.id
+    ? await getOrderInAppMuteState(id)
+    : false
   const orderUserId =
     typeof order.user === 'string' ? order.user : undefined
   const isSellerViewer =
@@ -67,6 +71,7 @@ export default async function OrderDetailsPage(props: {
         isAdmin={hasAdminAccess(session?.user?.role)}
         canCancelElevated={hasSupportAccess(session?.user?.role)}
         notes={notes}
+        inAppMuted={inAppMuted}
       />
     </>
   )

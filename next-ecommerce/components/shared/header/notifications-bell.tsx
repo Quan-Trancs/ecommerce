@@ -20,6 +20,7 @@ import {
 } from '@/lib/actions/notification.actions'
 import { useNotificationStream } from '@/hooks/use-notification-stream'
 import { showDesktopNotification } from '@/lib/notify/desktop-notification'
+import { areLiveToastsEnabled } from '@/lib/notify/live-toast-preference'
 import { cn, formatDateTime } from '@/lib/utils'
 
 export default function NotificationsBell({
@@ -55,7 +56,7 @@ export default function NotificationsBell({
     })
 
     // In-tab toast when visible; OS notification covers backgrounded tabs.
-    if (!showedDesktop) {
+    if (!showedDesktop && areLiveToastsEnabled()) {
       toast.message(latest.title, {
         description: latest.body.slice(0, 120),
         action: {
