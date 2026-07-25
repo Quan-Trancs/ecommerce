@@ -320,3 +320,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~SMS / push channel for urgent order notes~~ (v1.3.27)
 - ~~In-app notification center for order notes~~ (v1.3.28)
 - ~~Real-time notification refresh (SSE / websocket)~~ (v1.3.29)
+- ~~Desktop notifications when the storefront tab is backgrounded~~ (v1.3.30)

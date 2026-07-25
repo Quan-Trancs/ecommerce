@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.30 — 2026-07-25
+
+Desktop OS notifications when the signed-in tab is backgrounded.
+
+### Frontend
+- Account settings: per-browser “Alert me while browsing” + permission request / test
+- On SSE publish, show `Notification` when tab is hidden; toast when visible
+- Preference stored in `localStorage` (`notify_desktop_alerts`)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.30` |
+| Store API | `store-backend/` | `1.3.30` (`store-api`) |
+
+---
+
 ## v1.3.29 — 2026-07-25
 
 Real-time notification refresh via Server-Sent Events.

@@ -19,6 +19,7 @@ import {
   type InAppNotification,
 } from '@/lib/actions/notification.actions'
 import { useNotificationStream } from '@/hooks/use-notification-stream'
+import { showDesktopNotification } from '@/lib/notify/desktop-notification'
 import { cn, formatDateTime } from '@/lib/utils'
 
 export default function NotificationsBell({
@@ -45,13 +46,24 @@ export default function NotificationsBell({
     const previous = lastSeenLatestId.current
     if (previous != null && latest.id <= previous) return
     lastSeenLatestId.current = latest.id
-    toast.message(latest.title, {
-      description: latest.body.slice(0, 120),
-      action: {
-        label: 'Open',
-        onClick: () => router.push(latest.href),
-      },
+
+    const showedDesktop = showDesktopNotification({
+      id: latest.id,
+      title: latest.title,
+      body: latest.body,
+      href: latest.href,
     })
+
+    // In-tab toast when visible; OS notification covers backgrounded tabs.
+    if (!showedDesktop) {
+      toast.message(latest.title, {
+        description: latest.body.slice(0, 120),
+        action: {
+          label: 'Open',
+          onClick: () => router.push(latest.href),
+        },
+      })
+    }
   }, [summary, router])
 
   useEffect(() => {
