@@ -5,6 +5,7 @@ import { auth } from '@/auth'
 import {
   findUserById,
   normalizeOrderNoteEmailMode,
+  updateLowStockPreferences,
   updateOrderNoteNotificationPreferences,
   type OrderNoteEmailMode,
 } from '@/lib/db/users'
@@ -28,6 +29,8 @@ export async function getNotificationPreferences(): Promise<{
   notifyOrderNotesSms: boolean
   notifyOrderNotesPush: boolean
   notifyInAppOrderNotes: boolean
+  notifyLowStock: boolean
+  lowStockThreshold: number
   vapidPublicKey: string | null
 } | null> {
   const session = await auth()
@@ -45,6 +48,8 @@ export async function getNotificationPreferences(): Promise<{
     notifyOrderNotesSms: user.notifyOrderNotesSms,
     notifyOrderNotesPush: user.notifyOrderNotesPush,
     notifyInAppOrderNotes: user.notifyInAppOrderNotes,
+    notifyLowStock: user.notifyLowStock,
+    lowStockThreshold: user.lowStockThreshold,
     vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
@@ -136,6 +141,32 @@ export async function setOrderNoteNotificationPreferences(input: {
         ? 'Order note emails disabled'
         : 'Notification preferences saved',
     }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function setLowStockPreferences(input: {
+  notifyLowStock: boolean
+  lowStockThreshold: number | string
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    const threshold = Math.max(
+      0,
+      Math.min(9999, Math.floor(Number(input.lowStockThreshold) || 5))
+    )
+    const updated = await updateLowStockPreferences(session.user.id, {
+      notifyLowStock: Boolean(input.notifyLowStock),
+      lowStockThreshold: threshold,
+    })
+    if (!updated) return { success: false, message: 'Account not found' }
+    revalidatePath('/account/settings')
+    revalidatePath('/seller/products')
+    return { success: true, message: 'Low-stock alert preferences saved' }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }

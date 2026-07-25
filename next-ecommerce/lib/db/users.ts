@@ -29,6 +29,10 @@ export type DbUser = {
   notifyOrderNotesPush: boolean
   /** Opt-in (default true): create in-app inbox rows for public order notes. */
   notifyInAppOrderNotes: boolean
+  /** Opt-in (default true): in-app alerts when owned products are low on stock. */
+  notifyLowStock: boolean
+  /** Stock at or below this level triggers low-stock alerts (default 5). */
+  lowStockThreshold: number
   image: string | null
   active: boolean
   createdAt: Date
@@ -52,6 +56,8 @@ type AccountRow = {
   notify_order_notes_sms: boolean
   notify_order_notes_push: boolean
   notify_in_app_order_notes: boolean
+  notify_low_stock: boolean
+  low_stock_threshold: number
   image: string | null
   active: boolean
   created_at: Date
@@ -93,6 +99,8 @@ function mapRow(row: AccountRow): DbUser {
     notifyOrderNotesSms: Boolean(row.notify_order_notes_sms),
     notifyOrderNotesPush: Boolean(row.notify_order_notes_push),
     notifyInAppOrderNotes: row.notify_in_app_order_notes !== false,
+    notifyLowStock: row.notify_low_stock !== false,
+    lowStockThreshold: Math.max(0, Number(row.low_stock_threshold) || 5),
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -112,6 +120,8 @@ const SELECT_COLS = `
   COALESCE(notify_order_notes_sms, FALSE) AS notify_order_notes_sms,
   COALESCE(notify_order_notes_push, FALSE) AS notify_order_notes_push,
   COALESCE(notify_in_app_order_notes, TRUE) AS notify_in_app_order_notes,
+  COALESCE(notify_low_stock, TRUE) AS notify_low_stock,
+  COALESCE(low_stock_threshold, 5) AS low_stock_threshold,
   image, active, created_at, updated_at
 `
 
@@ -337,6 +347,27 @@ export async function updateOrderNoteNotificationPreferences(
     notifyOrderNotesPush: prefs.notifyOrderNotesPush,
     notifyInAppOrderNotes: prefs.notifyInAppOrderNotes,
   })
+}
+
+export async function updateLowStockPreferences(
+  id: string,
+  prefs: { notifyLowStock: boolean; lowStockThreshold: number }
+): Promise<DbUser | null> {
+  const existing = await findUserById(id)
+  if (!existing) return null
+  const threshold = Math.max(
+    0,
+    Math.min(9999, Math.floor(Number(prefs.lowStockThreshold) || 5))
+  )
+  await query(
+    `UPDATE accounts
+     SET notify_low_stock = $2,
+         low_stock_threshold = $3,
+         updated_at = NOW()
+     WHERE id = $1`,
+    [id, Boolean(prefs.notifyLowStock), threshold]
+  )
+  return findUserById(id)
 }
 
 /** Seed helper: wipe auth rows (keeps catalog/orders). */

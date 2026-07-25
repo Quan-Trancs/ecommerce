@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.37 — 2026-07-25
+
+Low-stock alerts for sellers.
+
+### Backend
+- Flyway `V20__low_stock_alerts.sql` — `notify_low_stock`, `low_stock_threshold`, alert dedupe state
+
+### Frontend
+- In-app `LOW_STOCK` notifications after checkout stock decrement or stock edits
+- Seller products banner + highlight for listings at/below threshold
+- Account settings: enable alerts + set threshold (default 5)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.37` |
+| Store API | `store-backend/` | `1.3.37` (`store-api`) |
+
+---
+
 ## v1.3.36 — 2026-07-25
 
 Seller payouts and earnings history.

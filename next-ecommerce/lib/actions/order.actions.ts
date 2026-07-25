@@ -31,6 +31,7 @@ import {
   getRedemptionForOrder,
   recordCouponRedemption,
 } from '@/lib/db/coupons'
+import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -214,6 +215,9 @@ export const createOrderFromCart = async (
       })
     }
   }
+
+  // Stock was decremented by Spring on create — alert sellers if now low.
+  await checkAndNotifyLowStock(productIds)
 
   return storeOrderToClient(storeOrder)
 }

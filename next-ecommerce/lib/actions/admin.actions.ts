@@ -6,6 +6,7 @@ import { hasAdminAccess, normalizeRole, ALL_ROLES, type Role } from '@/lib/auth/
 import { mintStoreAccessToken } from '@/lib/auth/store-token'
 import { formatError } from '@/lib/utils'
 import { listUsers, updateUser } from '@/lib/db/users'
+import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -171,6 +172,9 @@ export async function updateAdminCatalogProduct(
     revalidatePath('/admin/catalog')
     revalidatePath('/search')
     revalidatePath(`/product/${product.slug}`)
+    if (patch.stockQuantity !== undefined) {
+      await checkAndNotifyLowStock([product.id])
+    }
     return { success: true as const, product }
   } catch (error) {
     return { success: false as const, message: formatError(error) }

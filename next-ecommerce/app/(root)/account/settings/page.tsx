@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getNotificationPreferences } from '@/lib/actions/account.actions'
 import DesktopAlertsPreference from './desktop-alerts-preference'
+import LowStockPreferencesForm from './low-stock-preferences-form'
 import NotificationPreferencesForm from './notification-preferences-form'
 
 export const metadata = { title: 'Notification settings' }
@@ -24,11 +25,16 @@ export default async function AccountSettingsPage() {
           Notification settings
         </h1>
         <p className='mt-2 text-muted-foreground'>
-          Email digests, quiet hours, desktop alerts, and urgent SMS / push.
+          Email digests, quiet hours, desktop alerts, low-stock, and urgent
+          SMS / push.
         </p>
       </div>
       <div className='max-w-lg space-y-4'>
         <DesktopAlertsPreference />
+        <LowStockPreferencesForm
+          notifyLowStock={prefs.notifyLowStock}
+          lowStockThreshold={prefs.lowStockThreshold}
+        />
         <div className='rounded-lg border p-4'>
           <NotificationPreferencesForm
             notifyOrderNotes={prefs.notifyOrderNotes}

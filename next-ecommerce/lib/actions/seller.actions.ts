@@ -10,6 +10,7 @@ import {
 import { hasSellerAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
 import { notifyOrderShipped } from '@/lib/email/order-notifications'
+import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -126,6 +127,9 @@ export async function updateSellerProduct(
     revalidatePath('/seller/products')
     revalidatePath(`/product/${product.slug}`)
     revalidatePath('/search')
+    if (patch.stockQuantity !== undefined) {
+      await checkAndNotifyLowStock([product.id])
+    }
     return { success: true as const, product }
   } catch (error) {
     return { success: false as const, message: formatError(error) }
