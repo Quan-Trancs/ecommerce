@@ -32,7 +32,11 @@ export default async function SupportHomePage(props: {
         <h2 className='text-xl font-semibold'>Order assist</h2>
         <p className='text-sm text-muted-foreground'>
           Look up by order id or buyer email, or browse recent store orders.
-          Support cannot change roles or catalog — ask an admin for that.
+          For open note threads, use{' '}
+          <Link href='/support/tickets' className='text-primary underline'>
+            Tickets
+          </Link>
+          . Support cannot change roles or catalog — ask an admin for that.
         </p>
       </div>
 

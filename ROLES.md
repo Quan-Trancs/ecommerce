@@ -329,3 +329,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller payouts / earnings history~~ (v1.3.36)
 - ~~Low-stock alerts for sellers~~ (v1.3.37)
 - ~~Partial line-item refunds (support/admin)~~ (v1.3.38)
+- ~~Support ticket queue UI (order-note threads)~~ (v1.3.39)

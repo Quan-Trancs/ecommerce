@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.39 — 2026-07-25
+
+Support ticket queue for public order-note threads.
+
+### Frontend
+- `/support/tickets` — filter by awaiting staff, urgent, order status
+- Shared queue (no assignee); rows open `/account/orders/{id}` for the thread
+- Derived from `store_order_notes` (Next + Postgres)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.39` |
+| Store API | `store-backend/` | `1.3.39` (`store-api`) |
+
+---
+
 ## v1.3.38 — 2026-07-25
 
 Partial line-item refunds for support/admin.

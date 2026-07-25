@@ -9,6 +9,13 @@ import { hasSupportAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
 import { getOrderById } from '@/lib/actions/order.actions'
 import type { IOrder } from '@/lib/types/order'
+import {
+  listSupportTickets,
+  type SupportTicketFilters,
+  type SupportTicketRow,
+} from '@/lib/db/support-tickets'
+
+export type { SupportTicketRow }
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -121,4 +128,12 @@ export async function lookupSupportOrder(
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
+}
+
+export async function getSupportTicketQueue(
+  filters?: SupportTicketFilters
+): Promise<SupportTicketRow[]> {
+  await requireSupportSubject()
+  const rows = await listSupportTickets(filters)
+  return JSON.parse(JSON.stringify(rows))
 }
