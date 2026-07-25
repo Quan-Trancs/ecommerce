@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.42](./VERSION.md) — admin KPI dashboard. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.43](./VERSION.md) — Playwright smoke tests. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
@@ -43,3 +43,12 @@ npm run dev
 ```
 
 Open `http://localhost:3000`. If the API is down, the storefront uses a built-in fallback catalog.
+
+### Smoke tests (Playwright)
+```bash
+cd next-ecommerce
+npx playwright install chromium   # first time
+npm run test:e2e                  # public + auth (needs seed users / DB)
+E2E_SKIP_AUTH=1 npm run test:e2e  # public routes only
+```
+Auth cases use seeded `buyer@` / `support@` passwords; admin needs `ADMIN_PASSWORD` or `E2E_ADMIN_PASSWORD`. Set `PLAYWRIGHT_SKIP_WEBSERVER=1` if `next` is already running.

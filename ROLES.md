@@ -333,3 +333,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Staff audit log for support/admin actions~~ (v1.3.40)
 - ~~Support ticket assignment (claim / reassign)~~ (v1.3.41)
 - ~~Admin KPI dashboard~~ (v1.3.42)
+- ~~Playwright E2E smoke tests~~ (v1.3.43)

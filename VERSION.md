@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.43 — 2026-07-25
+
+Playwright E2E smoke tests for the storefront.
+
+### Frontend
+- `e2e/smoke.spec.ts` — public routes + optional buyer/support/admin auth checks
+- `npm run test:e2e` (Chromium); reuses a running `next` server when present
+- Fixed `useCSRF` React hooks so the sign-in form can load
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.43` |
+| Store API | `store-backend/` | `1.3.43` (`store-api`) |
+
+---
+
 ## v1.3.42 — 2026-07-25
 
 Admin KPI dashboard on `/admin`.
