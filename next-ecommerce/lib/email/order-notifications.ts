@@ -13,12 +13,14 @@ import type { IOrder } from '@/lib/types/order'
 import {
   sendOrderNoteDigestEmail,
   sendOrderNoteEmail,
+  sendOrderReturnEmail,
   sendOrderShippedEmail,
   sendPurchaseReceipt,
 } from '@/emails/index'
 import { SERVER_URL } from '@/lib/constants'
 import { roleLabel } from '@/lib/auth/roles'
 import { notifyInAppOrderEvent } from '@/lib/notify/in-app'
+import { createInAppNotification } from '@/lib/db/in-app-notifications'
 import {
   enqueueOrderNoteEmail,
   getDigestMaxBatch,
@@ -136,6 +138,75 @@ export async function notifyOrderCancelled(
     })
   } catch (err) {
     console.error('notifyOrderCancelled failed:', err)
+  }
+}
+
+type ReturnNotifyInput = {
+  orderId: string
+  returnId: number
+  accountId: string
+  kind: 'SUBMITTED' | 'APPROVED' | 'REJECTED'
+  reasonLabel: string
+  buyerNote?: string | null
+  reviewNote?: string | null
+  refundAmount?: number | null
+  lines: Array<{ name: string; quantity: number }>
+}
+
+/** Fire-and-forget: buyer email + in-app for return lifecycle. */
+export async function notifyOrderReturn(input: ReturnNotifyInput) {
+  try {
+    const account = await findUserById(input.accountId)
+    if (account?.email) {
+      await sendOrderReturnEmail({
+        to: account.email,
+        orderId: input.orderId,
+        returnId: input.returnId,
+        kind: input.kind,
+        reasonLabel: input.reasonLabel,
+        buyerNote: input.buyerNote,
+        reviewNote: input.reviewNote,
+        refundAmount: input.refundAmount,
+        lines: input.lines,
+      })
+    } else {
+      console.warn('No buyer email for return notify', input.returnId)
+    }
+
+    if (account?.notifyInAppOrderNotes !== false) {
+      const title =
+        input.kind === 'SUBMITTED'
+          ? 'Return request submitted'
+          : input.kind === 'APPROVED'
+            ? 'Return approved'
+            : 'Return rejected'
+      const body =
+        input.kind === 'SUBMITTED'
+          ? `Return #${input.returnId}: ${input.reasonLabel}`
+          : input.kind === 'APPROVED'
+            ? `Return #${input.returnId} approved${
+                input.refundAmount != null
+                  ? ` · refund $${Number(input.refundAmount).toFixed(2)}`
+                  : ''
+              }`
+            : `Return #${input.returnId} was not approved`
+      await createInAppNotification({
+        accountId: input.accountId,
+        type:
+          input.kind === 'SUBMITTED'
+            ? 'RETURN_SUBMITTED'
+            : input.kind === 'APPROVED'
+              ? 'RETURN_APPROVED'
+              : 'RETURN_REJECTED',
+        title,
+        body,
+        href: `/account/orders/${input.orderId}`,
+        orderId: input.orderId,
+        urgent: false,
+      })
+    }
+  } catch (err) {
+    console.error('notifyOrderReturn failed:', err)
   }
 }
 

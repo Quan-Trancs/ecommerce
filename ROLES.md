@@ -338,3 +338,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Buyer return / RMA requests~~ (v1.3.45)
 - ~~Auto-refund on approved returns~~ (v1.3.46)
 - ~~Wishlist hearts on product cards~~ (v1.3.47)
+- ~~Return request email / in-app notify~~ (v1.3.48)

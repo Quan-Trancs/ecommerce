@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.47](./VERSION.md) — wishlist hearts on product cards. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.48](./VERSION.md) — return request email notify. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

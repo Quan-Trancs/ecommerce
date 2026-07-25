@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.48 — 2026-07-25
+
+Email + in-app notifications for return requests.
+
+### Frontend
+- Buyer email on return submitted / approved / rejected (`RESEND_API_KEY`)
+- Matching in-app inbox rows on the order
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.48` |
+| Store API | `store-backend/` | `1.3.48` (`store-api`) |
+
+---
+
 ## v1.3.47 — 2026-07-25
 
 Wishlist hearts on product cards.

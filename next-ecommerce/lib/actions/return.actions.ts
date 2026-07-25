@@ -16,9 +16,10 @@ import {
   type OrderReturnRequest,
   type ReturnReason,
 } from '@/lib/db/order-returns'
-import { RETURN_REASONS } from '@/lib/returns/constants'
 import { logStaffAction } from '@/lib/audit/log-staff-action'
 import { createStoreOrderNote } from '@/lib/catalog/client'
+import { notifyOrderReturn } from '@/lib/email/order-notifications'
+import { RETURN_REASONS } from '@/lib/returns/constants'
 
 export type { OrderReturnRequest }
 export { RETURN_REASONS } from '@/lib/returns/constants'
@@ -137,7 +138,7 @@ export async function submitReturnRequest(input: {
 
     const reason = String(input.reason || 'OTHER').toUpperCase()
     const valid = RETURN_REASONS.some((r) => r.value === reason)
-    await createReturnRequest({
+    const created = await createReturnRequest({
       orderId: input.orderId,
       accountId: session.user.id,
       reason: valid ? reason : 'OTHER',
@@ -145,8 +146,22 @@ export async function submitReturnRequest(input: {
       lines,
     })
 
+    await notifyOrderReturn({
+      orderId: created.orderId,
+      returnId: created.id,
+      accountId: created.accountId,
+      kind: 'SUBMITTED',
+      reasonLabel: reasonLabel(created.reason),
+      buyerNote: created.note,
+      lines: created.items.map((item) => ({
+        name: item.name || `Item ${item.orderItemId}`,
+        quantity: item.quantity,
+      })),
+    })
+
     revalidatePath(`/account/orders/${input.orderId}`)
     revalidatePath('/support/returns')
+    revalidatePath('/account/notifications')
     return {
       success: true,
       message: 'Return request submitted — support will review it',
@@ -316,10 +331,26 @@ export async function reviewOrderReturn(input: {
       console.error('Failed to post return review note:', noteError)
     }
 
+    await notifyOrderReturn({
+      orderId: updated.orderId,
+      returnId: updated.id,
+      accountId: updated.accountId,
+      kind: decision === 'APPROVED' ? 'APPROVED' : 'REJECTED',
+      reasonLabel: reasonLabel(updated.reason),
+      buyerNote: updated.note,
+      reviewNote: updated.reviewNote || input.reviewNote,
+      refundAmount: refundMeta.amount ?? updated.refundAmount,
+      lines: updated.items.map((item) => ({
+        name: item.name || `Item ${item.orderItemId}`,
+        quantity: item.quantity,
+      })),
+    })
+
     revalidatePath(`/account/orders/${updated.orderId}`)
     revalidatePath('/support/returns')
     revalidatePath('/admin/audit')
     revalidatePath('/seller/earnings')
+    revalidatePath('/account/notifications')
     return {
       success: true,
       message:

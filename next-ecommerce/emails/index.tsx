@@ -5,6 +5,9 @@ import OrderNoteEmail from './order-note'
 import OrderNoteDigestEmail, {
   type DigestNoteItem,
 } from './order-note-digest'
+import OrderReturnEmail, {
+  type OrderReturnEmailKind,
+} from './order-return'
 import { SENDER_EMAIL, SENDER_NAME } from '@/lib/constants'
 import { IOrder } from '@/lib/types/order'
 
@@ -119,6 +122,54 @@ export const sendOrderNoteDigestEmail = async (input: {
         ? `New message on order ${input.notes[0].orderId}`
         : `${count} new order messages`,
     react: <OrderNoteDigestEmail notes={input.notes} />,
+  })
+  return { sent: true as const }
+}
+
+export const sendOrderReturnEmail = async (input: {
+  to: string
+  orderId: string
+  returnId: number
+  kind: OrderReturnEmailKind
+  reasonLabel: string
+  buyerNote?: string | null
+  reviewNote?: string | null
+  refundAmount?: number | null
+  lines: Array<{ name: string; quantity: number }>
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to) {
+    console.warn(
+      'Skipping return email:',
+      !resend ? 'RESEND_API_KEY missing' : 'buyer email missing'
+    )
+    return { sent: false as const }
+  }
+
+  const subject =
+    input.kind === 'SUBMITTED'
+      ? `Return request received for order ${input.orderId}`
+      : input.kind === 'APPROVED'
+        ? `Return approved for order ${input.orderId}`
+        : `Return update for order ${input.orderId}`
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject,
+    react: (
+      <OrderReturnEmail
+        orderId={input.orderId}
+        returnId={input.returnId}
+        kind={input.kind}
+        reasonLabel={input.reasonLabel}
+        buyerNote={input.buyerNote}
+        reviewNote={input.reviewNote}
+        refundAmount={input.refundAmount}
+        lines={input.lines}
+      />
+    ),
   })
   return { sent: true as const }
 }
