@@ -348,3 +348,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Recently viewed products carousel~~ (v1.3.55)
 - ~~Seller payout CSV export~~ (v1.3.56)
 - ~~Newsletter / marketing email signup~~ (v1.3.57)
+- ~~Abandoned-cart email reminders~~ (v1.3.58)
