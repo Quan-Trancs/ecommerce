@@ -91,7 +91,7 @@ export async function listSellerPayouts(
   sellerAccountId: string,
   options?: { limit?: number }
 ): Promise<SellerPayout[]> {
-  const limit = Math.max(1, Math.min(options?.limit ?? 50, 100))
+  const limit = Math.max(1, Math.min(options?.limit ?? 50, 5000))
   const result = await query<PayoutRow>(
     `SELECT id, seller_account_id, amount, currency, note, recorded_by, paid_at, created_at
      FROM seller_payouts
@@ -106,7 +106,7 @@ export async function listSellerPayouts(
 export async function listRecentPayouts(options?: {
   limit?: number
 }): Promise<SellerPayout[]> {
-  const limit = Math.max(1, Math.min(options?.limit ?? 40, 100))
+  const limit = Math.max(1, Math.min(options?.limit ?? 40, 5000))
   const result = await query<PayoutRow>(
     `SELECT sp.id, sp.seller_account_id, sp.amount, sp.currency, sp.note,
             sp.recorded_by, sp.paid_at, sp.created_at,

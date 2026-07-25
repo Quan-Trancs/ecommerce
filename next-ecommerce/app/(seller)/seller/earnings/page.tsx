@@ -48,7 +48,17 @@ export default async function SellerEarningsPage() {
       </div>
 
       <section className='space-y-3'>
-        <h3 className='text-lg font-semibold'>Payout history</h3>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <h3 className='text-lg font-semibold'>Payout history</h3>
+          {data.payouts.length > 0 ? (
+            <a
+              href='/api/seller/payouts/export'
+              className='rounded-md border px-3 py-1.5 text-sm hover:bg-muted'
+            >
+              Export CSV
+            </a>
+          ) : null}
+        </div>
         {data.payouts.length === 0 ? (
           <p className='rounded-lg border border-dashed p-6 text-sm text-muted-foreground'>
             No payouts recorded yet.

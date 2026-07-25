@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.55](./VERSION.md) — recently viewed carousel. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.56](./VERSION.md) — payout CSV export. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

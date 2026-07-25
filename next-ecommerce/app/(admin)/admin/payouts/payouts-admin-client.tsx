@@ -186,7 +186,14 @@ export function PayoutsAdminClient({
       </section>
 
       <section className='space-y-2'>
-        <h3 className='text-lg font-semibold'>Recent payouts</h3>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <h3 className='text-lg font-semibold'>Recent payouts</h3>
+          {payouts.length > 0 ? (
+            <Button type='button' variant='outline' size='sm' asChild>
+              <a href='/api/admin/payouts/export'>Export CSV</a>
+            </Button>
+          ) : null}
+        </div>
         {payouts.length === 0 ? (
           <p className='rounded-lg border border-dashed p-6 text-sm text-muted-foreground'>
             No payouts recorded yet.

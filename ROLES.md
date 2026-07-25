@@ -346,3 +346,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller product CSV import~~ (v1.3.53)
 - ~~Order invoice PDF download~~ (v1.3.54)
 - ~~Recently viewed products carousel~~ (v1.3.55)
+- ~~Seller payout CSV export~~ (v1.3.56)

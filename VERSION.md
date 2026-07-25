@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.56 — 2026-07-25
+
+Seller payout CSV export.
+
+### Frontend
+- Admin `/api/admin/payouts/export` — all recent payouts with seller identity
+- Seller `/api/seller/payouts/export` — own payout history
+- Export CSV buttons on `/admin/payouts` and `/seller/earnings`
+- Export limit raised to 5000 rows (UI lists unchanged)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.56` |
+| Store API | `store-backend/` | `1.3.56` (`store-api`) |
+
+---
+
 ## v1.3.55 — 2026-07-25
 
 Recently viewed products carousel polish.
