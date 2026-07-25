@@ -12,4 +12,5 @@ public class AdminProductUpdateRequestDto {
     private BigDecimal price;
     private Integer stockQuantity;
     private Boolean isPublished;
+    private java.util.List<String> images;
 }

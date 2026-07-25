@@ -1,21 +1,40 @@
 'use client'
 
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createSellerProduct } from '@/lib/actions/seller.actions'
+import { uploadSellerProductImage } from '@/lib/actions/upload.actions'
 
 export default function SellerProductCreateForm() {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [uploading, startUpload] = useTransition()
   const [name, setName] = useState('')
   const [price, setPrice] = useState('19.99')
   const [stock, setStock] = useState('10')
   const [description, setDescription] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [isPublished, setIsPublished] = useState(true)
+
+  const onUpload = (fileList: FileList | null) => {
+    const file = fileList?.[0]
+    if (!file) return
+    const body = new FormData()
+    body.set('file', file)
+    startUpload(async () => {
+      const result = await uploadSellerProductImage(body)
+      if (!result.success) {
+        toast.error(result.message)
+        return
+      }
+      setImageUrl(result.url)
+      toast.success('Image uploaded')
+    })
+  }
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,6 +71,8 @@ export default function SellerProductCreateForm() {
       router.refresh()
     })
   }
+
+  const busy = pending || uploading
 
   return (
     <form onSubmit={onSubmit} className='max-w-lg space-y-4'>
@@ -109,17 +130,45 @@ export default function SellerProductCreateForm() {
           placeholder='Short product description'
         />
       </div>
-      <div className='space-y-1.5'>
-        <label className='text-sm font-medium' htmlFor='imageUrl'>
-          Image URL (optional)
-        </label>
+
+      <div className='space-y-2'>
+        <p className='text-sm font-medium'>Product image</p>
+        <Input
+          id='imageFile'
+          type='file'
+          accept='image/jpeg,image/png,image/webp,image/gif'
+          disabled={busy}
+          onChange={(e) => {
+            onUpload(e.target.files)
+            e.target.value = ''
+          }}
+        />
+        <p className='text-xs text-muted-foreground'>
+          JPEG, PNG, WebP, or GIF up to 5MB. Or paste an external URL below.
+        </p>
         <Input
           id='imageUrl'
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder='https://...'
+          placeholder='/uploads/… or https://…'
+          disabled={busy}
         />
+        {imageUrl ? (
+          <div className='relative mt-2 h-32 w-32 overflow-hidden rounded-md border bg-muted'>
+            <Image
+              src={imageUrl}
+              alt='Product preview'
+              fill
+              className='object-cover'
+              unoptimized={imageUrl.startsWith('/uploads/')}
+            />
+          </div>
+        ) : null}
+        {uploading ? (
+          <p className='text-xs text-muted-foreground'>Uploading…</p>
+        ) : null}
       </div>
+
       <label className='flex items-center gap-2 text-sm'>
         <input
           type='checkbox'
@@ -129,13 +178,13 @@ export default function SellerProductCreateForm() {
         Published (visible in catalog)
       </label>
       <div className='flex gap-2'>
-        <Button type='submit' disabled={pending}>
+        <Button type='submit' disabled={busy}>
           {pending ? 'Creating…' : 'Create product'}
         </Button>
         <Button
           type='button'
           variant='outline'
-          disabled={pending}
+          disabled={busy}
           onClick={() => router.push('/seller/products')}
         >
           Cancel

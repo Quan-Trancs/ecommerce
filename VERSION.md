@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.16 — 2026-07-25
+
+Seller product image upload for listings.
+
+### Backend
+- `PATCH` product update accepts `images` (seller + admin)
+
+### Frontend
+- Upload JPEG/PNG/WebP/GIF (≤5MB) to `/uploads/products/*`
+- Create listing form: file upload + URL fallback + preview
+- Seller products list: change image in place
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.16` |
+| Store API | `store-backend/` | `1.3.16` (`store-api`) |
+
+---
+
 ## v1.3.15 — 2026-07-25
 
 Harden public catalog search against scraping / abuse.

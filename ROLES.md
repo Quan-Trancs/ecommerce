@@ -306,5 +306,6 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Webhook-driven payment confirmation (PayPal / Stripe) as backup to client approve~~ (v1.3.13)
 - ~~Email receipts on paid / shipped~~ (v1.3.14)
 - ~~Rate-limit public catalog search abuse hardening~~ (v1.3.15)
-- Product image upload for seller listings
+- ~~Product image upload for seller listings~~ (v1.3.16)
 - Order notes / support ticket thread
+- Cloud object storage for product images (S3-compatible) beyond local uploads

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { listSellerProducts } from '@/lib/actions/seller.actions'
 import SellerProductPublishToggle from './seller-product-publish-toggle'
 import SellerProductStockPriceForm from './seller-product-stock-price-form'
+import SellerProductImageForm from './seller-product-image-form'
 
 export const metadata = { title: 'Seller products' }
 
@@ -64,6 +65,10 @@ export default async function SellerProductsPage() {
                   isPublished={Boolean(product.isPublished)}
                 />
               </div>
+              <SellerProductImageForm
+                productId={product.id}
+                imageUrl={product.images?.[0]}
+              />
               <SellerProductStockPriceForm
                 productId={product.id}
                 price={Number(product.price)}

@@ -105,7 +105,12 @@ export async function createSellerProduct(input: SellerProductInput) {
 
 export async function updateSellerProduct(
   id: string,
-  patch: { price?: number; stockQuantity?: number; isPublished?: boolean }
+  patch: {
+    price?: number
+    stockQuantity?: number
+    isPublished?: boolean
+    images?: string[]
+  }
 ) {
   try {
     const subject = await requireSellerSubject()

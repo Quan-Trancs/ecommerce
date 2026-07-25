@@ -110,6 +110,9 @@ public class ProductAdminService {
         if (request.getIsPublished() != null) {
             product.setIsPublished(request.getIsPublished());
         }
+        if (request.getImages() != null) {
+            product.setImages(new java.util.ArrayList<>(request.getImages()));
+        }
 
         ProductEntity saved = productRepository.save(product);
         return ProductMapper.toDto(saved);

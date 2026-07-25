@@ -1,3 +1,7 @@
 
 bookstore-backend/.env
 **/.env
+
+# Seller product uploads (keep folder)
+next-ecommerce/public/uploads/products/*
+!next-ecommerce/public/uploads/products/.gitkeep

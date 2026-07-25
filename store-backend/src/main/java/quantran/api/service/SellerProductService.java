@@ -121,6 +121,9 @@ public class SellerProductService {
         if (request.getIsPublished() != null) {
             product.setIsPublished(request.getIsPublished());
         }
+        if (request.getImages() != null) {
+            product.setImages(new ArrayList<>(request.getImages()));
+        }
 
         return ProductMapper.toDto(productRepository.save(product));
     }
