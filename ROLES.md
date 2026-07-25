@@ -272,7 +272,7 @@ store-backend/src/main/java/quantran/api/
   entity/ProductEntity.java  # seller_account_id ownership
 ```
 
-Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`, `V12__account_order_note_email_mode.sql`, `V13__account_quiet_hours.sql`, `V14__urgent_notes_sms_push.sql`, `V15__in_app_notifications.sql`, `V16__in_app_mute_prefs.sql`, `V17__product_reviews.sql`
+Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V6__persistent_carts.sql`, `V7__order_item_shipped.sql`, `V8__order_notes.sql`, `V9__order_note_visibility.sql`, `V10__account_notify_order_notes.sql`, `V11__order_note_email_queue.sql`, `V12__account_order_note_email_mode.sql`, `V13__account_quiet_hours.sql`, `V14__urgent_notes_sms_push.sql`, `V15__in_app_notifications.sql`, `V16__in_app_mute_prefs.sql`, `V17__product_reviews.sql`, `V18__coupons.sql`
 
 ### Auth bridge (summary)
 
@@ -325,3 +325,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~In-app notifications for paid / shipped / cancelled orders~~ (v1.3.32)
 - ~~Redis pub/sub fanout for live notification SSE~~ (v1.3.33)
 - ~~Product reviews & ratings (verified buyers)~~ (v1.3.34)
+- ~~Checkout promo codes / coupons~~ (v1.3.35)

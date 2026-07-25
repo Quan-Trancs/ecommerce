@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.35 — 2026-07-25
+
+Checkout promo codes / coupons.
+
+### Backend
+- Flyway `V18__coupons.sql` — `coupons`, `coupon_redemptions`; seeds `WELCOME10` (10% off)
+
+### Frontend
+- Checkout Order Summary: apply / remove promo (discount before tax)
+- Admin `/admin/coupons` create + enable/disable
+- Order details shows redeemed promo line
+- Place-order revalidates coupon and records redemption
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.35` |
+| Store API | `store-backend/` | `1.3.35` (`store-api`) |
+
+---
+
 ## v1.3.34 — 2026-07-25
 
 Product reviews & ratings for verified paid buyers.

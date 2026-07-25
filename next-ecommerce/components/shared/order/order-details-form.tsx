@@ -26,6 +26,7 @@ export default function OrderDetailsForm({
   canCancelElevated = false,
   notes = [],
   inAppMuted = false,
+  coupon,
 }: {
   order: IOrder
   isAdmin: boolean
@@ -33,6 +34,7 @@ export default function OrderDetailsForm({
   canCancelElevated?: boolean
   notes?: OrderNote[]
   inAppMuted?: boolean
+  coupon?: { code: string; discountAmount: number } | null
 }) {
   const {
     shippingAddress,
@@ -173,6 +175,14 @@ export default function OrderDetailsForm({
                 <ProductPrice price={itemsPrice} plain />
               </div>
             </div>
+            {coupon && coupon.discountAmount > 0 ? (
+              <div className='flex justify-between text-emerald-700'>
+                <div>Promo ({coupon.code})</div>
+                <div>
+                  -<ProductPrice price={coupon.discountAmount} plain />
+                </div>
+              </div>
+            ) : null}
             <div className='flex justify-between'>
               <div>Tax</div>
               <div>

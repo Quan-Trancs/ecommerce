@@ -13,6 +13,7 @@ export default async function AdminLayout({
     { href: '/admin/orders', label: 'Orders' },
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/catalog', label: 'Catalog' },
+    { href: '/admin/coupons', label: 'Coupons' },
     { href: '/account', label: 'Account' },
   ]
 

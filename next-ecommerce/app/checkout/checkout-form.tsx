@@ -76,6 +76,8 @@ const CheckoutForm = () => {
       shippingPrice,
       taxPrice,
       totalPrice,
+      discountPrice = 0,
+      couponCode,
       shippingAddress,
       deliveryDateIndex,
       paymentMethod = DEFAULT_PAYMENT_METHOD,
@@ -85,9 +87,13 @@ const CheckoutForm = () => {
     updateItem,
     removeItem,
     setDeliveryDateIndex,
+    applyCoupon,
+    removeCoupon,
     clearCart,
   } = useCartStore()
   const isMounted = useIsMounted()
+  const [promoInput, setPromoInput] = useState('')
+  const [promoPending, setPromoPending] = useState(false)
 
   const shippingAddressForm = useForm<ShippingAddress>({
     resolver: zodResolver(ShippingAddressSchema),
@@ -128,6 +134,8 @@ const CheckoutForm = () => {
       shippingPrice,
       taxPrice,
       totalPrice,
+      discountPrice,
+      couponCode,
     })
     if (!res.success) {
       toast.error('', {
@@ -203,6 +211,14 @@ const CheckoutForm = () => {
                 <ProductPrice price={itemsPrice} plain />
               </span>
             </div>
+            {discountPrice > 0 ? (
+              <div className='flex justify-between text-emerald-700'>
+                <span>Promo{couponCode ? ` (${couponCode})` : ''}:</span>
+                <span>
+                  -<ProductPrice price={discountPrice} plain />
+                </span>
+              </div>
+            ) : null}
             <div className='flex justify-between'>
               <span>Shipping & Handling:</span>
               <span>
@@ -224,6 +240,75 @@ const CheckoutForm = () => {
                   <ProductPrice price={taxPrice} plain />
                 )}
               </span>
+            </div>
+            <div className='space-y-2 border-t pt-3'>
+              <Label htmlFor='promo-code' className='text-xs font-medium'>
+                Promo code
+              </Label>
+              {couponCode ? (
+                <div className='flex items-center justify-between gap-2'>
+                  <span className='font-medium'>{couponCode}</span>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    disabled={promoPending}
+                    onClick={async () => {
+                      setPromoPending(true)
+                      try {
+                        await removeCoupon()
+                        setPromoInput('')
+                        toast.success('Promo removed')
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : 'Could not remove promo'
+                        )
+                      } finally {
+                        setPromoPending(false)
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className='flex gap-2'>
+                  <Input
+                    id='promo-code'
+                    value={promoInput}
+                    onChange={(e) => setPromoInput(e.target.value)}
+                    placeholder='WELCOME10'
+                    className='h-9'
+                    disabled={promoPending || items.length === 0}
+                  />
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    disabled={promoPending || !promoInput.trim()}
+                    onClick={async () => {
+                      setPromoPending(true)
+                      try {
+                        const applied = await applyCoupon(promoInput)
+                        toast.success(`Applied ${applied}`)
+                        setPromoInput('')
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : 'Invalid promo code'
+                        )
+                      } finally {
+                        setPromoPending(false)
+                      }
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              )}
             </div>
             <div className='flex justify-between  pt-4 font-bold text-lg'>
               <span> Order Total:</span>

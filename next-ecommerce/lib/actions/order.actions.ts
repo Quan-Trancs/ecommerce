@@ -25,6 +25,12 @@ import { refundPaymentIntent, retrievePaymentIntent } from '@/lib/stripe'
 import { notifyOrderPaid, notifyOrderCancelled, notifyPublicOrderNote } from '@/lib/email/order-notifications'
 import { notifyUrgentOrderNoteChannels } from '@/lib/notify/urgent-channels'
 import { notifyInAppOrderNote } from '@/lib/notify/in-app'
+import {
+  assertCouponRedeemable,
+  findCouponByCode,
+  getRedemptionForOrder,
+  recordCouponRedemption,
+} from '@/lib/db/coupons'
 
 function assertCatalogMatchesCart(items: OrderItem[], catalogById: Map<string, { price: number; stockQuantity?: number; variants?: { color?: string; size?: string; price: number; stockQuantity?: number }[] }>) {
   for (const item of items) {
@@ -133,7 +139,15 @@ export const createOrderFromCart = async (
     items: clientSideCart.items,
     shippingAddress: clientSideCart.shippingAddress,
     deliveryDateIndex: clientSideCart.deliveryDateIndex,
+    couponCode: clientSideCart.couponCode,
+    accountId: subject.userId,
   })
+  if (
+    clientSideCart.couponCode &&
+    (!priced.couponCode || (priced.discountPrice || 0) <= 0)
+  ) {
+    throw new Error(priced.couponMessage || 'Promo code is no longer valid')
+  }
   const cart = {
     ...clientSideCart,
     ...priced,
@@ -188,6 +202,19 @@ export const createOrderFromCart = async (
     },
     subject
   )
+
+  if (cart.couponCode && (cart.discountPrice || 0) > 0) {
+    const coupon = await findCouponByCode(cart.couponCode)
+    if (coupon) {
+      await recordCouponRedemption({
+        couponId: coupon.id,
+        accountId: subject.userId,
+        orderId: storeOrder.id,
+        discountAmount: cart.discountPrice || 0,
+      })
+    }
+  }
+
   return storeOrderToClient(storeOrder)
 }
 
@@ -509,10 +536,14 @@ export const calculateDeliveryDateAndPrice = async ({
   items,
   shippingAddress,
   deliveryDateIndex,
+  couponCode,
+  accountId,
 }: {
   deliveryDateIndex?: number
   items: OrderItem[]
   shippingAddress?: ShippingAddress
+  couponCode?: string | null
+  accountId?: string | null
 }) => {
   const itemsPrice = roundToTwoDecimals(
     items.reduce((total, item) => total + item.price * item.quantity, 0)
@@ -533,9 +564,35 @@ export const calculateDeliveryDateAndPrice = async ({
         ? 0
         : deliveryDate.shippingPrice
 
-  const taxPrice = roundToTwoDecimals(itemsPrice * 0.15)
+  let discountPrice = 0
+  let appliedCouponCode: string | undefined
+  let couponMessage: string | undefined
+
+  const requestedCode = couponCode?.trim()
+  if (requestedCode) {
+    const coupon = await findCouponByCode(requestedCode)
+    if (!coupon) {
+      couponMessage = 'Invalid promo code'
+    } else {
+      const session = accountId ? null : await auth()
+      const check = await assertCouponRedeemable({
+        coupon,
+        accountId: accountId || session?.user?.id,
+        itemsPrice,
+      })
+      if (!check.ok) {
+        couponMessage = check.message
+      } else {
+        discountPrice = check.discount
+        appliedCouponCode = coupon.code
+      }
+    }
+  }
+
+  const taxable = roundToTwoDecimals(Math.max(0, itemsPrice - discountPrice))
+  const taxPrice = roundToTwoDecimals(taxable * 0.15)
   const totalPrice = roundToTwoDecimals(
-    itemsPrice +
+    taxable +
       (shippingPrice ? roundToTwoDecimals(shippingPrice) : 0) +
       (taxPrice ? roundToTwoDecimals(taxPrice) : 0)
   )
@@ -550,7 +607,14 @@ export const calculateDeliveryDateAndPrice = async ({
     shippingPrice,
     taxPrice,
     totalPrice,
+    discountPrice,
+    couponCode: appliedCouponCode,
+    couponMessage,
   }
+}
+
+export async function getOrderCoupon(orderId: string) {
+  return getRedemptionForOrder(orderId)
 }
 
 export type OrderNote = {

@@ -14,6 +14,8 @@ const initialState: Cart = {
   taxPrice: undefined,
   shippingPrice: undefined,
   totalPrice: 0,
+  discountPrice: 0,
+  couponCode: undefined,
   paymentMethod: undefined,
   shippingAddress: undefined,
   deliveryDateIndex: undefined,
@@ -28,6 +30,8 @@ interface CartState {
   setShippingAddress: (shippingAddress: ShippingAddress) => Promise<void>
   setPaymentMethod: (paymentMethod: string) => void
   setDeliveryDateIndex: (index: number) => Promise<void>
+  applyCoupon: (code: string) => Promise<string>
+  removeCoupon: () => Promise<void>
   clearCart: () => void
 }
 
@@ -57,6 +61,26 @@ function cancelScheduledPersist() {
   }
 }
 
+async function priceCart(input: {
+  items: OrderItem[]
+  shippingAddress?: ShippingAddress
+  deliveryDateIndex?: number
+  couponCode?: string
+}) {
+  const calculated = await calculateDeliveryDateAndPrice({
+    items: input.items,
+    shippingAddress: input.shippingAddress,
+    deliveryDateIndex: input.deliveryDateIndex,
+    couponCode: input.couponCode,
+  })
+  return {
+    ...calculated,
+    // Drop invalid codes so the cart stays consistent.
+    couponCode: calculated.couponCode,
+    discountPrice: calculated.discountPrice || 0,
+  }
+}
+
 const useCartStore = create(
   persist<CartState>(
     (set, get) => ({
@@ -71,7 +95,8 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress } = get().cart
+          const { items, shippingAddress, couponCode, deliveryDateIndex } =
+            get().cart
           const existItem = items.find(
             (x) =>
               x.product === item.product &&
@@ -99,9 +124,11 @@ const useCartStore = create(
               )
             : [...items, { ...item, quantity }]
 
-          const calculatedPrices = await calculateDeliveryDateAndPrice({
+          const calculatedPrices = await priceCart({
             items: updatedCartItems,
             shippingAddress,
+            deliveryDateIndex,
+            couponCode,
           })
 
           const nextCart = {
@@ -138,7 +165,8 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress } = get().cart
+          const { items, shippingAddress, couponCode, deliveryDateIndex } =
+            get().cart
           const existItem = items.find(
             (x) =>
               x.product === item.product &&
@@ -163,9 +191,11 @@ const useCartStore = create(
               : x
           )
 
-          const calculatedPrices = await calculateDeliveryDateAndPrice({
+          const calculatedPrices = await priceCart({
             items: updatedCartItems,
             shippingAddress,
+            deliveryDateIndex,
+            couponCode,
           })
 
           const nextCart = {
@@ -193,7 +223,8 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress } = get().cart
+          const { items, shippingAddress, couponCode, deliveryDateIndex } =
+            get().cart
           const updatedItems = items.filter(
             (x) =>
               x.product !== item.product ||
@@ -201,9 +232,11 @@ const useCartStore = create(
               x.color !== item.color
           )
 
-          const calculatedPrices = await calculateDeliveryDateAndPrice({
+          const calculatedPrices = await priceCart({
             items: updatedItems,
             shippingAddress,
+            deliveryDateIndex,
+            couponCode,
           })
 
           const nextCart = {
@@ -231,10 +264,12 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items } = get().cart
-          const calculatedPrices = await calculateDeliveryDateAndPrice({
+          const { items, couponCode, deliveryDateIndex } = get().cart
+          const calculatedPrices = await priceCart({
             items,
             shippingAddress,
+            deliveryDateIndex,
+            couponCode,
           })
 
           const nextCart = {
@@ -271,11 +306,12 @@ const useCartStore = create(
         set({ isUpdating: true })
 
         try {
-          const { items, shippingAddress } = get().cart
-          const calculatedPrices = await calculateDeliveryDateAndPrice({
+          const { items, shippingAddress, couponCode } = get().cart
+          const calculatedPrices = await priceCart({
             items,
             shippingAddress,
             deliveryDateIndex: index,
+            couponCode,
           })
 
           const nextCart = {
@@ -295,6 +331,66 @@ const useCartStore = create(
         }
       },
 
+      applyCoupon: async (code: string) => {
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
+        const trimmed = code.trim()
+        if (!trimmed) throw new Error('Enter a promo code')
+
+        set({ isUpdating: true })
+        try {
+          const { items, shippingAddress, deliveryDateIndex } = get().cart
+          const calculatedPrices = await priceCart({
+            items,
+            shippingAddress,
+            deliveryDateIndex,
+            couponCode: trimmed,
+          })
+          if (!calculatedPrices.couponCode) {
+            throw new Error(
+              calculatedPrices.couponMessage || 'Invalid promo code'
+            )
+          }
+          const nextCart = {
+            ...get().cart,
+            ...calculatedPrices,
+          }
+          set({ cart: nextCart, isUpdating: false })
+          schedulePersist(nextCart)
+          return calculatedPrices.couponCode
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
+      },
+
+      removeCoupon: async () => {
+        if (get().isUpdating) {
+          throw new Error('Cart is being updated, please try again')
+        }
+        set({ isUpdating: true })
+        try {
+          const { items, shippingAddress, deliveryDateIndex } = get().cart
+          const calculatedPrices = await priceCart({
+            items,
+            shippingAddress,
+            deliveryDateIndex,
+          })
+          const nextCart = {
+            ...get().cart,
+            ...calculatedPrices,
+            couponCode: undefined,
+            discountPrice: 0,
+          }
+          set({ cart: nextCart, isUpdating: false })
+          schedulePersist(nextCart)
+        } catch (error) {
+          set({ isUpdating: false })
+          throw error
+        }
+      },
+
       clearCart: () => {
         cancelScheduledPersist()
         const nextCart = {
@@ -304,6 +400,8 @@ const useCartStore = create(
           taxPrice: undefined,
           shippingPrice: undefined,
           totalPrice: 0,
+          discountPrice: 0,
+          couponCode: undefined,
         }
         set({ cart: nextCart })
         void clearPersistedCart().catch((error) => {
