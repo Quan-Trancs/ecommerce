@@ -68,6 +68,24 @@ export async function isProductWishlisted(
   return result.rows.length > 0
 }
 
+export async function listWishlistedProductIds(
+  accountId: string,
+  productIds: string[]
+): Promise<string[]> {
+  const unique = [
+    ...new Set(productIds.map((id) => id.trim()).filter(Boolean)),
+  ].slice(0, 100)
+  if (!unique.length) return []
+  const result = await query<{ product_id: string }>(
+    `SELECT product_id
+     FROM wishlist_items
+     WHERE account_id = $1
+       AND product_id = ANY($2::varchar[])`,
+    [accountId, unique]
+  )
+  return result.rows.map((row) => row.product_id)
+}
+
 export async function addWishlistItem(
   accountId: string,
   productId: string

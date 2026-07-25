@@ -14,12 +14,17 @@ export default function ProductSlider({
   products,
   hideDetails = false,
   href,
+  wishlistedIds,
+  signedIn,
 }: {
   title: string
   products: IProduct[]
   hideDetails?: boolean
   href?: string
+  wishlistedIds?: string[]
+  signedIn?: boolean
 }) {
+  const saved = new Set(wishlistedIds || [])
   return (
     <div className='w-full'>
       <div className='section-band'>
@@ -50,6 +55,8 @@ export default function ProductSlider({
                   hideDetails={hideDetails}
                   hideAddToCart
                   hideBorders
+                  wishlisted={saved.has(product._id)}
+                  signedIn={signedIn}
                 />
               </div>
             </CarouselItem>

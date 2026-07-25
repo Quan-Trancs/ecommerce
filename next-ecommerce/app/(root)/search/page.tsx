@@ -3,6 +3,7 @@ import {
   SearchLayout,
 } from '@/components/shared/search/search-filters'
 import { searchCatalog, getCategoryTree } from '@/lib/actions/product.actions'
+import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import type { CatalogCategory } from '@/lib/catalog/types'
 import { toArray } from '@/lib/search/filter-utils'
 import Link from 'next/link'
@@ -104,6 +105,10 @@ export default async function SearchPage(props: {
   ])
 
   const sortedProducts = products
+  const wishlist = await getWishlistStatusesForProducts(
+    sortedProducts.map((p) => p._id)
+  )
+  const saved = new Set(wishlist.wishlistedIds)
 
   const heading = q
     ? `Results for “${q}”`
@@ -139,7 +144,12 @@ export default async function SearchPage(props: {
       ) : (
         <div className='grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 xl:grid-cols-4'>
           {sortedProducts.map((product) => (
-            <ProductCard key={product._id} product={product} />
+            <ProductCard
+              key={product._id}
+              product={product}
+              wishlisted={saved.has(product._id)}
+              signedIn={wishlist.signedIn}
+            />
           ))}
         </div>
       )}

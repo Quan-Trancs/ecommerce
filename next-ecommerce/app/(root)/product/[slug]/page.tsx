@@ -17,7 +17,7 @@ import WishlistToggleButton from '@/components/shared/product/wishlist-toggle-bu
 import { roundToTwoDecimals } from '@/lib/utils'
 import Link from 'next/link'
 import { auth } from '@/auth'
-import { getWishlistStatus } from '@/lib/actions/wishlist.actions'
+import { getWishlistStatus, getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -54,6 +54,9 @@ export default async function ProductDetails(props: {
     getProductReviewsPanel(product._id),
     getWishlistStatus(product._id),
   ])
+  const relatedWishlist = await getWishlistStatusesForProducts(
+    (relatedProducts.data || []).map((p) => p._id)
+  )
 
   const avgRating = reviewsPanel.numReviews
     ? reviewsPanel.avgRating
@@ -180,6 +183,8 @@ export default async function ProductDetails(props: {
           products={relatedProducts.data}
           title={`Best Sellers in ${product.category}`}
           href={`/search?category=${encodeURIComponent(product.category)}`}
+          wishlistedIds={relatedWishlist.wishlistedIds}
+          signedIn={relatedWishlist.signedIn}
         />
       </section>
 

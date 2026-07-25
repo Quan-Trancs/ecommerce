@@ -7,6 +7,7 @@ import {
   addWishlistItem,
   isProductWishlisted,
   listWishlistItems,
+  listWishlistedProductIds,
   productExists,
   removeWishlistItem,
   type WishlistItemRow,
@@ -30,6 +31,20 @@ export async function getWishlistStatus(
   }
   const wishlisted = await isProductWishlisted(session.user.id, productId)
   return { wishlisted, signedIn: true }
+}
+
+export async function getWishlistStatusesForProducts(
+  productIds: string[]
+): Promise<{ signedIn: boolean; wishlistedIds: string[] }> {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { signedIn: false, wishlistedIds: [] }
+  }
+  const wishlistedIds = await listWishlistedProductIds(
+    session.user.id,
+    productIds
+  )
+  return JSON.parse(JSON.stringify({ signedIn: true, wishlistedIds }))
 }
 
 export async function toggleWishlistItem(

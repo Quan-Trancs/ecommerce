@@ -8,6 +8,7 @@ import {
   getProductsForCard,
   searchCatalog,
 } from '@/lib/actions/product.actions'
+import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import data from '@/lib/data'
 
 export default async function Page() {
@@ -25,6 +26,11 @@ export default async function Page() {
     getProductsForCard({ tag: 'best-seller', limit: 4 }),
     getProductsByTag({ tag: 'todays-deal' }),
     getProductsByTag({ tag: 'best-seller' }),
+  ])
+
+  const wishlist = await getWishlistStatusesForProducts([
+    ...todaysDeals.map((p) => p._id),
+    ...bestSellingProducts.map((p) => p._id),
   ])
 
   const topCategories = categoryTree.slice(0, 4)
@@ -83,6 +89,8 @@ export default async function Page() {
               title="Today's Deals"
               products={todaysDeals}
               href='/search?tag=todays-deal'
+              wishlistedIds={wishlist.wishlistedIds}
+              signedIn={wishlist.signedIn}
             />
           </section>
 
@@ -92,6 +100,8 @@ export default async function Page() {
               products={bestSellingProducts}
               hideDetails
               href='/search?tag=best-seller'
+              wishlistedIds={wishlist.wishlistedIds}
+              signedIn={wishlist.signedIn}
             />
           </section>
 

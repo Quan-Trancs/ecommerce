@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.47 — 2026-07-25
+
+Wishlist hearts on product cards.
+
+### Frontend
+- Compact heart overlay on product tiles (search, home sliders, related)
+- Batch wishlist status lookup for listing pages
+- Browsing-history cards self-hydrate wishlist state
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.47` |
+| Store API | `store-backend/` | `1.3.47` (`store-api`) |
+
+---
+
 ## v1.3.46 — 2026-07-25
 
 Auto-refund when a return request is approved.

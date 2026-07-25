@@ -337,3 +337,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Buyer wishlist / save for later~~ (v1.3.44)
 - ~~Buyer return / RMA requests~~ (v1.3.45)
 - ~~Auto-refund on approved returns~~ (v1.3.46)
+- ~~Wishlist hearts on product cards~~ (v1.3.47)

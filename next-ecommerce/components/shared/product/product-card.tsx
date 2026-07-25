@@ -6,38 +6,52 @@ import Rating from './rating'
 import { formatNumber, generateId, roundToTwoDecimals } from '@/lib/utils'
 import ProductPrice from './product-price'
 import AddToCart from './add-to-cart'
+import WishlistHeartButton from './wishlist-heart-button'
 
 const ProductCard = ({
   product,
   hideBorders = false,
   hideDetails = false,
   hideAddToCart = false,
+  wishlisted,
+  signedIn,
 }: {
   product: IProduct
   hideBorders?: boolean
   hideDetails?: boolean
   hideAddToCart?: boolean
+  wishlisted?: boolean
+  signedIn?: boolean
 }) => {
   const ProductImage = () => (
-    <Link href={`/product/${product.slug}`} className='block'>
-      <div className='brick-media relative h-48 bg-white md:h-52'>
-        {product.images.length > 1 ? (
-          <ImageHover
-            src={product.images[0]}
-            alt={product.name}
-            hoverSrc={product.images[1]}
-          />
-        ) : (
-          <Image
-            src={product.images[0]}
-            alt={product.name}
-            fill
-            sizes='280px'
-            className='object-contain p-3 transition duration-300 hover:scale-105'
-          />
-        )}
+    <div className='relative'>
+      <Link href={`/product/${product.slug}`} className='block'>
+        <div className='brick-media relative h-48 bg-white md:h-52'>
+          {product.images.length > 1 ? (
+            <ImageHover
+              src={product.images[0]}
+              alt={product.name}
+              hoverSrc={product.images[1]}
+            />
+          ) : (
+            <Image
+              src={product.images[0]}
+              alt={product.name}
+              fill
+              sizes='280px'
+              className='object-contain p-3 transition duration-300 hover:scale-105'
+            />
+          )}
+        </div>
+      </Link>
+      <div className='absolute right-2 top-2 z-10'>
+        <WishlistHeartButton
+          productId={product._id}
+          initialWishlisted={wishlisted}
+          signedIn={signedIn}
+        />
       </div>
-    </Link>
+    </div>
   )
 
   const ProductDetails = () => (
