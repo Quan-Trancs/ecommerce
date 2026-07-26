@@ -1,8 +1,57 @@
-import { sendProductQaAnswerEmail } from '@/emails/index'
+import { sendProductQaAnswerEmail, sendProductQaAskedEmail } from '@/emails/index'
 import { findUserById } from '@/lib/db/users'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
 import { getProductQaListing } from '@/lib/db/product-qa'
 import type { ProductQuestion } from '@/lib/db/product-qa'
+
+/** Notify the listing seller when a buyer asks a question. Never throws. */
+export async function notifyProductQuestionAsked(input: {
+  question: ProductQuestion
+  productId: string
+  productSlug: string
+  sellerAccountId: string
+}) {
+  try {
+    if (input.sellerAccountId === input.question.askerAccountId) return
+
+    const [seller, listing] = await Promise.all([
+      findUserById(input.sellerAccountId),
+      getProductQaListing(input.productId),
+    ])
+
+    const productName = listing?.name || 'a product'
+    const productSlug = listing?.slug || input.productSlug
+    const questionPreview = input.question.body.slice(0, 160)
+
+    await createInAppNotification({
+      accountId: input.sellerAccountId,
+      type: 'PRODUCT_QA',
+      title: 'New product question',
+      body: `${productName}: ${questionPreview}`,
+      href: '/seller/questions',
+    }).catch(() => undefined)
+
+    if (!seller?.email) {
+      console.warn(
+        'No seller email for product Q&A ask',
+        input.question.id,
+        input.sellerAccountId
+      )
+      return
+    }
+
+    await sendProductQaAskedEmail({
+      to: seller.email,
+      displayName: seller.name,
+      productName,
+      productSlug,
+      questionBody: input.question.body,
+      askerName: input.question.askerName,
+    })
+  } catch (error) {
+    console.warn('notifyProductQuestionAsked failed', error)
+  }
+}
 
 /** Notify the asker when their product question gets an answer. Never throws. */
 export async function notifyProductQuestionAnswered(input: {

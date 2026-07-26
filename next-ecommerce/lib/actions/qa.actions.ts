@@ -4,8 +4,10 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
 import { hasSellerAccess, hasSupportAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
-import { createInAppNotification } from '@/lib/db/in-app-notifications'
-import { notifyProductQuestionAnswered } from '@/lib/email/product-qa'
+import {
+  notifyProductQuestionAnswered,
+  notifyProductQuestionAsked,
+} from '@/lib/email/product-qa'
 import {
   answerProductQuestion,
   countUnansweredQuestionsForAdmin,
@@ -79,14 +81,13 @@ export async function askProductQuestion(input: {
     })
 
     const sellerId = await getProductSellerAccountId(productId)
-    if (sellerId && sellerId !== session.user.id) {
-      await createInAppNotification({
-        accountId: sellerId,
-        type: 'PRODUCT_QA',
-        title: 'New product question',
-        body: body.slice(0, 160),
-        href: '/seller/questions',
-      }).catch(() => undefined)
+    if (sellerId) {
+      await notifyProductQuestionAsked({
+        question,
+        productId,
+        productSlug: input.productSlug,
+        sellerAccountId: sellerId,
+      })
     }
 
     revalidatePath(`/product/${input.productSlug}`)

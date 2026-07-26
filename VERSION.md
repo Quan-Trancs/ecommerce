@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.64 — 2026-07-26
+
+Email the seller when a buyer asks a product question (in-app already existed).
+
+### Frontend
+- `ProductQaAskedEmail` via Resend; links to `/seller/questions`
+- Shared `notifyProductQuestionAsked` (in-app body includes product name)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.64` |
+| Store API | `store-backend/` | `1.3.64` (`store-api`) |
+
+---
+
 ## v1.3.63 — 2026-07-26
 
 Email the asker when their product question is answered (in-app already existed).
