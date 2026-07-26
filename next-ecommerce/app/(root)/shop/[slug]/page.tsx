@@ -8,7 +8,9 @@ import { getPublicSellerShop, shopHref } from '@/lib/actions/shop.actions'
 import { getShopFollowStatus } from '@/lib/actions/shop-follow.actions'
 import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import { countShopFollowers } from '@/lib/db/shop-follows'
+import { getPublicShopAnnouncements } from '@/lib/actions/shop-announcement.actions'
 import { shouldUnoptimizeProductImage } from '@/lib/storage/product-image-url'
+import { formatDateTime } from '@/lib/utils'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -49,11 +51,13 @@ export default async function PublicSellerShopPage(props: {
   }
 
   const basePath = shopHref(shop)
-  const [wishlist, followStatus, followerCount] = await Promise.all([
-    getWishlistStatusesForProducts(products.map((p) => p._id)),
-    getShopFollowStatus(shop.accountId),
-    countShopFollowers(shop.accountId),
-  ])
+  const [wishlist, followStatus, followerCount, announcements] =
+    await Promise.all([
+      getWishlistStatusesForProducts(products.map((p) => p._id)),
+      getShopFollowStatus(shop.accountId),
+      countShopFollowers(shop.accountId),
+      getPublicShopAnnouncements(shop.accountId),
+    ])
   const wishlisted = new Set(wishlist.wishlistedIds)
   const filteredEmpty = products.length === 0 && shop.productCount > 0
   const bannerUrl = shop.shopBannerUrl
@@ -212,6 +216,32 @@ export default async function PublicSellerShopPage(props: {
             ))}
           </div>
         )}
+
+        {announcements.length > 0 ? (
+          <section id='shop-announcements' className='space-y-4 border-t pt-8'>
+            <div>
+              <h2 className='font-display text-xl font-extrabold tracking-tight'>
+                Announcements
+              </h2>
+              <p className='mt-1 text-sm text-muted-foreground'>
+                Latest updates from {shop.shopName}.
+              </p>
+            </div>
+            <ul className='space-y-4'>
+              {announcements.map((item) => (
+                <li key={item.id} className='space-y-1'>
+                  <p className='font-medium'>{item.title}</p>
+                  <p className='whitespace-pre-wrap text-sm text-muted-foreground'>
+                    {item.body}
+                  </p>
+                  <p className='text-xs text-muted-foreground'>
+                    {formatDateTime(new Date(item.createdAt)).dateTime}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {shop.shippingPolicy || shop.returnsPolicy ? (
           <section id='shop-policies' className='space-y-4 border-t pt-8'>

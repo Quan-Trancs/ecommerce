@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.98 — 2026-07-26
+
+Seller shop announcements with in-app notices to followers.
+
+### Backend
+- Flyway `V49__shop_announcements.sql`
+- In-app type `SHOP_ANNOUNCEMENT` (no email for v1); reuses `notify_shop_follows`
+
+### Frontend
+- Seller dashboard form to post/delete announcements (max 5/day)
+- Public shop “Announcements” section (latest 5)
+- Account prefs copy updated for announcements
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.98` |
+| Store API | `store-backend/` | `1.3.98` (`store-api`) |
+
+---
+
 ## v1.3.97 — 2026-07-26
 
 Seller shop logo and name links on the compare page.

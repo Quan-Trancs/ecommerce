@@ -2,11 +2,13 @@ import Link from 'next/link'
 import { getSellerAnalytics } from '@/lib/actions/seller.actions'
 import { getSellerQaInbox } from '@/lib/actions/qa.actions'
 import { getMySellerShop, shopHref } from '@/lib/actions/shop.actions'
+import { getMyShopAnnouncements } from '@/lib/actions/shop-announcement.actions'
 import { countShopFollowers } from '@/lib/db/shop-follows'
 import ProductPrice from '@/components/shared/product/product-price'
 import SellerShopProfileForm from './seller-shop-profile-form'
 import SellerShopBannerForm from './seller-shop-banner-form'
 import SellerShopLogoForm from './seller-shop-logo-form'
+import SellerShopAnnouncementForm from './seller-shop-announcement-form'
 
 export const metadata = { title: 'Seller dashboard' }
 
@@ -18,6 +20,7 @@ export default async function SellerHomePage() {
   const followerCount = shop
     ? await countShopFollowers(shop.accountId)
     : 0
+  const announcements = shop ? await getMyShopAnnouncements() : []
 
   try {
     analytics = await getSellerAnalytics()
@@ -73,9 +76,13 @@ export default async function SellerHomePage() {
               {shop.shopName}
             </Link>
             . They get in-app alerts and batched emails when you publish new
-            products.
+            products, plus in-app notices for shop announcements.
           </p>
         </div>
+      ) : null}
+
+      {shop ? (
+        <SellerShopAnnouncementForm announcements={announcements} />
       ) : null}
 
       {error ? (
