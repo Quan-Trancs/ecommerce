@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.70 — 2026-07-26
+
+PDP Q&A sort tabs: Most helpful / Newest.
+
+### Frontend
+- Client sort on the product Q&A panel (default Most helpful)
+- Answered questions rank by helpful count; Newest is chronological
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.70` |
+| Store API | `store-backend/` | `1.3.70` (`store-api`) |
+
+---
+
 ## v1.3.69 — 2026-07-26
 
 Helpful votes on answered product Q&A.

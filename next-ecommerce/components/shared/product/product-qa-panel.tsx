@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useState, useTransition } from 'react'
+import { FormEvent, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,34 @@ import {
   type ProductQuestion,
 } from '@/lib/actions/qa.actions'
 import { formatDateTime } from '@/lib/utils'
+
+type QaSort = 'helpful' | 'newest'
+
+function sortQuestions(
+  questions: ProductQuestion[],
+  sort: QaSort
+): ProductQuestion[] {
+  const copy = [...questions]
+  if (sort === 'newest') {
+    copy.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    return copy
+  }
+  copy.sort((a, b) => {
+    const aOpen = a.answerBody ? 0 : 1
+    const bOpen = b.answerBody ? 0 : 1
+    if (aOpen !== bOpen) return aOpen - bOpen
+    if (b.helpfulCount !== a.helpfulCount) {
+      return b.helpfulCount - a.helpfulCount
+    }
+    return (
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+  })
+  return copy
+}
 
 export default function ProductQaPanel({
   productId,
@@ -39,6 +67,11 @@ export default function ProductQaPanel({
   const [pending, startTransition] = useTransition()
   const [body, setBody] = useState('')
   const [answers, setAnswers] = useState<Record<number, string>>({})
+  const [sort, setSort] = useState<QaSort>('helpful')
+  const sortedQuestions = useMemo(
+    () => sortQuestions(questions, sort),
+    [questions, sort]
+  )
 
   function onAsk(event: FormEvent) {
     event.preventDefault()
@@ -60,11 +93,39 @@ export default function ProductQaPanel({
 
   return (
     <section className='brick space-y-6 p-4 md:p-5'>
-      <div>
-        <p className='brick-label'>Questions & answers</p>
-        <h2 className='mt-1 text-xl font-bold text-chrome'>
-          {questions.length} question{questions.length === 1 ? '' : 's'}
-        </h2>
+      <div className='flex flex-wrap items-end justify-between gap-3'>
+        <div>
+          <p className='brick-label'>Questions & answers</p>
+          <h2 className='mt-1 text-xl font-bold text-chrome'>
+            {questions.length} question{questions.length === 1 ? '' : 's'}
+          </h2>
+        </div>
+        {questions.length > 1 ? (
+          <div className='flex flex-wrap gap-2 text-sm'>
+            <button
+              type='button'
+              onClick={() => setSort('helpful')}
+              className={
+                sort === 'helpful'
+                  ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
+                  : 'rounded-md border px-3 py-1.5 hover:border-primary'
+              }
+            >
+              Most helpful
+            </button>
+            <button
+              type='button'
+              onClick={() => setSort('newest')}
+              className={
+                sort === 'newest'
+                  ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
+                  : 'rounded-md border px-3 py-1.5 hover:border-primary'
+              }
+            >
+              Newest
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {signedIn ? (
@@ -97,13 +158,13 @@ export default function ProductQaPanel({
         </p>
       )}
 
-      {questions.length === 0 ? (
+      {sortedQuestions.length === 0 ? (
         <p className='text-sm text-muted-foreground'>
           No questions yet. Be the first to ask.
         </p>
       ) : (
         <ul className='space-y-4'>
-          {questions.map((question) => {
+          {sortedQuestions.map((question) => {
             const isAsker = accountId && question.askerAccountId === accountId
             const unanswered = !question.answerBody
             return (
