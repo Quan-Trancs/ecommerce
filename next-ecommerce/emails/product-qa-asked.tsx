@@ -18,6 +18,8 @@ type Props = {
   productSlug: string
   questionBody: string
   askerName?: string | null
+  /** Inbox path for the CTA (seller vs staff). */
+  inboxPath?: string
 }
 
 export default function ProductQaAskedEmail({
@@ -26,10 +28,11 @@ export default function ProductQaAskedEmail({
   productSlug,
   questionBody,
   askerName,
+  inboxPath = '/seller/questions',
 }: Props) {
   const greeting = displayName?.trim() ? `Hi ${displayName.trim()},` : 'Hi,'
   const productUrl = `${SERVER_URL}/product/${productSlug}`
-  const inboxUrl = `${SERVER_URL}/seller/questions`
+  const inboxUrl = `${SERVER_URL}${inboxPath.startsWith('/') ? inboxPath : `/${inboxPath}`}`
   const who = askerName?.trim() || 'A customer'
 
   return (

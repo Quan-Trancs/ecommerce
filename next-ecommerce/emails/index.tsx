@@ -253,6 +253,7 @@ export const sendProductQaAskedEmail = async (input: {
   productSlug: string
   questionBody: string
   askerName?: string | null
+  inboxPath?: string
 }) => {
   const resend = getResend()
   const to = input.to.trim()
@@ -275,6 +276,7 @@ export const sendProductQaAskedEmail = async (input: {
         productSlug={input.productSlug}
         questionBody={input.questionBody}
         askerName={input.askerName}
+        inboxPath={input.inboxPath}
       />
     ),
   })

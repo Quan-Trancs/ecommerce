@@ -355,3 +355,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Support-role Q&A assist~~ (v1.3.62)
 - ~~Buyer email when a product question is answered~~ (v1.3.63)
 - ~~Seller email when a product question is asked~~ (v1.3.64)
+- ~~Staff notify for platform product Q&A~~ (v1.3.65)

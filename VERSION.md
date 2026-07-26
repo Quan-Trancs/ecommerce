@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.65 — 2026-07-26
+
+Staff notify when a buyer asks on a platform-owned product (no seller).
+
+### Frontend
+- In-app + email to all active SUPPORT/ADMIN; inbox CTA by role
+- Optional `SUPPORT_PRODUCT_QA_EMAIL` (falls back to `SUPPORT_ORDER_NOTES_EMAIL`)
+- `ProductQaAskedEmail` accepts staff vs seller inbox path
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.65` |
+| Store API | `store-backend/` | `1.3.65` (`store-api`) |
+
+---
+
 ## v1.3.64 — 2026-07-26
 
 Email the seller when a buyer asks a product question (in-app already existed).

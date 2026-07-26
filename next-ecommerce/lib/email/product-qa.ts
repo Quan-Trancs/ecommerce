@@ -1,8 +1,16 @@
 import { sendProductQaAnswerEmail, sendProductQaAskedEmail } from '@/emails/index'
 import { findUserById } from '@/lib/db/users'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
+import { listSupportStaff } from '@/lib/db/support-ticket-assignments'
 import { getProductQaListing } from '@/lib/db/product-qa'
 import type { ProductQuestion } from '@/lib/db/product-qa'
+import { ROLES, normalizeRole } from '@/lib/auth/roles'
+
+function staffQaInboxPath(role?: string | null) {
+  return normalizeRole(role) === ROLES.ADMIN
+    ? '/admin/questions'
+    : '/support/questions'
+}
 
 /** Notify the listing seller when a buyer asks a question. Never throws. */
 export async function notifyProductQuestionAsked(input: {
@@ -47,9 +55,82 @@ export async function notifyProductQuestionAsked(input: {
       productSlug,
       questionBody: input.question.body,
       askerName: input.question.askerName,
+      inboxPath: '/seller/questions',
     })
   } catch (error) {
     console.warn('notifyProductQuestionAsked failed', error)
+  }
+}
+
+/**
+ * Platform listings (no seller): notify SUPPORT/ADMIN in-app + email.
+ * Optional SUPPORT_PRODUCT_QA_EMAIL (falls back to SUPPORT_ORDER_NOTES_EMAIL).
+ */
+export async function notifyPlatformProductQuestionAsked(input: {
+  question: ProductQuestion
+  productId: string
+  productSlug: string
+}) {
+  try {
+    const [staff, listing] = await Promise.all([
+      listSupportStaff(),
+      getProductQaListing(input.productId),
+    ])
+
+    const productName = listing?.name || 'a product'
+    const productSlug = listing?.slug || input.productSlug
+    const questionPreview = input.question.body.slice(0, 160)
+    const recipients = staff.filter(
+      (s) => s.id !== input.question.askerAccountId
+    )
+
+    await Promise.all(
+      recipients.map((member) =>
+        createInAppNotification({
+          accountId: member.id,
+          type: 'PRODUCT_QA',
+          title: 'Platform product question',
+          body: `${productName}: ${questionPreview}`,
+          href: staffQaInboxPath(member.role),
+        }).catch(() => undefined)
+      )
+    )
+
+    const emailed = new Set<string>()
+    for (const member of recipients) {
+      const email = member.email?.trim().toLowerCase()
+      if (!email || emailed.has(email)) continue
+      emailed.add(email)
+      await sendProductQaAskedEmail({
+        to: member.email,
+        displayName: member.name,
+        productName,
+        productSlug,
+        questionBody: input.question.body,
+        askerName: input.question.askerName,
+        inboxPath: staffQaInboxPath(member.role),
+      })
+    }
+
+    const sharedInbox =
+      process.env.SUPPORT_PRODUCT_QA_EMAIL?.trim() ||
+      process.env.SUPPORT_ORDER_NOTES_EMAIL?.trim()
+    if (sharedInbox) {
+      const email = sharedInbox.toLowerCase()
+      if (!emailed.has(email)) {
+        await sendProductQaAskedEmail({
+          to: sharedInbox,
+          displayName: null,
+          productName,
+          productSlug,
+          questionBody: input.question.body,
+          askerName: input.question.askerName,
+          inboxPath: '/support/questions',
+        })
+      }
+    }
+  } catch (error) {
+    console.warn('notifyPlatformProductQuestionAsked failed', error)
   }
 }
 

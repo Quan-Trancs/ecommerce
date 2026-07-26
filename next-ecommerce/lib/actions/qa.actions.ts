@@ -5,6 +5,7 @@ import { auth } from '@/auth'
 import { hasSellerAccess, hasSupportAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
 import {
+  notifyPlatformProductQuestionAsked,
   notifyProductQuestionAnswered,
   notifyProductQuestionAsked,
 } from '@/lib/email/product-qa'
@@ -87,6 +88,12 @@ export async function askProductQuestion(input: {
         productId,
         productSlug: input.productSlug,
         sellerAccountId: sellerId,
+      })
+    } else {
+      await notifyPlatformProductQuestionAsked({
+        question,
+        productId,
+        productSlug: input.productSlug,
       })
     }
 
