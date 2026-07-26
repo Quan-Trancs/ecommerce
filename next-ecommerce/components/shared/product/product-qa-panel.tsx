@@ -11,6 +11,7 @@ import {
   moderateDeleteProductQuestion,
   removeMyProductQuestion,
   sellerHideProductQuestion,
+  toggleProductQuestionHelpful,
   type ProductQuestion,
 } from '@/lib/actions/qa.actions'
 import { formatDateTime } from '@/lib/utils'
@@ -119,14 +120,63 @@ export default function ProductQaPanel({
                 </div>
 
                 {question.answerBody ? (
-                  <div className='rounded-md bg-muted/40 p-3'>
-                    <p className='font-medium'>A: {question.answerBody}</p>
-                    <p className='mt-1 text-xs text-muted-foreground'>
-                      {question.answererName || 'Seller'}
-                      {question.answeredAt
-                        ? ` · ${formatDateTime(new Date(question.answeredAt)).dateTime}`
-                        : ''}
-                    </p>
+                  <div className='space-y-2'>
+                    <div className='rounded-md bg-muted/40 p-3'>
+                      <p className='font-medium'>A: {question.answerBody}</p>
+                      <p className='mt-1 text-xs text-muted-foreground'>
+                        {question.answererName || 'Seller'}
+                        {question.answeredAt
+                          ? ` · ${formatDateTime(new Date(question.answeredAt)).dateTime}`
+                          : ''}
+                      </p>
+                    </div>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      {signedIn &&
+                      accountId &&
+                      question.answerAccountId !== accountId ? (
+                        <Button
+                          type='button'
+                          size='sm'
+                          variant={
+                            question.viewerMarkedHelpful
+                              ? 'secondary'
+                              : 'outline'
+                          }
+                          disabled={pending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              const result = await toggleProductQuestionHelpful(
+                                {
+                                  questionId: question.id,
+                                  productSlug,
+                                }
+                              )
+                              if (result.success) {
+                                toast.success(result.message)
+                                router.refresh()
+                              } else {
+                                toast.error(result.message)
+                              }
+                            })
+                          }}
+                        >
+                          {question.viewerMarkedHelpful
+                            ? 'Helpful ✓'
+                            : 'Helpful'}
+                          {question.helpfulCount > 0
+                            ? ` (${question.helpfulCount})`
+                            : ''}
+                        </Button>
+                      ) : question.helpfulCount > 0 ? (
+                        <p className='text-xs text-muted-foreground'>
+                          {question.helpfulCount} found this helpful
+                        </p>
+                      ) : !signedIn ? (
+                        <p className='text-xs text-muted-foreground'>
+                          Sign in to mark helpful
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                 ) : canAnswer ? (
                   <form

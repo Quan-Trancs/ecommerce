@@ -11,6 +11,8 @@ export type ProductQuestion = {
   answererName: string | null
   answeredAt: string | null
   createdAt: string
+  helpfulCount: number
+  viewerMarkedHelpful: boolean
 }
 
 export type SellerInboxQuestion = ProductQuestion & {
@@ -37,6 +39,8 @@ type Row = {
   answerer_email: string | null
   answered_at: Date | string | null
   created_at: Date | string
+  helpful_count?: number | string | null
+  viewer_marked_helpful?: boolean | null
 }
 
 function displayName(
@@ -66,6 +70,8 @@ function mapRow(row: Row): ProductQuestion {
       ? new Date(row.answered_at).toISOString()
       : null,
     createdAt: new Date(row.created_at).toISOString(),
+    helpfulCount: Number(row.helpful_count) || 0,
+    viewerMarkedHelpful: Boolean(row.viewer_marked_helpful),
   }
 }
 
@@ -93,21 +99,40 @@ export async function getProductQaListing(
 
 export async function listProductQuestions(
   productId: string,
-  options?: { limit?: number }
+  options?: { limit?: number; viewerAccountId?: string | null }
 ): Promise<ProductQuestion[]> {
   const limit = Math.max(1, Math.min(options?.limit ?? 40, 100))
+  const viewerId = options?.viewerAccountId?.trim() || null
   const result = await query<Row>(
     `SELECT q.id, q.product_id, q.asker_account_id, q.body,
             q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
             asker.display_name AS asker_name, asker.email AS asker_email,
-            answerer.display_name AS answerer_name, answerer.email AS answerer_email
+            answerer.display_name AS answerer_name, answerer.email AS answerer_email,
+            (
+              SELECT COUNT(*)::int
+              FROM product_question_helpful h
+              WHERE h.question_id = q.id
+            ) AS helpful_count,
+            EXISTS (
+              SELECT 1
+              FROM product_question_helpful h
+              WHERE h.question_id = q.id
+                AND h.account_id = $3
+            ) AS viewer_marked_helpful
      FROM product_questions q
      LEFT JOIN accounts asker ON asker.id = q.asker_account_id
      LEFT JOIN accounts answerer ON answerer.id = q.answer_account_id
      WHERE q.product_id = $1
-     ORDER BY q.created_at DESC
+     ORDER BY
+       CASE WHEN q.answer_body IS NULL THEN 1 ELSE 0 END,
+       (
+         SELECT COUNT(*)::int
+         FROM product_question_helpful h
+         WHERE h.question_id = q.id
+       ) DESC,
+       q.created_at DESC
      LIMIT $2`,
-    [productId, limit]
+    [productId, limit, viewerId]
   )
   return result.rows.map(mapRow)
 }
@@ -432,4 +457,74 @@ export async function countUnansweredQuestionsForAdmin(options?: {
          WHERE q.answer_body IS NULL`
   )
   return Number(result.rows[0]?.count || 0)
+}
+
+export async function getProductQuestionAnswerMeta(
+  questionId: number
+): Promise<{
+  id: number
+  productId: string
+  answerAccountId: string | null
+  answered: boolean
+} | null> {
+  const result = await query<{
+    id: number | string
+    product_id: string
+    answer_account_id: string | null
+    answer_body: string | null
+  }>(
+    `SELECT id, product_id, answer_account_id, answer_body
+     FROM product_questions
+     WHERE id = $1
+     LIMIT 1`,
+    [questionId]
+  )
+  const row = result.rows[0]
+  if (!row) return null
+  return {
+    id: Number(row.id),
+    productId: row.product_id,
+    answerAccountId: row.answer_account_id,
+    answered: Boolean(row.answer_body),
+  }
+}
+
+export async function countQuestionHelpful(questionId: number): Promise<number> {
+  const result = await query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count
+     FROM product_question_helpful
+     WHERE question_id = $1`,
+    [questionId]
+  )
+  return Number(result.rows[0]?.count || 0)
+}
+
+/** Toggle helpful mark. Returns whether the viewer now has it marked. */
+export async function toggleQuestionHelpful(input: {
+  questionId: number
+  accountId: string
+}): Promise<{ marked: boolean; helpfulCount: number }> {
+  const existing = await query(
+    `SELECT 1 FROM product_question_helpful
+     WHERE question_id = $1 AND account_id = $2
+     LIMIT 1`,
+    [input.questionId, input.accountId]
+  )
+  if ((existing.rowCount || 0) > 0) {
+    await query(
+      `DELETE FROM product_question_helpful
+       WHERE question_id = $1 AND account_id = $2`,
+      [input.questionId, input.accountId]
+    )
+    const helpfulCount = await countQuestionHelpful(input.questionId)
+    return { marked: false, helpfulCount }
+  }
+  await query(
+    `INSERT INTO product_question_helpful (question_id, account_id, created_at)
+     VALUES ($1, $2, NOW())
+     ON CONFLICT DO NOTHING`,
+    [input.questionId, input.accountId]
+  )
+  const helpfulCount = await countQuestionHelpful(input.questionId)
+  return { marked: true, helpfulCount }
 }

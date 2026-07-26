@@ -1,5 +1,24 @@
 # Version History
 
+## v1.3.69 — 2026-07-26
+
+Helpful votes on answered product Q&A.
+
+### Backend
+- Flyway `V33__product_qa_helpful.sql` — per-account votes on questions
+
+### Frontend
+- Signed-in users can toggle Helpful on answers (not their own)
+- PDP sorts answered by helpful count; shows counts for guests
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.69` |
+| Store API | `store-backend/` | `1.3.69` (`store-api`) |
+
+---
+
 ## v1.3.68 — 2026-07-26
 
 Search/filter unanswered Q&A on seller and staff inboxes.

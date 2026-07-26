@@ -18,11 +18,13 @@ import {
   deleteProductQuestion,
   deleteProductQuestionAsStaff,
   deleteUnansweredProductQuestionForSeller,
+  getProductQuestionAnswerMeta,
   getProductSellerAccountId,
   listProductQuestions,
   listUnansweredQuestionsForAdmin,
   listUnansweredQuestionsForSeller,
   normalizeQaSearch,
+  toggleQuestionHelpful,
   type AdminInboxQuestion,
   type ProductQuestion,
   type SellerInboxQuestion,
@@ -47,7 +49,10 @@ export async function getProductQaPanel(productId: string): Promise<{
 }> {
   const session = await auth()
   const sellerAccountId = await getProductSellerAccountId(productId)
-  const questions = await listProductQuestions(productId, { limit: 40 })
+  const questions = await listProductQuestions(productId, {
+    limit: 40,
+    viewerAccountId: session?.user?.id,
+  })
   const canAnswer = Boolean(
     session?.user?.id &&
       canAnswerProduct(session.user.id, session.user.role, sellerAccountId)
@@ -365,6 +370,49 @@ export async function sellerHideProductQuestion(input: {
     revalidatePath('/support/questions')
     revalidatePath('/support')
     return { success: true, message: 'Question hidden' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/** Signed-in buyers: mark/unmark an answer as helpful. */
+export async function toggleProductQuestionHelpful(input: {
+  questionId: number
+  productSlug: string
+}): Promise<{
+  success: boolean
+  message: string
+  marked?: boolean
+  helpfulCount?: number
+}> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+
+    const meta = await getProductQuestionAnswerMeta(input.questionId)
+    if (!meta || !meta.answered) {
+      return { success: false, message: 'Answered question required' }
+    }
+    if (meta.answerAccountId === session.user.id) {
+      return {
+        success: false,
+        message: 'You cannot mark your own answer as helpful',
+      }
+    }
+
+    const result = await toggleQuestionHelpful({
+      questionId: input.questionId,
+      accountId: session.user.id,
+    })
+    revalidatePath(`/product/${input.productSlug}`)
+    return {
+      success: true,
+      message: result.marked ? 'Marked helpful' : 'Removed helpful mark',
+      marked: result.marked,
+      helpfulCount: result.helpfulCount,
+    }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
