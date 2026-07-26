@@ -17,6 +17,7 @@ import {
   createProductQuestion,
   deleteProductQuestion,
   deleteProductQuestionAsStaff,
+  deleteUnansweredProductQuestionForSeller,
   getProductSellerAccountId,
   listProductQuestions,
   listUnansweredQuestionsForAdmin,
@@ -41,6 +42,7 @@ export async function getProductQaPanel(productId: string): Promise<{
   questions: ProductQuestion[]
   canAnswer: boolean
   canModerate: boolean
+  canSellerHide: boolean
 }> {
   const session = await auth()
   const sellerAccountId = await getProductSellerAccountId(productId)
@@ -52,11 +54,15 @@ export async function getProductQaPanel(productId: string): Promise<{
   const canModerate = Boolean(
     session?.user?.id && hasSupportAccess(session.user.role)
   )
+  const canSellerHide = Boolean(
+    session?.user?.id && sellerAccountId === session.user.id
+  )
   return JSON.parse(
     JSON.stringify({
       questions,
       canAnswer,
       canModerate,
+      canSellerHide,
     })
   )
 }
@@ -305,6 +311,42 @@ export async function moderateDeleteProductQuestion(input: {
     revalidatePath('/support/questions')
     revalidatePath('/support')
     return { success: true, message: 'Question removed' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/** Seller: hide unanswered Q&A on their own listing. */
+export async function sellerHideProductQuestion(input: {
+  questionId: number
+  productSlug?: string
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
+      return { success: false, message: 'Seller access required' }
+    }
+
+    const deleted = await deleteUnansweredProductQuestionForSeller({
+      questionId: input.questionId,
+      sellerAccountId: session.user.id,
+    })
+    if (!deleted) {
+      return {
+        success: false,
+        message: 'Question not found, already answered, or not your listing',
+      }
+    }
+
+    const slug = input.productSlug || deleted.productSlug
+    revalidatePath(`/product/${slug}`)
+    revalidatePath('/seller/questions')
+    revalidatePath('/seller')
+    revalidatePath('/admin/questions')
+    revalidatePath('/admin')
+    revalidatePath('/support/questions')
+    revalidatePath('/support')
+    return { success: true, message: 'Question hidden' }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }

@@ -180,6 +180,49 @@ export async function deleteProductQuestion(input: {
   return (result.rowCount || 0) > 0
 }
 
+/** Seller: remove unanswered Q&A only on products they own. */
+export async function deleteUnansweredProductQuestionForSeller(input: {
+  questionId: number
+  sellerAccountId: string
+}): Promise<{
+  id: number
+  productId: string
+  productSlug: string
+  body: string
+  askerAccountId: string
+} | null> {
+  const result = await query<{
+    id: number | string
+    product_id: string
+    product_slug: string | null
+    body: string
+    asker_account_id: string
+  }>(
+    `WITH deleted AS (
+       DELETE FROM product_questions q
+       USING products p
+       WHERE q.id = $1
+         AND q.product_id = p.id
+         AND p.seller_account_id = $2
+         AND q.answer_body IS NULL
+       RETURNING q.id, q.product_id, q.body, q.asker_account_id
+     )
+     SELECT d.id, d.product_id, d.body, d.asker_account_id, p.slug AS product_slug
+     FROM deleted d
+     LEFT JOIN products p ON p.id = d.product_id`,
+    [input.questionId, input.sellerAccountId]
+  )
+  const row = result.rows[0]
+  if (!row) return null
+  return {
+    id: Number(row.id),
+    productId: row.product_id,
+    productSlug: row.product_slug?.trim() || row.product_id,
+    body: row.body,
+    askerAccountId: row.asker_account_id,
+  }
+}
+
 /** Staff moderation: delete any question (answered or not). */
 export async function deleteProductQuestionAsStaff(
   questionId: number

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   answerProductQuestionAction,
+  sellerHideProductQuestion,
   type SellerInboxQuestion,
 } from '@/lib/actions/qa.actions'
 import { formatDateTime } from '@/lib/utils'
@@ -95,9 +96,41 @@ export default function SellerQuestionsInboxClient({
               maxLength={4000}
               required
             />
-            <Button type='submit' size='sm' disabled={pending}>
-              {pending ? 'Posting…' : 'Post answer'}
-            </Button>
+            <div className='flex flex-wrap gap-2'>
+              <Button type='submit' size='sm' disabled={pending}>
+                {pending ? 'Posting…' : 'Post answer'}
+              </Button>
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                className='text-destructive'
+                disabled={pending}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      'Hide this unanswered question from your listing?'
+                    )
+                  ) {
+                    return
+                  }
+                  startTransition(async () => {
+                    const result = await sellerHideProductQuestion({
+                      questionId: question.id,
+                      productSlug: question.productSlug,
+                    })
+                    if (result.success) {
+                      toast.success(result.message)
+                      router.refresh()
+                    } else {
+                      toast.error(result.message)
+                    }
+                  })
+                }}
+              >
+                Hide
+              </Button>
+            </div>
           </form>
         </li>
       ))}

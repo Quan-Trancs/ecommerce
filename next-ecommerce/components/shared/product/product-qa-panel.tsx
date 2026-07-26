@@ -10,6 +10,7 @@ import {
   askProductQuestion,
   moderateDeleteProductQuestion,
   removeMyProductQuestion,
+  sellerHideProductQuestion,
   type ProductQuestion,
 } from '@/lib/actions/qa.actions'
 import { formatDateTime } from '@/lib/utils'
@@ -20,6 +21,7 @@ export default function ProductQaPanel({
   signedIn,
   canAnswer,
   canModerate = false,
+  canSellerHide = false,
   accountId,
   questions,
 }: {
@@ -28,6 +30,7 @@ export default function ProductQaPanel({
   signedIn: boolean
   canAnswer: boolean
   canModerate?: boolean
+  canSellerHide?: boolean
   accountId?: string | null
   questions: ProductQuestion[]
 }) {
@@ -231,6 +234,42 @@ export default function ProductQaPanel({
                     }}
                   >
                     Remove (moderation)
+                  </Button>
+                ) : null}
+
+                {canSellerHide &&
+                unanswered &&
+                !canModerate &&
+                !(isAsker && unanswered) ? (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='px-0 text-destructive'
+                    disabled={pending}
+                    onClick={() => {
+                      if (
+                        !window.confirm(
+                          'Hide this unanswered question from your listing?'
+                        )
+                      ) {
+                        return
+                      }
+                      startTransition(async () => {
+                        const result = await sellerHideProductQuestion({
+                          questionId: question.id,
+                          productSlug,
+                        })
+                        if (result.success) {
+                          toast.success(result.message)
+                          router.refresh()
+                        } else {
+                          toast.error(result.message)
+                        }
+                      })
+                    }}
+                  >
+                    Hide question
                   </Button>
                 ) : null}
               </li>

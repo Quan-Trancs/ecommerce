@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.67 — 2026-07-26
+
+Sellers can hide unanswered Q&A on their own listings.
+
+### Frontend
+- `sellerHideProductQuestion` — unanswered only, product ownership enforced
+- Hide control on `/seller/questions` and PDP (`canSellerHide`)
+- Staff moderation still covers answered questions
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.67` |
+| Store API | `store-backend/` | `1.3.67` (`store-api`) |
+
+---
+
 ## v1.3.66 — 2026-07-26
 
 Staff moderation: SUPPORT/ADMIN can delete abusive product Q&A.

@@ -357,3 +357,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller email when a product question is asked~~ (v1.3.64)
 - ~~Staff notify for platform product Q&A~~ (v1.3.65)
 - ~~Staff Q&A moderation (delete)~~ (v1.3.66)
+- ~~Seller hide unanswered Q&A on own listings~~ (v1.3.67)
