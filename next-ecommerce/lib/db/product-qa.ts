@@ -79,6 +79,18 @@ export async function getProductSellerAccountId(
   return result.rows[0]?.seller_account_id || null
 }
 
+export async function getProductQaListing(
+  productId: string
+): Promise<{ name: string; slug: string } | null> {
+  const result = await query<{ name: string; slug: string }>(
+    `SELECT name, slug FROM products WHERE id = $1 LIMIT 1`,
+    [productId]
+  )
+  const row = result.rows[0]
+  if (!row?.slug) return null
+  return { name: row.name || row.slug, slug: row.slug }
+}
+
 export async function listProductQuestions(
   productId: string,
   options?: { limit?: number }

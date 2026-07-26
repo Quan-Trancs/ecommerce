@@ -5,6 +5,7 @@ import { auth } from '@/auth'
 import { hasSellerAccess, hasSupportAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
+import { notifyProductQuestionAnswered } from '@/lib/email/product-qa'
 import {
   answerProductQuestion,
   countUnansweredQuestionsForAdmin,
@@ -142,15 +143,13 @@ export async function answerProductQuestionAction(input: {
       return { success: false, message: 'Question not found' }
     }
 
-    if (question.askerAccountId !== session.user.id) {
-      await createInAppNotification({
-        accountId: question.askerAccountId,
-        type: 'PRODUCT_QA',
-        title: 'Your question was answered',
-        body: answerBody.slice(0, 160),
-        href: `/product/${input.productSlug}`,
-      }).catch(() => undefined)
-    }
+    await notifyProductQuestionAnswered({
+      question,
+      productId: input.productId,
+      productSlug: input.productSlug,
+      answerBody,
+      answererAccountId: session.user.id,
+    })
 
     revalidatePath(`/product/${input.productSlug}`)
     revalidatePath('/seller/questions')

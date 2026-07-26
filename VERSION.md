@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.63 — 2026-07-26
+
+Email the asker when their product question is answered (in-app already existed).
+
+### Frontend
+- `ProductQaAnswerEmail` via Resend when staff/seller posts an answer
+- In-app body includes product name; shared `notifyProductQuestionAnswered`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.63` |
+| Store API | `store-backend/` | `1.3.63` (`store-api`) |
+
+---
+
 ## v1.3.62 — 2026-07-26
 
 Support-role product Q&A assist (same inbox as admin).

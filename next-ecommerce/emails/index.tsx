@@ -9,6 +9,7 @@ import OrderReturnEmail, {
   type OrderReturnEmailKind,
 } from './order-return'
 import AbandonedCartEmail from './abandoned-cart'
+import ProductQaAnswerEmail from './product-qa-answer'
 import { SENDER_EMAIL, SENDER_NAME } from '@/lib/constants'
 import { IOrder } from '@/lib/types/order'
 import type { AbandonedCartItem } from '@/lib/db/abandoned-carts'
@@ -201,6 +202,43 @@ export const sendAbandonedCartEmail = async (input: {
         displayName={input.displayName}
         items={input.items}
         itemsTotal={input.itemsTotal}
+      />
+    ),
+  })
+  return { sent: true as const }
+}
+
+export const sendProductQaAnswerEmail = async (input: {
+  to: string
+  displayName?: string | null
+  productName: string
+  productSlug: string
+  questionBody: string
+  answerBody: string
+  answererName?: string | null
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to) {
+    console.warn(
+      'Skipping product Q&A answer email:',
+      !resend ? 'RESEND_API_KEY missing' : 'buyer email missing'
+    )
+    return { sent: false as const }
+  }
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject: `Your question about ${input.productName} was answered`,
+    react: (
+      <ProductQaAnswerEmail
+        displayName={input.displayName}
+        productName={input.productName}
+        productSlug={input.productSlug}
+        questionBody={input.questionBody}
+        answerBody={input.answerBody}
+        answererName={input.answererName}
       />
     ),
   })

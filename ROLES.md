@@ -353,3 +353,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller unanswered Q&A inbox~~ (v1.3.60)
 - ~~Admin unanswered Q&A inbox~~ (v1.3.61)
 - ~~Support-role Q&A assist~~ (v1.3.62)
+- ~~Buyer email when a product question is answered~~ (v1.3.63)
