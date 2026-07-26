@@ -368,3 +368,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Staff/seller Q&A SLA aging badges~~ (v1.3.75)
 - ~~Filter Q&A inboxes by overdue/aging~~ (v1.3.76)
 - ~~Pin/star important unanswered Q&A~~ (v1.3.77)
+- ~~Filter Q&A inboxes by pinned~~ (v1.3.78)

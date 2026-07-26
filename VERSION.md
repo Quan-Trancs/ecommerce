@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.78 — 2026-07-26
+
+Pinned-only filter on unanswered Q&A inboxes.
+
+### Frontend
+- `?pinned=1` All / Pinned tabs on admin, support, and seller question inboxes
+- Combines with age, scope, and search; counts reflect the current age slice
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.78` |
+| Store API | `store-backend/` | `1.3.78` (`store-api`) |
+
+---
+
 ## v1.3.77 — 2026-07-26
 
 Pin important unanswered product Q&A in seller and staff inboxes.

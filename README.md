@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.77](./VERSION.md) — Pin unanswered Q&A in inboxes. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.78](./VERSION.md) — Pinned-only Q&A inbox filter. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
