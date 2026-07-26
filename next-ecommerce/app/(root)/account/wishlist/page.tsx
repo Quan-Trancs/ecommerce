@@ -2,8 +2,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { requireSession } from '@/lib/auth/require-role'
 import { getMyWishlist } from '@/lib/actions/wishlist.actions'
+import { getSellerShopsForProducts, shopHref } from '@/lib/actions/shop.actions'
 import ProductPrice from '@/components/shared/product/product-price'
 import { formatDateTime } from '@/lib/utils'
+import { shouldUnoptimizeProductImage } from '@/lib/storage/product-image-url'
 import { WishlistRemoveButton } from './wishlist-remove-button'
 
 export const metadata = { title: 'Wishlist' }
@@ -11,6 +13,7 @@ export const metadata = { title: 'Wishlist' }
 export default async function WishlistPage() {
   await requireSession()
   const items = await getMyWishlist()
+  const shopsBySellerId = await getSellerShopsForProducts(items)
 
   return (
     <div className='page-shell space-y-6 px-4 py-8 md:px-6'>
@@ -48,13 +51,19 @@ export default async function WishlistPage() {
             const href = item.slug
               ? `/product/${item.slug}`
               : `/search?q=${encodeURIComponent(item.productId)}`
+            const shop = item.sellerAccountId
+              ? shopsBySellerId[item.sellerAccountId]
+              : undefined
             return (
               <li
                 key={item.productId}
                 className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between'
               >
-                <Link href={href} className='flex min-w-0 flex-1 gap-4'>
-                  <div className='relative size-20 shrink-0 overflow-hidden rounded-md border bg-muted'>
+                <div className='flex min-w-0 flex-1 gap-4'>
+                  <Link
+                    href={href}
+                    className='relative size-20 shrink-0 overflow-hidden rounded-md border bg-muted'
+                  >
                     {item.imageUrl ? (
                       <Image
                         src={item.imageUrl}
@@ -64,11 +73,36 @@ export default async function WishlistPage() {
                         sizes='80px'
                       />
                     ) : null}
-                  </div>
+                  </Link>
                   <div className='min-w-0 space-y-1'>
-                    <p className='font-medium leading-snug'>
+                    <Link
+                      href={href}
+                      className='font-medium leading-snug hover:text-primary hover:underline'
+                    >
                       {item.name || 'Unavailable product'}
-                    </p>
+                    </Link>
+                    {shop ? (
+                      <Link
+                        href={shopHref(shop)}
+                        className='flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground'
+                      >
+                        {shop.shopLogoUrl ? (
+                          <span className='relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border bg-muted'>
+                            <Image
+                              src={shop.shopLogoUrl}
+                              alt=''
+                              fill
+                              className='object-cover'
+                              sizes='16px'
+                              unoptimized={shouldUnoptimizeProductImage(
+                                shop.shopLogoUrl
+                              )}
+                            />
+                          </span>
+                        ) : null}
+                        <span className='truncate'>{shop.shopName}</span>
+                      </Link>
+                    ) : null}
                     {item.price != null ? (
                       <div className='flex flex-wrap items-center gap-2'>
                         <ProductPrice price={item.price} plain />
@@ -90,7 +124,7 @@ export default async function WishlistPage() {
                       {formatDateTime(new Date(item.createdAt)).dateTime}
                     </p>
                   </div>
-                </Link>
+                </div>
                 <WishlistRemoveButton productId={item.productId} />
               </li>
             )

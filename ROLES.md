@@ -386,3 +386,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Follow shop on product detail page~~ (v1.3.93)
 - ~~Shop logo + link on product cards~~ (v1.3.94)
 - ~~Shop links on browsing-history carousel~~ (v1.3.95)
+- ~~Shop links on wishlist page~~ (v1.3.96)

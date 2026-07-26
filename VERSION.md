@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.96 — 2026-07-26
+
+Seller shop logo and name links on the wishlist page.
+
+### Frontend
+- Wishlist items include `sellerAccountId`; batch shop lookup via `getSellerShopsForProducts`
+- Each saved product shows an optional shop logo + link to `/shop/{slug}`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.96` |
+| Store API | `store-backend/` | `1.3.96` (`store-api`) |
+
+---
+
 ## v1.3.95 — 2026-07-26
 
 Shop logo and name links on the browsing-history carousel.

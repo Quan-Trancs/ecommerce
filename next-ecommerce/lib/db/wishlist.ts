@@ -10,6 +10,7 @@ export type WishlistItemRow = {
   imageUrl: string | null
   isPublished: boolean
   priceDropped: boolean
+  sellerAccountId: string | null
 }
 
 type Row = {
@@ -21,6 +22,7 @@ type Row = {
   watched_price: number | string | null
   image_url: string | null
   is_published: boolean | null
+  seller_account_id: string | null
 }
 
 export async function listWishlistItems(
@@ -33,6 +35,7 @@ export async function listWishlistItems(
             p.name,
             p.slug,
             p.price,
+            p.seller_account_id,
             (
               SELECT pi.image_url
               FROM product_images pi
@@ -64,6 +67,7 @@ export async function listWishlistItems(
         price != null &&
         watchedPrice != null &&
         price < watchedPrice - 0.009,
+      sellerAccountId: row.seller_account_id?.trim() || null,
     }
   })
 }
