@@ -197,6 +197,7 @@ export default async function ProductDetails(props: {
         productSlug={product.slug}
         signedIn={Boolean(session?.user?.id)}
         canAnswer={qaPanel.canAnswer}
+        canModerate={qaPanel.canModerate}
         accountId={session?.user?.id}
         questions={qaPanel.questions}
       />

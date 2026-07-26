@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
 import { hasSellerAccess, hasSupportAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
+import { logStaffAction } from '@/lib/audit/log-staff-action'
 import {
   notifyPlatformProductQuestionAsked,
   notifyProductQuestionAnswered,
@@ -15,6 +16,7 @@ import {
   countUnansweredQuestionsForSeller,
   createProductQuestion,
   deleteProductQuestion,
+  deleteProductQuestionAsStaff,
   getProductSellerAccountId,
   listProductQuestions,
   listUnansweredQuestionsForAdmin,
@@ -38,6 +40,7 @@ function canAnswerProduct(
 export async function getProductQaPanel(productId: string): Promise<{
   questions: ProductQuestion[]
   canAnswer: boolean
+  canModerate: boolean
 }> {
   const session = await auth()
   const sellerAccountId = await getProductSellerAccountId(productId)
@@ -46,10 +49,14 @@ export async function getProductQaPanel(productId: string): Promise<{
     session?.user?.id &&
       canAnswerProduct(session.user.id, session.user.role, sellerAccountId)
   )
+  const canModerate = Boolean(
+    session?.user?.id && hasSupportAccess(session.user.role)
+  )
   return JSON.parse(
     JSON.stringify({
       questions,
       canAnswer,
+      canModerate,
     })
   )
 }
@@ -252,6 +259,51 @@ export async function removeMyProductQuestion(input: {
       }
     }
     revalidatePath(`/product/${input.productSlug}`)
+    return { success: true, message: 'Question removed' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/** SUPPORT/ADMIN: remove abusive or off-topic Q&A (answered or not). */
+export async function moderateDeleteProductQuestion(input: {
+  questionId: number
+  productSlug?: string
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !hasSupportAccess(session.user.role)) {
+      return { success: false, message: 'Support or admin required' }
+    }
+
+    const deleted = await deleteProductQuestionAsStaff(input.questionId)
+    if (!deleted) {
+      return { success: false, message: 'Question not found' }
+    }
+
+    await logStaffAction({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: 'PRODUCT_QA_DELETE',
+      entityType: 'product_question',
+      entityId: String(deleted.id),
+      summary: `Removed product Q&A on ${deleted.productSlug}`,
+      metadata: {
+        productId: deleted.productId,
+        askerAccountId: deleted.askerAccountId,
+        hadAnswer: deleted.hadAnswer,
+        bodyPreview: deleted.body.slice(0, 160),
+      },
+    })
+
+    const slug = input.productSlug || deleted.productSlug
+    revalidatePath(`/product/${slug}`)
+    revalidatePath('/seller/questions')
+    revalidatePath('/seller')
+    revalidatePath('/admin/questions')
+    revalidatePath('/admin')
+    revalidatePath('/support/questions')
+    revalidatePath('/support')
     return { success: true, message: 'Question removed' }
   } catch (error) {
     return { success: false, message: formatError(error) }

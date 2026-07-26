@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
   answerProductQuestionAction,
   askProductQuestion,
+  moderateDeleteProductQuestion,
   removeMyProductQuestion,
   type ProductQuestion,
 } from '@/lib/actions/qa.actions'
@@ -18,6 +19,7 @@ export default function ProductQaPanel({
   productSlug,
   signedIn,
   canAnswer,
+  canModerate = false,
   accountId,
   questions,
 }: {
@@ -25,6 +27,7 @@ export default function ProductQaPanel({
   productSlug: string
   signedIn: boolean
   canAnswer: boolean
+  canModerate?: boolean
   accountId?: string | null
   questions: ProductQuestion[]
 }) {
@@ -195,6 +198,39 @@ export default function ProductQaPanel({
                     }}
                   >
                     Remove question
+                  </Button>
+                ) : null}
+
+                {canModerate && !(isAsker && unanswered) ? (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='px-0 text-destructive'
+                    disabled={pending}
+                    onClick={() => {
+                      if (
+                        !window.confirm(
+                          'Remove this question from the product page?'
+                        )
+                      ) {
+                        return
+                      }
+                      startTransition(async () => {
+                        const result = await moderateDeleteProductQuestion({
+                          questionId: question.id,
+                          productSlug,
+                        })
+                        if (result.success) {
+                          toast.success(result.message)
+                          router.refresh()
+                        } else {
+                          toast.error(result.message)
+                        }
+                      })
+                    }}
+                  >
+                    Remove (moderation)
                   </Button>
                 ) : null}
               </li>

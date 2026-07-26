@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.66 — 2026-07-26
+
+Staff moderation: SUPPORT/ADMIN can delete abusive product Q&A.
+
+### Frontend
+- `moderateDeleteProductQuestion` (answered or not) + staff audit `PRODUCT_QA_DELETE`
+- Remove control on staff Q&A inbox and PDP (`canModerate`)
+- Asker self-remove unchanged for unanswered questions
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.66` |
+| Store API | `store-backend/` | `1.3.66` (`store-api`) |
+
+---
+
 ## v1.3.65 — 2026-07-26
 
 Staff notify when a buyer asks on a platform-owned product (no seller).

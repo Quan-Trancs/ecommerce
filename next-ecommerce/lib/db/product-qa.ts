@@ -180,6 +180,48 @@ export async function deleteProductQuestion(input: {
   return (result.rowCount || 0) > 0
 }
 
+/** Staff moderation: delete any question (answered or not). */
+export async function deleteProductQuestionAsStaff(
+  questionId: number
+): Promise<{
+  id: number
+  productId: string
+  productSlug: string
+  body: string
+  askerAccountId: string
+  hadAnswer: boolean
+} | null> {
+  const result = await query<{
+    id: number | string
+    product_id: string
+    product_slug: string | null
+    body: string
+    asker_account_id: string
+    answer_body: string | null
+  }>(
+    `WITH deleted AS (
+       DELETE FROM product_questions
+       WHERE id = $1
+       RETURNING id, product_id, body, asker_account_id, answer_body
+     )
+     SELECT d.id, d.product_id, d.body, d.asker_account_id, d.answer_body,
+            p.slug AS product_slug
+     FROM deleted d
+     LEFT JOIN products p ON p.id = d.product_id`,
+    [questionId]
+  )
+  const row = result.rows[0]
+  if (!row) return null
+  return {
+    id: Number(row.id),
+    productId: row.product_id,
+    productSlug: row.product_slug?.trim() || row.product_id,
+    body: row.body,
+    askerAccountId: row.asker_account_id,
+    hadAnswer: Boolean(row.answer_body),
+  }
+}
+
 type InboxRow = Row & {
   product_name: string | null
   product_slug: string | null

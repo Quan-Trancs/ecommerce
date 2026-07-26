@@ -6,7 +6,7 @@ Roles used across **storefront** (`next-ecommerce`) and **store API** (`store-ba
 |------|-----|--------------|--------------|
 | **BUYER** | Shoppers | `/account` | Browse, cart, checkout, own orders |
 | **SELLER** | Merchants | `/seller` | Buyer capabilities + seller workspace + seller APIs |
-| **SUPPORT** | Customer service | `/support` | Buyer capabilities + view any order + product Q&A assist (no catalog/user admin) |
+| **SUPPORT** | Customer service | `/support` | Buyer capabilities + view any order + product Q&A assist/moderation (no catalog/user admin) |
 | **ADMIN** | Platform ops | `/admin` | All of the above + user/role admin + catalog override |
 
 Legacy strings `User` / `Admin` are normalized to `BUYER` / `ADMIN` on login.
@@ -356,3 +356,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Buyer email when a product question is answered~~ (v1.3.63)
 - ~~Seller email when a product question is asked~~ (v1.3.64)
 - ~~Staff notify for platform product Q&A~~ (v1.3.65)
+- ~~Staff Q&A moderation (delete)~~ (v1.3.66)
