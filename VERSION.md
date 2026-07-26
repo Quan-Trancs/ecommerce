@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.71 — 2026-07-26
+
+Unanswered-only filter on the PDP Q&A panel.
+
+### Frontend
+- Toggle “Unanswered only” when open questions exist
+- Header shows unanswered count; empty state when filter has no matches
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.71` |
+| Store API | `store-backend/` | `1.3.71` (`store-api`) |
+
+---
+
 ## v1.3.70 — 2026-07-26
 
 PDP Q&A sort tabs: Most helpful / Newest.

@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.70](./VERSION.md) — PDP Q&A sort tabs. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.71](./VERSION.md) — PDP Q&A unanswered filter. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

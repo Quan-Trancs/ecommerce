@@ -68,10 +68,17 @@ export default function ProductQaPanel({
   const [body, setBody] = useState('')
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [sort, setSort] = useState<QaSort>('helpful')
-  const sortedQuestions = useMemo(
-    () => sortQuestions(questions, sort),
-    [questions, sort]
+  const [unansweredOnly, setUnansweredOnly] = useState(false)
+  const unansweredCount = useMemo(
+    () => questions.filter((q) => !q.answerBody).length,
+    [questions]
   )
+  const sortedQuestions = useMemo(() => {
+    const filtered = unansweredOnly
+      ? questions.filter((q) => !q.answerBody)
+      : questions
+    return sortQuestions(filtered, sort)
+  }, [questions, sort, unansweredOnly])
 
   function onAsk(event: FormEvent) {
     event.preventDefault()
@@ -98,32 +105,52 @@ export default function ProductQaPanel({
           <p className='brick-label'>Questions & answers</p>
           <h2 className='mt-1 text-xl font-bold text-chrome'>
             {questions.length} question{questions.length === 1 ? '' : 's'}
+            {unansweredCount > 0
+              ? ` · ${unansweredCount} unanswered`
+              : ''}
           </h2>
         </div>
-        {questions.length > 1 ? (
+        {questions.length > 0 ? (
           <div className='flex flex-wrap gap-2 text-sm'>
-            <button
-              type='button'
-              onClick={() => setSort('helpful')}
-              className={
-                sort === 'helpful'
-                  ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
-                  : 'rounded-md border px-3 py-1.5 hover:border-primary'
-              }
-            >
-              Most helpful
-            </button>
-            <button
-              type='button'
-              onClick={() => setSort('newest')}
-              className={
-                sort === 'newest'
-                  ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
-                  : 'rounded-md border px-3 py-1.5 hover:border-primary'
-              }
-            >
-              Newest
-            </button>
+            {questions.length > 1 ? (
+              <>
+                <button
+                  type='button'
+                  onClick={() => setSort('helpful')}
+                  className={
+                    sort === 'helpful'
+                      ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
+                      : 'rounded-md border px-3 py-1.5 hover:border-primary'
+                  }
+                >
+                  Most helpful
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setSort('newest')}
+                  className={
+                    sort === 'newest'
+                      ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
+                      : 'rounded-md border px-3 py-1.5 hover:border-primary'
+                  }
+                >
+                  Newest
+                </button>
+              </>
+            ) : null}
+            {unansweredCount > 0 ? (
+              <button
+                type='button'
+                onClick={() => setUnansweredOnly((v) => !v)}
+                className={
+                  unansweredOnly
+                    ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
+                    : 'rounded-md border px-3 py-1.5 hover:border-primary'
+                }
+              >
+                Unanswered only
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -160,7 +187,9 @@ export default function ProductQaPanel({
 
       {sortedQuestions.length === 0 ? (
         <p className='text-sm text-muted-foreground'>
-          No questions yet. Be the first to ask.
+          {unansweredOnly
+            ? 'No unanswered questions right now.'
+            : 'No questions yet. Be the first to ask.'}
         </p>
       ) : (
         <ul className='space-y-4'>
