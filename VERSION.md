@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.73 — 2026-07-26
+
+Auto-hide product Q&A after enough open buyer reports.
+
+### Backend
+- Flyway `V35__product_qa_hidden.sql` — soft-hide columns
+- Threshold via `PRODUCT_QA_AUTO_HIDE_REPORTS` (default 3, min 2)
+
+### Frontend
+- Hitting the threshold hides the question from PDP/seller/staff unanswered inboxes
+- Dismissing reports restores auto-hidden questions; reports queue shows auto-hidden badge
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.73` |
+| Store API | `store-backend/` | `1.3.73` (`store-api`) |
+
+---
+
 ## v1.3.72 — 2026-07-26
 
 Buyer report/flag for abusive product Q&A.

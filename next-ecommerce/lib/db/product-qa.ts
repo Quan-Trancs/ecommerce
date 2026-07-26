@@ -132,6 +132,7 @@ export async function listProductQuestions(
      LEFT JOIN accounts asker ON asker.id = q.asker_account_id
      LEFT JOIN accounts answerer ON answerer.id = q.answer_account_id
      WHERE q.product_id = $1
+       AND q.hidden_at IS NULL
      ORDER BY
        CASE WHEN q.answer_body IS NULL THEN 1 ELSE 0 END,
        (
@@ -344,6 +345,7 @@ export async function listUnansweredQuestionsForSeller(
      LEFT JOIN accounts asker ON asker.id = q.asker_account_id
      WHERE p.seller_account_id = $1
        AND q.answer_body IS NULL
+       AND q.hidden_at IS NULL
        ${searchClause}
      ORDER BY q.created_at ASC
      LIMIT ${limitParam}`,
@@ -364,7 +366,8 @@ export async function countUnansweredQuestionsForSeller(
      FROM product_questions q
      JOIN products p ON p.id = q.product_id
      WHERE p.seller_account_id = $1
-       AND q.answer_body IS NULL`,
+       AND q.answer_body IS NULL
+       AND q.hidden_at IS NULL`,
     [sellerAccountId]
   )
   return Number(result.rows[0]?.count || 0)
@@ -424,6 +427,7 @@ export async function listUnansweredQuestionsForAdmin(options?: {
      LEFT JOIN accounts asker ON asker.id = q.asker_account_id
      LEFT JOIN accounts seller ON seller.id = p.seller_account_id
      WHERE q.answer_body IS NULL
+       AND q.hidden_at IS NULL
        ${platformClause}
        ${searchClause}
      ${orderClause}
@@ -460,10 +464,12 @@ export async function countUnansweredQuestionsForAdmin(options?: {
          FROM product_questions q
          JOIN products p ON p.id = q.product_id
          WHERE q.answer_body IS NULL
+           AND q.hidden_at IS NULL
            AND p.seller_account_id IS NULL`
       : `SELECT COUNT(*)::text AS count
          FROM product_questions q
-         WHERE q.answer_body IS NULL`
+         WHERE q.answer_body IS NULL
+           AND q.hidden_at IS NULL`
   )
   return Number(result.rows[0]?.count || 0)
 }
@@ -542,4 +548,54 @@ export async function toggleQuestionHelpful(input: {
   )
   const helpfulCount = await countQuestionHelpful(input.questionId)
   return { marked: true, helpfulCount }
+}
+
+export function getProductQaAutoHideReportThreshold(): number {
+  const raw = Number(process.env.PRODUCT_QA_AUTO_HIDE_REPORTS ?? 3)
+  if (!Number.isFinite(raw)) return 3
+  return Math.max(2, Math.min(20, Math.floor(raw)))
+}
+
+export async function hideProductQuestion(input: {
+  questionId: number
+  reason: string
+}): Promise<boolean> {
+  const result = await query(
+    `UPDATE product_questions
+     SET hidden_at = COALESCE(hidden_at, NOW()),
+         hidden_reason = COALESCE(hidden_reason, $2),
+         updated_at = NOW()
+     WHERE id = $1`,
+    [input.questionId, input.reason.slice(0, 40)]
+  )
+  return (result.rowCount || 0) > 0
+}
+
+/** Clear auto-hide only (keeps staff hides if we add those later). */
+export async function unhideProductQuestionIfAutoHidden(
+  questionId: number
+): Promise<boolean> {
+  const result = await query(
+    `UPDATE product_questions
+     SET hidden_at = NULL,
+         hidden_reason = NULL,
+         updated_at = NOW()
+     WHERE id = $1
+       AND hidden_reason = 'AUTO_REPORTS'`,
+    [questionId]
+  )
+  return (result.rowCount || 0) > 0
+}
+
+export async function isProductQuestionHidden(
+  questionId: number
+): Promise<boolean> {
+  const result = await query<{ hidden: boolean }>(
+    `SELECT (hidden_at IS NOT NULL) AS hidden
+     FROM product_questions
+     WHERE id = $1
+     LIMIT 1`,
+    [questionId]
+  )
+  return Boolean(result.rows[0]?.hidden)
 }

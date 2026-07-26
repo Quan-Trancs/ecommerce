@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.72](./VERSION.md) — Q&A buyer reports. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.73](./VERSION.md) — Q&A auto-hide on reports. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

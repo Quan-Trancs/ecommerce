@@ -21,17 +21,21 @@ import {
   deleteUnansweredProductQuestionForSeller,
   getProductQuestionAnswerMeta,
   getProductSellerAccountId,
+  getProductQaAutoHideReportThreshold,
+  hideProductQuestion,
   listProductQuestions,
   listUnansweredQuestionsForAdmin,
   listUnansweredQuestionsForSeller,
   normalizeQaSearch,
   toggleQuestionHelpful,
+  unhideProductQuestionIfAutoHidden,
   type AdminInboxQuestion,
   type ProductQuestion,
   type SellerInboxQuestion,
 } from '@/lib/db/product-qa'
 import {
   countOpenProductQuestionReports,
+  countOpenReportsForQuestion,
   createProductQuestionReport,
   isQaReportReason,
   listOpenProductQuestionReports,
@@ -468,6 +472,27 @@ export async function reportProductQuestion(input: {
       return { success: false, message: 'You already reported this question' }
     }
 
+    const openForQuestion = await countOpenReportsForQuestion(input.questionId)
+    const threshold = getProductQaAutoHideReportThreshold()
+    let autoHidden = false
+    if (openForQuestion >= threshold) {
+      autoHidden = await hideProductQuestion({
+        questionId: input.questionId,
+        reason: 'AUTO_REPORTS',
+      })
+      if (autoHidden) {
+        await logStaffAction({
+          actorId: session.user.id,
+          actorRole: session.user.role,
+          action: 'PRODUCT_QA_AUTO_HIDE',
+          entityType: 'product_question',
+          entityId: String(input.questionId),
+          summary: `Auto-hid Q&A after ${openForQuestion} open reports`,
+          metadata: { threshold, openForQuestion },
+        })
+      }
+    }
+
     await notifyStaffProductQuestionReported({
       productId: input.productId,
       productSlug: input.productSlug,
@@ -480,7 +505,14 @@ export async function reportProductQuestion(input: {
     revalidatePath('/support/questions/reports')
     revalidatePath('/admin/questions')
     revalidatePath('/support/questions')
-    return { success: true, message: 'Report submitted' }
+    revalidatePath('/seller/questions')
+    revalidatePath('/seller')
+    return {
+      success: true,
+      message: autoHidden
+        ? 'Report submitted — question hidden pending review'
+        : 'Report submitted',
+    }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
@@ -518,20 +550,32 @@ export async function dismissProductQuestionReport(input: {
     if (!updated) {
       return { success: false, message: 'No open reports for this question' }
     }
+    const restored = await unhideProductQuestionIfAutoHidden(input.questionId)
     await logStaffAction({
       actorId: session.user.id,
       actorRole: session.user.role,
       action: 'PRODUCT_QA_REPORT_DISMISS',
       entityType: 'product_question',
       entityId: String(input.questionId),
-      summary: `Dismissed Q&A reports on question #${input.questionId}`,
+      summary: restored
+        ? `Dismissed Q&A reports and restored question #${input.questionId}`
+        : `Dismissed Q&A reports on question #${input.questionId}`,
+      metadata: { restored },
     })
     if (input.productSlug) {
       revalidatePath(`/product/${input.productSlug}`)
     }
     revalidatePath('/admin/questions/reports')
     revalidatePath('/support/questions/reports')
-    return { success: true, message: 'Reports dismissed' }
+    revalidatePath('/admin/questions')
+    revalidatePath('/support/questions')
+    revalidatePath('/seller/questions')
+    return {
+      success: true,
+      message: restored
+        ? 'Reports dismissed — question restored to the product page'
+        : 'Reports dismissed',
+    }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }

@@ -56,8 +56,9 @@ export default function StaffQaReportsClient({
                 {qaReportReasonLabel(report.reason)}
                 {report.openReportCount > 1
                   ? ` · ${report.openReportCount} open reports`
-                  : ''}{' '}
-                · {formatDateTime(new Date(report.createdAt)).dateTime}
+                  : ''}
+                {report.isHidden ? ' · auto-hidden from PDP' : ''} ·{' '}
+                {formatDateTime(new Date(report.createdAt)).dateTime}
               </p>
               {report.note ? (
                 <p className='mt-1 text-xs text-muted-foreground'>

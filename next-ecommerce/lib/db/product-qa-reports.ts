@@ -27,6 +27,7 @@ export type ProductQuestionReport = {
   status: 'OPEN' | 'DISMISSED' | 'RESOLVED'
   createdAt: string
   openReportCount: number
+  isHidden: boolean
 }
 
 export async function createProductQuestionReport(input: {
@@ -56,6 +57,19 @@ export async function countOpenProductQuestionReports(): Promise<number> {
   return Number(result.rows[0]?.count || 0)
 }
 
+export async function countOpenReportsForQuestion(
+  questionId: number
+): Promise<number> {
+  const result = await query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count
+     FROM product_question_reports
+     WHERE question_id = $1
+       AND status = 'OPEN'`,
+    [questionId]
+  )
+  return Number(result.rows[0]?.count || 0)
+}
+
 export async function listOpenProductQuestionReports(options?: {
   limit?: number
 }): Promise<ProductQuestionReport[]> {
@@ -78,10 +92,11 @@ export async function listOpenProductQuestionReports(options?: {
     status: string
     created_at: Date | string
     open_report_count: number | string
+    hidden_at: Date | string | null
   }>(
     `SELECT r.id, r.question_id, r.reason, r.note, r.status, r.created_at,
             r.reporter_account_id,
-            q.product_id, q.body AS question_body, q.answer_body,
+            q.product_id, q.body AS question_body, q.answer_body, q.hidden_at,
             p.name AS product_name, p.slug AS product_slug,
             asker.display_name AS asker_name, asker.email AS asker_email,
             reporter.display_name AS reporter_name, reporter.email AS reporter_email,
@@ -128,6 +143,7 @@ export async function listOpenProductQuestionReports(options?: {
       status: 'OPEN',
       createdAt: new Date(row.created_at).toISOString(),
       openReportCount: Number(row.open_report_count) || 1,
+      isHidden: Boolean(row.hidden_at),
     }
   })
 }
