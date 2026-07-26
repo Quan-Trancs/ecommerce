@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.60](./VERSION.md) — seller Q&A inbox. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.61](./VERSION.md) — admin Q&A inbox. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.61 — 2026-07-26
+
+Admin unanswered product Q&A inbox (platform + all open).
+
+### Frontend
+- `/admin/questions` — platform-only (default) or all unanswered
+- Inline admin answers; badges for platform vs seller listings
+- Admin nav + overview link with platform open count
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.61` |
+| Store API | `store-backend/` | `1.3.61` (`store-api`) |
+
+---
+
 ## v1.3.60 — 2026-07-26
 
 Seller unanswered product Q&A inbox.

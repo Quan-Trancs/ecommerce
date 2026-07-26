@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/auth/require-role'
 import { getAdminKpis } from '@/lib/actions/admin.actions'
+import { getAdminQaInbox } from '@/lib/actions/qa.actions'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
 export const metadata = { title: 'Admin' }
@@ -44,7 +45,10 @@ function KpiCard({
 
 export default async function AdminHomePage() {
   await requireAdmin()
-  const kpis = await getAdminKpis()
+  const [kpis, qaInbox] = await Promise.all([
+    getAdminKpis(),
+    getAdminQaInbox({ all: false }),
+  ])
 
   return (
     <div className='space-y-8'>
@@ -171,6 +175,20 @@ export default async function AdminHomePage() {
             <h2 className='font-semibold'>Payouts</h2>
             <p className='text-sm text-muted-foreground'>
               Record seller settlements against available balance
+            </p>
+          </Link>
+        </li>
+        <li>
+          <Link
+            href='/admin/questions'
+            className='block rounded-lg border p-4 transition hover:border-primary'
+          >
+            <h2 className='font-semibold'>Product questions</h2>
+            <p className='text-sm text-muted-foreground'>
+              Unanswered Q&A on platform listings
+              {qaInbox.platformCount > 0
+                ? ` (${qaInbox.platformCount} open)`
+                : ''}
             </p>
           </Link>
         </li>

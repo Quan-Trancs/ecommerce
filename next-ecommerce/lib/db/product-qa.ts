@@ -18,6 +18,12 @@ export type SellerInboxQuestion = ProductQuestion & {
   productSlug: string
 }
 
+export type AdminInboxQuestion = SellerInboxQuestion & {
+  sellerAccountId: string | null
+  sellerLabel: string
+  isPlatformOwned: boolean
+}
+
 type Row = {
   id: number | string
   product_id: string
@@ -205,6 +211,95 @@ export async function countUnansweredQuestionsForSeller(
      WHERE p.seller_account_id = $1
        AND q.answer_body IS NULL`,
     [sellerAccountId]
+  )
+  return Number(result.rows[0]?.count || 0)
+}
+
+type AdminInboxRow = InboxRow & {
+  seller_account_id: string | null
+  seller_name: string | null
+  seller_email: string | null
+}
+
+/**
+ * Unanswered questions for admin review.
+ * Default: platform-owned products (no seller). Pass `all: true` for every open Q.
+ */
+export async function listUnansweredQuestionsForAdmin(options?: {
+  limit?: number
+  all?: boolean
+}): Promise<AdminInboxQuestion[]> {
+  const limit = Math.max(1, Math.min(options?.limit ?? 50, 200))
+  const all = Boolean(options?.all)
+  const result = await query<AdminInboxRow>(
+    all
+      ? `SELECT q.id, q.product_id, q.asker_account_id, q.body,
+                q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
+                asker.display_name AS asker_name, asker.email AS asker_email,
+                NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
+                p.name AS product_name, p.slug AS product_slug,
+                p.seller_account_id,
+                seller.display_name AS seller_name, seller.email AS seller_email
+         FROM product_questions q
+         JOIN products p ON p.id = q.product_id
+         LEFT JOIN accounts asker ON asker.id = q.asker_account_id
+         LEFT JOIN accounts seller ON seller.id = p.seller_account_id
+         WHERE q.answer_body IS NULL
+         ORDER BY
+           CASE WHEN p.seller_account_id IS NULL THEN 0 ELSE 1 END,
+           q.created_at ASC
+         LIMIT $1`
+      : `SELECT q.id, q.product_id, q.asker_account_id, q.body,
+                q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
+                asker.display_name AS asker_name, asker.email AS asker_email,
+                NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
+                p.name AS product_name, p.slug AS product_slug,
+                p.seller_account_id,
+                seller.display_name AS seller_name, seller.email AS seller_email
+         FROM product_questions q
+         JOIN products p ON p.id = q.product_id
+         LEFT JOIN accounts asker ON asker.id = q.asker_account_id
+         LEFT JOIN accounts seller ON seller.id = p.seller_account_id
+         WHERE q.answer_body IS NULL
+           AND p.seller_account_id IS NULL
+         ORDER BY q.created_at ASC
+         LIMIT $1`,
+    [limit]
+  )
+  return result.rows.map((row) => {
+    const sellerAccountId = row.seller_account_id || null
+    const isPlatformOwned = !sellerAccountId
+    const sellerLabel = isPlatformOwned
+      ? 'Platform'
+      : row.seller_name?.trim() ||
+        (row.seller_email?.includes('@')
+          ? row.seller_email.split('@')[0]
+          : sellerAccountId)
+    return {
+      ...mapRow(row),
+      productName: row.product_name?.trim() || 'Product',
+      productSlug: row.product_slug?.trim() || row.product_id,
+      sellerAccountId,
+      sellerLabel,
+      isPlatformOwned,
+    }
+  })
+}
+
+export async function countUnansweredQuestionsForAdmin(options?: {
+  platformOnly?: boolean
+}): Promise<number> {
+  const platformOnly = options?.platformOnly !== false
+  const result = await query<{ count: string }>(
+    platformOnly
+      ? `SELECT COUNT(*)::text AS count
+         FROM product_questions q
+         JOIN products p ON p.id = q.product_id
+         WHERE q.answer_body IS NULL
+           AND p.seller_account_id IS NULL`
+      : `SELECT COUNT(*)::text AS count
+         FROM product_questions q
+         WHERE q.answer_body IS NULL`
   )
   return Number(result.rows[0]?.count || 0)
 }

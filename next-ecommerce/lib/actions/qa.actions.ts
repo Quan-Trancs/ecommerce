@@ -7,17 +7,20 @@ import { formatError } from '@/lib/utils'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
 import {
   answerProductQuestion,
+  countUnansweredQuestionsForAdmin,
   countUnansweredQuestionsForSeller,
   createProductQuestion,
   deleteProductQuestion,
   getProductSellerAccountId,
   listProductQuestions,
+  listUnansweredQuestionsForAdmin,
   listUnansweredQuestionsForSeller,
+  type AdminInboxQuestion,
   type ProductQuestion,
   type SellerInboxQuestion,
 } from '@/lib/db/product-qa'
 
-export type { ProductQuestion, SellerInboxQuestion }
+export type { AdminInboxQuestion, ProductQuestion, SellerInboxQuestion }
 
 function canAnswerProduct(
   sessionUserId: string,
@@ -88,6 +91,8 @@ export async function askProductQuestion(input: {
     revalidatePath(`/product/${input.productSlug}`)
     revalidatePath('/seller/questions')
     revalidatePath('/seller')
+    revalidatePath('/admin/questions')
+    revalidatePath('/admin')
     return {
       success: true,
       message: 'Question posted',
@@ -145,6 +150,8 @@ export async function answerProductQuestionAction(input: {
     revalidatePath(`/product/${input.productSlug}`)
     revalidatePath('/seller/questions')
     revalidatePath('/seller')
+    revalidatePath('/admin/questions')
+    revalidatePath('/admin')
     return { success: true, message: 'Answer posted' }
   } catch (error) {
     return { success: false, message: formatError(error) }
@@ -167,6 +174,39 @@ export async function getSellerQaInbox(): Promise<{
     JSON.stringify({
       questions,
       unansweredCount,
+    })
+  )
+}
+
+export async function getAdminQaInbox(options?: {
+  all?: boolean
+}): Promise<{
+  questions: AdminInboxQuestion[]
+  platformCount: number
+  allCount: number
+  showingAll: boolean
+}> {
+  const session = await auth()
+  if (!session?.user?.id || !hasAdminAccess(session.user.role)) {
+    return {
+      questions: [],
+      platformCount: 0,
+      allCount: 0,
+      showingAll: false,
+    }
+  }
+  const showingAll = Boolean(options?.all)
+  const [questions, platformCount, allCount] = await Promise.all([
+    listUnansweredQuestionsForAdmin({ limit: 50, all: showingAll }),
+    countUnansweredQuestionsForAdmin({ platformOnly: true }),
+    countUnansweredQuestionsForAdmin({ platformOnly: false }),
+  ])
+  return JSON.parse(
+    JSON.stringify({
+      questions,
+      platformCount,
+      allCount,
+      showingAll,
     })
   )
 }
