@@ -10,10 +10,12 @@ import {
   askProductQuestion,
   moderateDeleteProductQuestion,
   removeMyProductQuestion,
+  reportProductQuestion,
   sellerHideProductQuestion,
   toggleProductQuestionHelpful,
   type ProductQuestion,
 } from '@/lib/actions/qa.actions'
+import { QA_REPORT_REASONS } from '@/lib/qa/report-constants'
 import { formatDateTime } from '@/lib/utils'
 
 type QaSort = 'helpful' | 'newest'
@@ -69,6 +71,9 @@ export default function ProductQaPanel({
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [sort, setSort] = useState<QaSort>('helpful')
   const [unansweredOnly, setUnansweredOnly] = useState(false)
+  const [reportingId, setReportingId] = useState<number | null>(null)
+  const [reportReason, setReportReason] = useState<string>('SPAM')
+  const [reportNote, setReportNote] = useState('')
   const unansweredCount = useMemo(
     () => questions.filter((q) => !q.answerBody).length,
     [questions]
@@ -411,6 +416,96 @@ export default function ProductQaPanel({
                   >
                     Hide question
                   </Button>
+                ) : null}
+
+                {signedIn &&
+                accountId &&
+                !isAsker &&
+                !canModerate ? (
+                  question.viewerHasReported ? (
+                    <p className='text-xs text-muted-foreground'>Reported</p>
+                  ) : reportingId === question.id ? (
+                    <form
+                      className='space-y-2 rounded-md border p-3'
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        startTransition(async () => {
+                          const result = await reportProductQuestion({
+                            questionId: question.id,
+                            productId,
+                            productSlug,
+                            reason: reportReason,
+                            note: reportNote,
+                          })
+                          if (result.success) {
+                            toast.success(result.message)
+                            setReportingId(null)
+                            setReportNote('')
+                            setReportReason('SPAM')
+                            router.refresh()
+                          } else {
+                            toast.error(result.message)
+                          }
+                        })
+                      }}
+                    >
+                      <label className='block text-xs font-medium'>
+                        Reason
+                        <select
+                          className='mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm'
+                          value={reportReason}
+                          onChange={(e) => setReportReason(e.target.value)}
+                          disabled={pending}
+                        >
+                          {QA_REPORT_REASONS.map((r) => (
+                            <option key={r.value} value={r.value}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className='block text-xs font-medium'>
+                        Optional note
+                        <input
+                          className='mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm'
+                          value={reportNote}
+                          onChange={(e) => setReportNote(e.target.value)}
+                          maxLength={500}
+                          disabled={pending}
+                          placeholder='Anything staff should know…'
+                        />
+                      </label>
+                      <div className='flex flex-wrap gap-2'>
+                        <Button type='submit' size='sm' disabled={pending}>
+                          Submit report
+                        </Button>
+                        <Button
+                          type='button'
+                          size='sm'
+                          variant='ghost'
+                          disabled={pending}
+                          onClick={() => setReportingId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='sm'
+                      className='px-0 text-muted-foreground'
+                      disabled={pending}
+                      onClick={() => {
+                        setReportingId(question.id)
+                        setReportReason('SPAM')
+                        setReportNote('')
+                      }}
+                    >
+                      Report
+                    </Button>
+                  )
                 ) : null}
               </li>
             )

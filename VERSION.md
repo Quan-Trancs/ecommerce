@@ -1,5 +1,24 @@
 # Version History
 
+## v1.3.72 — 2026-07-26
+
+Buyer report/flag for abusive product Q&A.
+
+### Backend
+- Flyway `V34__product_qa_reports.sql` — one report per asker/question, staff resolve
+
+### Frontend
+- PDP Report form (reason + optional note); staff queue at `/admin|support/questions/reports`
+- In-app notify staff; dismiss or remove; audit on dismiss
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.72` |
+| Store API | `store-backend/` | `1.3.72` (`store-api`) |
+
+---
+
 ## v1.3.71 — 2026-07-26
 
 Unanswered-only filter on the PDP Q&A panel.

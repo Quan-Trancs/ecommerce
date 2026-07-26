@@ -13,6 +13,7 @@ export type ProductQuestion = {
   createdAt: string
   helpfulCount: number
   viewerMarkedHelpful: boolean
+  viewerHasReported: boolean
 }
 
 export type SellerInboxQuestion = ProductQuestion & {
@@ -41,6 +42,7 @@ type Row = {
   created_at: Date | string
   helpful_count?: number | string | null
   viewer_marked_helpful?: boolean | null
+  viewer_has_reported?: boolean | null
 }
 
 function displayName(
@@ -72,6 +74,7 @@ function mapRow(row: Row): ProductQuestion {
     createdAt: new Date(row.created_at).toISOString(),
     helpfulCount: Number(row.helpful_count) || 0,
     viewerMarkedHelpful: Boolean(row.viewer_marked_helpful),
+    viewerHasReported: Boolean(row.viewer_has_reported),
   }
 }
 
@@ -118,7 +121,13 @@ export async function listProductQuestions(
               FROM product_question_helpful h
               WHERE h.question_id = q.id
                 AND h.account_id = $3
-            ) AS viewer_marked_helpful
+            ) AS viewer_marked_helpful,
+            EXISTS (
+              SELECT 1
+              FROM product_question_reports r
+              WHERE r.question_id = q.id
+                AND r.reporter_account_id = $3
+            ) AS viewer_has_reported
      FROM product_questions q
      LEFT JOIN accounts asker ON asker.id = q.asker_account_id
      LEFT JOIN accounts answerer ON answerer.id = q.answer_account_id
@@ -464,16 +473,20 @@ export async function getProductQuestionAnswerMeta(
 ): Promise<{
   id: number
   productId: string
+  askerAccountId: string
+  body: string
   answerAccountId: string | null
   answered: boolean
 } | null> {
   const result = await query<{
     id: number | string
     product_id: string
+    asker_account_id: string
+    body: string
     answer_account_id: string | null
     answer_body: string | null
   }>(
-    `SELECT id, product_id, answer_account_id, answer_body
+    `SELECT id, product_id, asker_account_id, body, answer_account_id, answer_body
      FROM product_questions
      WHERE id = $1
      LIMIT 1`,
@@ -484,6 +497,8 @@ export async function getProductQuestionAnswerMeta(
   return {
     id: Number(row.id),
     productId: row.product_id,
+    askerAccountId: row.asker_account_id,
+    body: row.body,
     answerAccountId: row.answer_account_id,
     answered: Boolean(row.answer_body),
   }

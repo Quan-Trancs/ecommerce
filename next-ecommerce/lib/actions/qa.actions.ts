@@ -9,6 +9,7 @@ import {
   notifyPlatformProductQuestionAsked,
   notifyProductQuestionAnswered,
   notifyProductQuestionAsked,
+  notifyStaffProductQuestionReported,
 } from '@/lib/email/product-qa'
 import {
   answerProductQuestion,
@@ -29,8 +30,18 @@ import {
   type ProductQuestion,
   type SellerInboxQuestion,
 } from '@/lib/db/product-qa'
+import {
+  countOpenProductQuestionReports,
+  createProductQuestionReport,
+  isQaReportReason,
+  listOpenProductQuestionReports,
+  qaReportReasonLabel,
+  resolveProductQuestionReports,
+  type ProductQuestionReport,
+} from '@/lib/db/product-qa-reports'
 
-export type { AdminInboxQuestion, ProductQuestion, SellerInboxQuestion }
+export type { AdminInboxQuestion, ProductQuestion, SellerInboxQuestion, ProductQuestionReport }
+export { QA_REPORT_REASONS } from '@/lib/qa/report-constants'
 
 function canAnswerProduct(
   sessionUserId: string,
@@ -228,6 +239,7 @@ export async function getStaffQaInbox(options?: {
   allCount: number
   showingAll: boolean
   query: string | null
+  openReportCount: number
 }> {
   const session = await auth()
   if (!session?.user?.id || !hasSupportAccess(session.user.role)) {
@@ -237,19 +249,22 @@ export async function getStaffQaInbox(options?: {
       allCount: 0,
       showingAll: false,
       query: null,
+      openReportCount: 0,
     }
   }
   const showingAll = Boolean(options?.all)
   const query = normalizeQaSearch(options?.q)
-  const [questions, platformCount, allCount] = await Promise.all([
-    listUnansweredQuestionsForAdmin({
-      limit: 50,
-      all: showingAll,
-      q: query,
-    }),
-    countUnansweredQuestionsForAdmin({ platformOnly: true }),
-    countUnansweredQuestionsForAdmin({ platformOnly: false }),
-  ])
+  const [questions, platformCount, allCount, openReportCount] =
+    await Promise.all([
+      listUnansweredQuestionsForAdmin({
+        limit: 50,
+        all: showingAll,
+        q: query,
+      }),
+      countUnansweredQuestionsForAdmin({ platformOnly: true }),
+      countUnansweredQuestionsForAdmin({ platformOnly: false }),
+      countOpenProductQuestionReports(),
+    ])
   return JSON.parse(
     JSON.stringify({
       questions,
@@ -257,6 +272,7 @@ export async function getStaffQaInbox(options?: {
       allCount,
       showingAll,
       query,
+      openReportCount,
     })
   )
 }
@@ -413,6 +429,109 @@ export async function toggleProductQuestionHelpful(input: {
       marked: result.marked,
       helpfulCount: result.helpfulCount,
     }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function reportProductQuestion(input: {
+  questionId: number
+  productId: string
+  productSlug: string
+  reason: string
+  note?: string
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    if (!isQaReportReason(input.reason)) {
+      return { success: false, message: 'Choose a report reason' }
+    }
+
+    const meta = await getProductQuestionAnswerMeta(input.questionId)
+    if (!meta || meta.productId !== input.productId) {
+      return { success: false, message: 'Question not found' }
+    }
+    if (meta.askerAccountId === session.user.id) {
+      return { success: false, message: 'You cannot report your own question' }
+    }
+
+    const result = await createProductQuestionReport({
+      questionId: input.questionId,
+      reporterAccountId: session.user.id,
+      reason: input.reason,
+      note: input.note,
+    })
+    if (result.alreadyReported) {
+      return { success: false, message: 'You already reported this question' }
+    }
+
+    await notifyStaffProductQuestionReported({
+      productId: input.productId,
+      productSlug: input.productSlug,
+      questionBody: meta.body,
+      reasonLabel: qaReportReasonLabel(input.reason),
+    })
+
+    revalidatePath(`/product/${input.productSlug}`)
+    revalidatePath('/admin/questions/reports')
+    revalidatePath('/support/questions/reports')
+    revalidatePath('/admin/questions')
+    revalidatePath('/support/questions')
+    return { success: true, message: 'Report submitted' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function getStaffQaReportsInbox(): Promise<{
+  reports: ProductQuestionReport[]
+  openCount: number
+}> {
+  const session = await auth()
+  if (!session?.user?.id || !hasSupportAccess(session.user.role)) {
+    return { reports: [], openCount: 0 }
+  }
+  const [reports, openCount] = await Promise.all([
+    listOpenProductQuestionReports({ limit: 50 }),
+    countOpenProductQuestionReports(),
+  ])
+  return JSON.parse(JSON.stringify({ reports, openCount }))
+}
+
+export async function dismissProductQuestionReport(input: {
+  questionId: number
+  productSlug?: string
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !hasSupportAccess(session.user.role)) {
+      return { success: false, message: 'Support or admin required' }
+    }
+    const updated = await resolveProductQuestionReports({
+      questionId: input.questionId,
+      resolverAccountId: session.user.id,
+      status: 'DISMISSED',
+    })
+    if (!updated) {
+      return { success: false, message: 'No open reports for this question' }
+    }
+    await logStaffAction({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: 'PRODUCT_QA_REPORT_DISMISS',
+      entityType: 'product_question',
+      entityId: String(input.questionId),
+      summary: `Dismissed Q&A reports on question #${input.questionId}`,
+    })
+    if (input.productSlug) {
+      revalidatePath(`/product/${input.productSlug}`)
+    }
+    revalidatePath('/admin/questions/reports')
+    revalidatePath('/support/questions/reports')
+    return { success: true, message: 'Reports dismissed' }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }

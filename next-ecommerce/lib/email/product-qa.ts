@@ -12,6 +12,12 @@ function staffQaInboxPath(role?: string | null) {
     : '/support/questions'
 }
 
+function staffQaReportsPath(role?: string | null) {
+  return normalizeRole(role) === ROLES.ADMIN
+    ? '/admin/questions/reports'
+    : '/support/questions/reports'
+}
+
 /** Notify the listing seller when a buyer asks a question. Never throws. */
 export async function notifyProductQuestionAsked(input: {
   question: ProductQuestion
@@ -183,5 +189,36 @@ export async function notifyProductQuestionAnswered(input: {
     })
   } catch (error) {
     console.warn('notifyProductQuestionAnswered failed', error)
+  }
+}
+
+/** In-app notify SUPPORT/ADMIN about a buyer Q&A report. Never throws. */
+export async function notifyStaffProductQuestionReported(input: {
+  productId: string
+  productSlug: string
+  questionBody: string
+  reasonLabel: string
+}) {
+  try {
+    const [staff, listing] = await Promise.all([
+      listSupportStaff(),
+      getProductQaListing(input.productId),
+    ])
+    const productName = listing?.name || 'a product'
+    const preview = input.questionBody.slice(0, 120)
+
+    await Promise.all(
+      staff.map((member) =>
+        createInAppNotification({
+          accountId: member.id,
+          type: 'PRODUCT_QA_REPORT',
+          title: 'Product Q&A reported',
+          body: `${productName} · ${input.reasonLabel}: ${preview}`,
+          href: staffQaReportsPath(member.role),
+        }).catch(() => undefined)
+      )
+    )
+  } catch (error) {
+    console.warn('notifyStaffProductQuestionReported failed', error)
   }
 }

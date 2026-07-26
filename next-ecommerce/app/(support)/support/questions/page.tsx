@@ -67,6 +67,12 @@ export default async function SupportQuestionsPage({
           >
             All open ({inbox.allCount})
           </Link>
+          <Link
+            href='/support/questions/reports'
+            className='rounded-md border px-3 py-1.5 hover:border-primary'
+          >
+            Reports ({inbox.openReportCount})
+          </Link>
         </div>
       </div>
       <QaInboxSearchForm
