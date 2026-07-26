@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.94 — 2026-07-26
+
+Seller shop logo and name link on product cards.
+
+### Frontend
+- Batch `getSellerShopsForProducts` for search, home, and related grids
+- Product cards show optional logo + shop name linking to `/shop/{slug}`
+- Public shop grids reuse the parent shop (no extra query)
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.94` |
+| Store API | `store-backend/` | `1.3.94` (`store-api`) |
+
+---
+
 ## v1.3.93 — 2026-07-26
 
 Follow shop from the product detail page buy box.

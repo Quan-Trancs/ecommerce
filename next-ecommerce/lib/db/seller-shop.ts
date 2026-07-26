@@ -22,6 +22,12 @@ export type SellerShop = {
   productCount: number
 }
 
+/** Slim shop fields for product cards / grids. */
+export type SellerShopCardInfo = Pick<
+  SellerShop,
+  'accountId' | 'shopSlug' | 'shopName' | 'shopLogoUrl'
+>
+
 const RESERVED_SHOP_SLUGS = new Set([
   'new',
   'edit',
@@ -126,6 +132,44 @@ export async function getSellerShop(
   )
   const row = result.rows[0]
   return row ? mapShop(row) : null
+}
+
+/** Batch-load slim shop info for product cards (deduped, max 100). */
+export async function listSellerShopsByAccountIds(
+  accountIds: string[]
+): Promise<SellerShopCardInfo[]> {
+  const ids = [
+    ...new Set(
+      accountIds
+        .map((id) => (typeof id === 'string' ? id.trim() : ''))
+        .filter(Boolean)
+    ),
+  ].slice(0, 100)
+  if (!ids.length) return []
+
+  const result = await query<{
+    account_id: string
+    shop_slug: string | null
+    shop_name: string
+    shop_logo_url: string | null
+  }>(
+    `SELECT sp.account_id,
+            sp.shop_slug,
+            sp.shop_name,
+            sp.shop_logo_url
+     FROM seller_profiles sp
+     JOIN accounts a ON a.id = sp.account_id
+     WHERE COALESCE(a.active, TRUE) = TRUE
+       AND sp.account_id = ANY($1::varchar[])`,
+    [ids]
+  )
+
+  return result.rows.map((row) => ({
+    accountId: row.account_id,
+    shopSlug: row.shop_slug?.trim() || row.account_id,
+    shopName: row.shop_name?.trim() || 'Shop',
+    shopLogoUrl: row.shop_logo_url?.trim() || null,
+  }))
 }
 
 export type ShopProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name'

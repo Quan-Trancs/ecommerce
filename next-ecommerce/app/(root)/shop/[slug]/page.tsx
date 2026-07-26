@@ -202,6 +202,12 @@ export default async function PublicSellerShopPage(props: {
                 product={product}
                 wishlisted={wishlisted.has(product._id)}
                 signedIn={wishlist.signedIn}
+                shop={{
+                  accountId: shop.accountId,
+                  shopSlug: shop.shopSlug,
+                  shopName: shop.shopName,
+                  shopLogoUrl: shop.shopLogoUrl,
+                }}
               />
             ))}
           </div>

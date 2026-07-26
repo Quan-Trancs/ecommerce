@@ -1,6 +1,5 @@
 import { IProduct } from '@/lib/catalog/store-product'
 import Link from 'next/link'
-import ImageHover from './image-hover'
 import Image from 'next/image'
 import Rating from './rating'
 import { formatNumber, generateId, roundToTwoDecimals } from '@/lib/utils'
@@ -8,6 +7,12 @@ import ProductPrice from './product-price'
 import AddToCart from './add-to-cart'
 import WishlistHeartButton from './wishlist-heart-button'
 import CompareToggleButton from './compare-toggle-button'
+import ImageHover from './image-hover'
+import {
+  shopHref,
+  type SellerShopCardInfo,
+} from '@/lib/db/seller-shop'
+import { shouldUnoptimizeProductImage } from '@/lib/storage/product-image-url'
 
 const ProductCard = ({
   product,
@@ -16,6 +21,7 @@ const ProductCard = ({
   hideAddToCart = false,
   wishlisted,
   signedIn,
+  shop,
 }: {
   product: IProduct
   hideBorders?: boolean
@@ -23,6 +29,7 @@ const ProductCard = ({
   hideAddToCart?: boolean
   wishlisted?: boolean
   signedIn?: boolean
+  shop?: SellerShopCardInfo | null
 }) => {
   const ProductImage = () => (
     <div className='relative'>
@@ -67,6 +74,26 @@ const ProductCard = ({
   const ProductDetails = () => (
     <div className='flex-1 space-y-1.5 text-left'>
       <p className='brick-label !text-slate-500'>{product.brand}</p>
+      {shop ? (
+        <Link
+          href={shopHref(shop)}
+          className='flex items-center gap-1.5 text-xs text-slate-500 hover:text-chrome'
+        >
+          {shop.shopLogoUrl ? (
+            <span className='relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-slate-900/10 bg-muted'>
+              <Image
+                src={shop.shopLogoUrl}
+                alt=''
+                fill
+                className='object-cover'
+                sizes='16px'
+                unoptimized={shouldUnoptimizeProductImage(shop.shopLogoUrl)}
+              />
+            </span>
+          ) : null}
+          <span className='truncate'>{shop.shopName}</span>
+        </Link>
+      ) : null}
       <Link
         href={`/product/${product.slug}`}
         className='line-clamp-2 text-sm font-semibold leading-snug text-chrome hover:text-deal'

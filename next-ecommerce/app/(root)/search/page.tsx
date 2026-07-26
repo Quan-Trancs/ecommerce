@@ -5,6 +5,7 @@ import {
 } from '@/components/shared/search/search-filters'
 import { searchCatalog, getCategoryTree } from '@/lib/actions/product.actions'
 import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
+import { getSellerShopsForProducts } from '@/lib/actions/shop.actions'
 import type { CatalogCategory } from '@/lib/catalog/types'
 import { toArray } from '@/lib/search/filter-utils'
 import Link from 'next/link'
@@ -106,9 +107,10 @@ export default async function SearchPage(props: {
   ])
 
   const sortedProducts = products
-  const wishlist = await getWishlistStatusesForProducts(
-    sortedProducts.map((p) => p._id)
-  )
+  const [wishlist, shopsBySellerId] = await Promise.all([
+    getWishlistStatusesForProducts(sortedProducts.map((p) => p._id)),
+    getSellerShopsForProducts(sortedProducts),
+  ])
   const saved = new Set(wishlist.wishlistedIds)
 
   const heading = q
@@ -151,6 +153,11 @@ export default async function SearchPage(props: {
                 product={product}
                 wishlisted={saved.has(product._id)}
                 signedIn={wishlist.signedIn}
+                shop={
+                  product.sellerAccountId
+                    ? shopsBySellerId[product.sellerAccountId]
+                    : undefined
+                }
               />
             ))}
           </div>

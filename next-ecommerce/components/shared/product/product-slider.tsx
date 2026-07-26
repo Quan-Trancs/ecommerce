@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/carousel'
 import ProductCard from './product-card'
 import { IProduct } from '@/lib/catalog/store-product'
+import type { SellerShopCardInfo } from '@/lib/db/seller-shop'
 import Link from 'next/link'
 
 export default function ProductSlider({
@@ -16,6 +17,7 @@ export default function ProductSlider({
   href,
   wishlistedIds,
   signedIn,
+  shopsBySellerId,
   action,
 }: {
   title: string
@@ -24,6 +26,7 @@ export default function ProductSlider({
   href?: string
   wishlistedIds?: string[]
   signedIn?: boolean
+  shopsBySellerId?: Record<string, SellerShopCardInfo>
   action?: React.ReactNode
 }) {
   const saved = new Set(wishlistedIds || [])
@@ -62,6 +65,11 @@ export default function ProductSlider({
                   hideBorders
                   wishlisted={saved.has(product._id)}
                   signedIn={signedIn}
+                  shop={
+                    product.sellerAccountId
+                      ? shopsBySellerId?.[product.sellerAccountId]
+                      : undefined
+                  }
                 />
               </div>
             </CarouselItem>

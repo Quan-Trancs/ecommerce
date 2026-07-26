@@ -23,7 +23,7 @@ import Link from 'next/link'
 import { auth } from '@/auth'
 import { getWishlistStatus, getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import { getStockAlertStatus } from '@/lib/actions/stock-alert.actions'
-import { getSellerShopSummary, shopHref } from '@/lib/actions/shop.actions'
+import { getSellerShopSummary, shopHref, getSellerShopsForProducts } from '@/lib/actions/shop.actions'
 import { getShopFollowStatus } from '@/lib/actions/shop-follow.actions'
 import { getProductSellerAccountId } from '@/lib/db/product-qa'
 import ShopPoliciesSnippet from '@/components/shared/product/shop-policies-snippet'
@@ -70,19 +70,21 @@ export default async function ProductDetails(props: {
   const sellerAccountId =
     product.sellerAccountId ||
     (await getProductSellerAccountId(product._id))
-  const [sellerShop, followStatus, relatedWishlist] = await Promise.all([
-    getSellerShopSummary(sellerAccountId),
-    sellerAccountId
-      ? getShopFollowStatus(sellerAccountId)
-      : Promise.resolve({
-          signedIn: false,
-          following: false,
-          isOwnShop: false,
-        }),
-    getWishlistStatusesForProducts(
-      (relatedProducts.data || []).map((p) => p._id)
-    ),
-  ])
+  const [sellerShop, followStatus, relatedWishlist, relatedShops] =
+    await Promise.all([
+      getSellerShopSummary(sellerAccountId),
+      sellerAccountId
+        ? getShopFollowStatus(sellerAccountId)
+        : Promise.resolve({
+            signedIn: false,
+            following: false,
+            isOwnShop: false,
+          }),
+      getWishlistStatusesForProducts(
+        (relatedProducts.data || []).map((p) => p._id)
+      ),
+      getSellerShopsForProducts(relatedProducts.data || []),
+    ])
 
   const avgRating = reviewsPanel.numReviews
     ? reviewsPanel.avgRating
@@ -267,6 +269,7 @@ export default async function ProductDetails(props: {
           href={`/search?category=${encodeURIComponent(product.category)}`}
           wishlistedIds={relatedWishlist.wishlistedIds}
           signedIn={relatedWishlist.signedIn}
+          shopsBySellerId={relatedShops}
         />
       </section>
 

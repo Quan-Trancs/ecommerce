@@ -8,6 +8,7 @@ import { formatError } from '@/lib/utils'
 import {
   getSellerShop,
   listSellerShopProductIds,
+  listSellerShopsByAccountIds,
   normalizeShopSearch,
   parseShopProductSort,
   shopHref,
@@ -15,6 +16,7 @@ import {
   updateSellerShopLogo,
   updateSellerShopProfile,
   type SellerShop,
+  type SellerShopCardInfo,
   type ShopProductSort,
 } from '@/lib/db/seller-shop'
 import { getProductsByIds } from '@/lib/actions/product.actions'
@@ -33,8 +35,23 @@ const BANNER_ALLOWED: Record<string, string> = {
   'image/gif': '.gif',
 }
 
-export type { SellerShop, ShopProductSort }
+export type { SellerShop, SellerShopCardInfo, ShopProductSort }
 export { shopHref, parseShopProductSort, normalizeShopSearch }
+
+/** Batch shop card info keyed by seller account id. */
+export async function getSellerShopsForProducts(
+  products: Array<{ sellerAccountId?: string | null }>
+): Promise<Record<string, SellerShopCardInfo>> {
+  const ids = products
+    .map((p) => p.sellerAccountId)
+    .filter((id): id is string => Boolean(id?.trim()))
+  const shops = await listSellerShopsByAccountIds(ids)
+  const byId: Record<string, SellerShopCardInfo> = {}
+  for (const shop of shops) {
+    byId[shop.accountId] = shop
+  }
+  return JSON.parse(JSON.stringify(byId))
+}
 
 /** Load public shop by pretty slug or account id. */
 export async function getPublicSellerShop(

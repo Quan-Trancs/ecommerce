@@ -384,3 +384,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Seller shop shipping / returns policies~~ (v1.3.91)
 - ~~PDP shop policies snippet~~ (v1.3.92)
 - ~~Follow shop on product detail page~~ (v1.3.93)
+- ~~Shop logo + link on product cards~~ (v1.3.94)
