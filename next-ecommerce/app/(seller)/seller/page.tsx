@@ -1,17 +1,26 @@
 import Link from 'next/link'
 import { getSellerAnalytics } from '@/lib/actions/seller.actions'
+import { getSellerQaInbox } from '@/lib/actions/qa.actions'
 import ProductPrice from '@/components/shared/product/product-price'
 
 export const metadata = { title: 'Seller dashboard' }
 
 export default async function SellerHomePage() {
   let analytics: Awaited<ReturnType<typeof getSellerAnalytics>> | null = null
+  let unansweredQuestions = 0
   let error: string | null = null
 
   try {
     analytics = await getSellerAnalytics()
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load analytics'
+  }
+
+  try {
+    const inbox = await getSellerQaInbox()
+    unansweredQuestions = inbox.unansweredCount
+  } catch {
+    /* Q&A inbox is optional on overview */
   }
 
   return (
@@ -91,10 +100,24 @@ export default async function SellerHomePage() {
               Include unpaid / cancelled in this count
             </p>
           </div>
+          <Link
+            href='/seller/questions'
+            className='rounded-lg border p-4 transition hover:border-primary'
+          >
+            <p className='font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
+              Unanswered Q&A
+            </p>
+            <p className='mt-2 font-display text-2xl font-extrabold tracking-tight'>
+              {unansweredQuestions}
+            </p>
+            <p className='mt-1 text-sm text-muted-foreground'>
+              Buyer questions waiting on your listings
+            </p>
+          </Link>
         </div>
       ) : null}
 
-      <ul className='grid gap-3 sm:grid-cols-2'>
+      <ul className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
         <li>
           <Link
             href='/seller/products'
@@ -114,6 +137,20 @@ export default async function SellerHomePage() {
             <h2 className='font-semibold'>Orders</h2>
             <p className='text-sm text-muted-foreground'>
               Orders containing your products — mark your lines shipped
+            </p>
+          </Link>
+        </li>
+        <li>
+          <Link
+            href='/seller/questions'
+            className='block rounded-lg border p-4 transition hover:border-primary'
+          >
+            <h2 className='font-semibold'>Questions</h2>
+            <p className='text-sm text-muted-foreground'>
+              Answer buyer questions on your product pages
+              {unansweredQuestions > 0
+                ? ` (${unansweredQuestions} open)`
+                : ''}
             </p>
           </Link>
         </li>

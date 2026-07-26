@@ -350,3 +350,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Newsletter / marketing email signup~~ (v1.3.57)
 - ~~Abandoned-cart email reminders~~ (v1.3.58)
 - ~~Product Q&A on PDP~~ (v1.3.59)
+- ~~Seller unanswered Q&A inbox~~ (v1.3.60)

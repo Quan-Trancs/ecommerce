@@ -1,5 +1,23 @@
 # Version History
 
+## v1.3.60 — 2026-07-26
+
+Seller unanswered product Q&A inbox.
+
+### Frontend
+- `/seller/questions` — unanswered questions on owned listings with inline answer
+- Seller nav + overview count card
+- New-question in-app notify links to the inbox
+- Answer revalidates inbox and PDP
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.60` |
+| Store API | `store-backend/` | `1.3.60` (`store-api`) |
+
+---
+
 ## v1.3.59 — 2026-07-25
 
 Product Q&A on the PDP.

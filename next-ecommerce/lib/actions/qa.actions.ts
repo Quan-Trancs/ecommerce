@@ -2,19 +2,22 @@
 
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
-import { hasAdminAccess } from '@/lib/auth/roles'
+import { hasAdminAccess, hasSellerAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
 import {
   answerProductQuestion,
+  countUnansweredQuestionsForSeller,
   createProductQuestion,
   deleteProductQuestion,
   getProductSellerAccountId,
   listProductQuestions,
+  listUnansweredQuestionsForSeller,
   type ProductQuestion,
+  type SellerInboxQuestion,
 } from '@/lib/db/product-qa'
 
-export type { ProductQuestion }
+export type { ProductQuestion, SellerInboxQuestion }
 
 function canAnswerProduct(
   sessionUserId: string,
@@ -78,11 +81,13 @@ export async function askProductQuestion(input: {
         type: 'PRODUCT_QA',
         title: 'New product question',
         body: body.slice(0, 160),
-        href: `/product/${input.productSlug}`,
+        href: '/seller/questions',
       }).catch(() => undefined)
     }
 
     revalidatePath(`/product/${input.productSlug}`)
+    revalidatePath('/seller/questions')
+    revalidatePath('/seller')
     return {
       success: true,
       message: 'Question posted',
@@ -138,10 +143,32 @@ export async function answerProductQuestionAction(input: {
     }
 
     revalidatePath(`/product/${input.productSlug}`)
+    revalidatePath('/seller/questions')
+    revalidatePath('/seller')
     return { success: true, message: 'Answer posted' }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
+}
+
+export async function getSellerQaInbox(): Promise<{
+  questions: SellerInboxQuestion[]
+  unansweredCount: number
+}> {
+  const session = await auth()
+  if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
+    return { questions: [], unansweredCount: 0 }
+  }
+  const [questions, unansweredCount] = await Promise.all([
+    listUnansweredQuestionsForSeller(session.user.id, { limit: 50 }),
+    countUnansweredQuestionsForSeller(session.user.id),
+  ])
+  return JSON.parse(
+    JSON.stringify({
+      questions,
+      unansweredCount,
+    })
+  )
 }
 
 export async function removeMyProductQuestion(input: {

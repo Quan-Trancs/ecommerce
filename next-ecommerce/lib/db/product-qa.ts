@@ -13,6 +13,11 @@ export type ProductQuestion = {
   createdAt: string
 }
 
+export type SellerInboxQuestion = ProductQuestion & {
+  productName: string
+  productSlug: string
+}
+
 type Row = {
   id: number | string
   product_id: string
@@ -155,4 +160,51 @@ export async function deleteProductQuestion(input: {
     [input.questionId, input.askerAccountId]
   )
   return (result.rowCount || 0) > 0
+}
+
+type InboxRow = Row & {
+  product_name: string | null
+  product_slug: string | null
+}
+
+/** Unanswered questions on products owned by this seller. */
+export async function listUnansweredQuestionsForSeller(
+  sellerAccountId: string,
+  options?: { limit?: number }
+): Promise<SellerInboxQuestion[]> {
+  const limit = Math.max(1, Math.min(options?.limit ?? 50, 200))
+  const result = await query<InboxRow>(
+    `SELECT q.id, q.product_id, q.asker_account_id, q.body,
+            q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
+            asker.display_name AS asker_name, asker.email AS asker_email,
+            NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
+            p.name AS product_name, p.slug AS product_slug
+     FROM product_questions q
+     JOIN products p ON p.id = q.product_id
+     LEFT JOIN accounts asker ON asker.id = q.asker_account_id
+     WHERE p.seller_account_id = $1
+       AND q.answer_body IS NULL
+     ORDER BY q.created_at ASC
+     LIMIT $2`,
+    [sellerAccountId, limit]
+  )
+  return result.rows.map((row) => ({
+    ...mapRow(row),
+    productName: row.product_name?.trim() || 'Product',
+    productSlug: row.product_slug?.trim() || row.product_id,
+  }))
+}
+
+export async function countUnansweredQuestionsForSeller(
+  sellerAccountId: string
+): Promise<number> {
+  const result = await query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count
+     FROM product_questions q
+     JOIN products p ON p.id = q.product_id
+     WHERE p.seller_account_id = $1
+       AND q.answer_body IS NULL`,
+    [sellerAccountId]
+  )
+  return Number(result.rows[0]?.count || 0)
 }
