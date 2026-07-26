@@ -8,6 +8,7 @@ import {
   updateAbandonedCartPreferences,
   updateLowStockPreferences,
   updateOrderNoteNotificationPreferences,
+  updateQaDigestPreferences,
   type OrderNoteEmailMode,
 } from '@/lib/db/users'
 import { flushOrderNoteDigestsForEmail } from '@/lib/email/order-notifications'
@@ -33,6 +34,7 @@ export async function getNotificationPreferences(): Promise<{
   notifyLowStock: boolean
   lowStockThreshold: number
   notifyAbandonedCart: boolean
+  notifyQaDigest: boolean
   vapidPublicKey: string | null
 } | null> {
   const session = await auth()
@@ -53,6 +55,7 @@ export async function getNotificationPreferences(): Promise<{
     notifyLowStock: user.notifyLowStock,
     lowStockThreshold: user.lowStockThreshold,
     notifyAbandonedCart: user.notifyAbandonedCart,
+    notifyQaDigest: user.notifyQaDigest,
     vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
@@ -193,6 +196,30 @@ export async function setAbandonedCartPreferences(input: {
       message: updated.notifyAbandonedCart
         ? 'Abandoned cart emails enabled'
         : 'Abandoned cart emails disabled',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function setQaDigestPreferences(input: {
+  notifyQaDigest: boolean
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    const updated = await updateQaDigestPreferences(session.user.id, {
+      notifyQaDigest: Boolean(input.notifyQaDigest),
+    })
+    if (!updated) return { success: false, message: 'Account not found' }
+    revalidatePath('/account/settings')
+    return {
+      success: true,
+      message: updated.notifyQaDigest
+        ? 'Product Q&A digest emails enabled'
+        : 'Product Q&A digest emails disabled',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }

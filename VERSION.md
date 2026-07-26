@@ -1,5 +1,24 @@
 # Version History
 
+## v1.3.74 — 2026-07-26
+
+Seller email digests for unanswered product Q&A.
+
+### Backend
+- Flyway `V36__seller_qa_digest.sql` — opt-out pref + digest cooldown state
+- Cron `/api/cron/product-qa-digests` every 6h; interval via `PRODUCT_QA_DIGEST_HOURS` (default 24)
+
+### Frontend
+- Digest email listing open questions; notification settings toggle
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.74` |
+| Store API | `store-backend/` | `1.3.74` (`store-api`) |
+
+---
+
 ## v1.3.73 — 2026-07-26
 
 Auto-hide product Q&A after enough open buyer reports.

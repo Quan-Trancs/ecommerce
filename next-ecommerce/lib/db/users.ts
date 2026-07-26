@@ -35,6 +35,8 @@ export type DbUser = {
   lowStockThreshold: number
   /** Opt-out (default true): email when a signed-in cart sits unused. */
   notifyAbandonedCart: boolean
+  /** Opt-out (default true): digest email for unanswered product Q&A on listings. */
+  notifyQaDigest: boolean
   image: string | null
   active: boolean
   createdAt: Date
@@ -61,6 +63,7 @@ type AccountRow = {
   notify_low_stock: boolean
   low_stock_threshold: number
   notify_abandoned_cart: boolean
+  notify_qa_digest: boolean
   image: string | null
   active: boolean
   created_at: Date
@@ -105,6 +108,7 @@ function mapRow(row: AccountRow): DbUser {
     notifyLowStock: row.notify_low_stock !== false,
     lowStockThreshold: Math.max(0, Number(row.low_stock_threshold) || 5),
     notifyAbandonedCart: row.notify_abandoned_cart !== false,
+    notifyQaDigest: row.notify_qa_digest !== false,
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -127,6 +131,7 @@ const SELECT_COLS = `
   COALESCE(notify_low_stock, TRUE) AS notify_low_stock,
   COALESCE(low_stock_threshold, 5) AS low_stock_threshold,
   COALESCE(notify_abandoned_cart, TRUE) AS notify_abandoned_cart,
+  COALESCE(notify_qa_digest, TRUE) AS notify_qa_digest,
   image, active, created_at, updated_at
 `
 
@@ -387,6 +392,22 @@ export async function updateAbandonedCartPreferences(
          updated_at = NOW()
      WHERE id = $1`,
     [id, Boolean(prefs.notifyAbandonedCart)]
+  )
+  return findUserById(id)
+}
+
+export async function updateQaDigestPreferences(
+  id: string,
+  prefs: { notifyQaDigest: boolean }
+): Promise<DbUser | null> {
+  const existing = await findUserById(id)
+  if (!existing) return null
+  await query(
+    `UPDATE accounts
+     SET notify_qa_digest = $2,
+         updated_at = NOW()
+     WHERE id = $1`,
+    [id, Boolean(prefs.notifyQaDigest)]
   )
   return findUserById(id)
 }

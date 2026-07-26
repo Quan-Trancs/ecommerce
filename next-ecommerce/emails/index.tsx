@@ -11,9 +11,11 @@ import OrderReturnEmail, {
 import AbandonedCartEmail from './abandoned-cart'
 import ProductQaAnswerEmail from './product-qa-answer'
 import ProductQaAskedEmail from './product-qa-asked'
+import ProductQaDigestEmail from './product-qa-digest'
 import { SENDER_EMAIL, SENDER_NAME } from '@/lib/constants'
 import { IOrder } from '@/lib/types/order'
 import type { AbandonedCartItem } from '@/lib/db/abandoned-carts'
+import type { SellerQaDigestItem } from '@/lib/db/seller-qa-digest'
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
@@ -277,6 +279,41 @@ export const sendProductQaAskedEmail = async (input: {
         questionBody={input.questionBody}
         askerName={input.askerName}
         inboxPath={input.inboxPath}
+      />
+    ),
+  })
+  return { sent: true as const }
+}
+
+export const sendProductQaDigestEmail = async (input: {
+  to: string
+  displayName?: string | null
+  unansweredCount: number
+  questions: SellerQaDigestItem[]
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to) {
+    console.warn(
+      'Skipping product Q&A digest email:',
+      !resend ? 'RESEND_API_KEY missing' : 'seller email missing'
+    )
+    return { sent: false as const }
+  }
+
+  const count = input.unansweredCount
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject:
+      count === 1
+        ? '1 unanswered product question'
+        : `${count} unanswered product questions`,
+    react: (
+      <ProductQaDigestEmail
+        displayName={input.displayName}
+        unansweredCount={input.unansweredCount}
+        questions={input.questions}
       />
     ),
   })
