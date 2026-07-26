@@ -14,6 +14,7 @@ import ReviewRequestEmail from './review-request'
 import PriceDropEmail from './price-drop'
 import ShopNewListingEmail from './shop-new-listing'
 import ShopFollowDigestEmail from './shop-follow-digest'
+import ShopAnnouncementDigestEmail from './shop-announcement-digest'
 import ProductQaAnswerEmail from './product-qa-answer'
 import ProductQaAskedEmail from './product-qa-asked'
 import ProductQaDigestEmail from './product-qa-digest'
@@ -395,6 +396,43 @@ export const sendShopFollowDigestEmail = async (input: {
       <ShopFollowDigestEmail
         displayName={input.displayName}
         listings={input.listings}
+      />
+    ),
+  })
+  return { sent: true as const }
+}
+
+export const sendShopAnnouncementDigestEmail = async (input: {
+  to: string
+  displayName?: string | null
+  announcements: import('@/lib/db/shop-announcement-digest').ShopDigestAnnouncement[]
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to || !input.announcements.length) {
+    console.warn(
+      'Skipping shop announcement digest:',
+      !resend
+        ? 'RESEND_API_KEY missing'
+        : !to
+          ? 'buyer email missing'
+          : 'no announcements'
+    )
+    return { sent: false as const }
+  }
+
+  const count = input.announcements.length
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject:
+      count === 1
+        ? '1 announcement from shops you follow'
+        : `${count} announcements from shops you follow`,
+    react: (
+      <ShopAnnouncementDigestEmail
+        displayName={input.displayName}
+        announcements={input.announcements}
       />
     ),
   })

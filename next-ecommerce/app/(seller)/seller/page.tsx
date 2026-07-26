@@ -76,7 +76,7 @@ export default async function SellerHomePage() {
               {shop.shopName}
             </Link>
             . They get in-app alerts and batched emails when you publish new
-            products, plus in-app notices for shop announcements.
+            products or post announcements.
           </p>
         </div>
       ) : null}

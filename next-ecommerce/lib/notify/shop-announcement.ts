@@ -1,13 +1,17 @@
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
 import { listShopFollowerAccountIds } from '@/lib/db/shop-follows'
 import { getSellerShop, shopHref } from '@/lib/db/seller-shop'
+import { enqueueShopAnnouncementDigest } from '@/lib/db/shop-announcement-digest'
 import { findUserById } from '@/lib/db/users'
 
 /**
- * Notify shop followers of a seller announcement (in-app only).
+ * Notify shop followers of a seller announcement:
+ * - immediate in-app notification
+ * - email queued for batched digest (cron)
  */
 export async function notifyShopFollowersOfAnnouncement(input: {
   sellerAccountId: string
+  announcementId: number
   title: string
   body: string
 }): Promise<void> {
@@ -33,6 +37,14 @@ export async function notifyShopFollowersOfAnnouncement(input: {
         body: bodyPreview || input.title,
         href,
       })
+
+      if (user.email) {
+        await enqueueShopAnnouncementDigest({
+          followerAccountId: accountId,
+          sellerAccountId: sellerId,
+          announcementId: input.announcementId,
+        })
+      }
     }
   } catch (error) {
     console.error('notifyShopFollowersOfAnnouncement failed:', error)

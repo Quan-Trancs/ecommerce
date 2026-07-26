@@ -27,7 +27,7 @@ export default function SellerShopAnnouncementForm({
         <p className='text-sm font-medium'>Shop announcement</p>
         <p className='mt-1 text-sm text-muted-foreground'>
           Post an update to your public shop. Followers with shop alerts on get
-          an in-app notice (up to 5 posts per day).
+          an in-app notice and a batched email digest (up to 5 posts per day).
         </p>
       </div>
 

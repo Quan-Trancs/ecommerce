@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.99 — 2026-07-26
+
+Batched email digests for shop announcements to followers.
+
+### Backend
+- Flyway `V50__shop_announcement_digest_queue.sql`
+- Queue on announce; flush via existing `/api/cron/shop-follow-digests` (every 6h)
+
+### Frontend
+- Announcement digest email template; in-app stays immediate
+- Prefs / seller copy mention announcement digests
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.99` |
+| Store API | `store-backend/` | `1.3.99` (`store-api`) |
+
+---
+
 ## v1.3.98 — 2026-07-26
 
 Seller shop announcements with in-app notices to followers.

@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.98](./VERSION.md) — Seller shop announcements. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.99](./VERSION.md) — Shop announcement email digests. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

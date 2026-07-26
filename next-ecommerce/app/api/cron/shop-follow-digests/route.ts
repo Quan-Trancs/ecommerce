@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { flushShopFollowDigests } from '@/lib/email/shop-follow-digest'
+import { flushShopAnnouncementDigests } from '@/lib/email/shop-announcement-digest'
 
 function authorize(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim()
@@ -11,7 +12,7 @@ function authorize(request: NextRequest): boolean {
 }
 
 /**
- * Batch email digests of new listings from followed shops.
+ * Batch email digests for followed shops (new listings + announcements).
  * Secure with CRON_SECRET (Authorization: Bearer … or ?secret=).
  */
 export async function GET(request: NextRequest) {
@@ -20,8 +21,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await flushShopFollowDigests()
-    return NextResponse.json({ ok: true, ...result })
+    const [listings, announcements] = await Promise.all([
+      flushShopFollowDigests(),
+      flushShopAnnouncementDigests(),
+    ])
+    return NextResponse.json({
+      ok: true,
+      listings,
+      announcements,
+    })
   } catch (error) {
     console.error('shop follow digest cron failed:', error)
     return NextResponse.json(

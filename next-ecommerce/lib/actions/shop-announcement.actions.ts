@@ -74,6 +74,7 @@ export async function postMyShopAnnouncement(input: {
 
     await notifyShopFollowersOfAnnouncement({
       sellerAccountId: session.user.id,
+      announcementId: announcement.id,
       title: announcement.title,
       body: announcement.body,
     })
