@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.82 — 2026-07-26
+
+Public seller shop pages.
+
+### Frontend
+- `/shop/[id]` storefront listing published products for a seller
+- PDP “Sold by {shop}” link when the listing has a seller profile
+- Seller dashboard: edit shop name/bio + view public shop
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.82` |
+| Store API | `store-backend/` | `1.3.82` (`store-api`) |
+
+---
+
 ## v1.3.81 — 2026-07-26
 
 Post-delivery product review request emails.

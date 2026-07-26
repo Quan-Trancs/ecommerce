@@ -31,6 +31,8 @@ export type StoreProduct = {
   reviews: unknown[]
   numSales: number
   variants?: StoreProductVariant[]
+  /** Owning seller account when sold by a marketplace seller. */
+  sellerAccountId?: string | null
   createdAt: Date
   updatedAt: Date
 }

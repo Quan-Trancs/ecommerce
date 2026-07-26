@@ -64,6 +64,7 @@ export function catalogProductToStoreProduct(
     reviews: [],
     numSales: product.numSales ?? 0,
     variants,
+    sellerAccountId: product.sellerAccountId || null,
     createdAt: product.createdAt ? new Date(product.createdAt) : new Date(),
     updatedAt: product.updatedAt ? new Date(product.updatedAt) : new Date(),
   }

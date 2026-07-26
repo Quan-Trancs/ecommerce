@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { getSellerAnalytics } from '@/lib/actions/seller.actions'
 import { getSellerQaInbox } from '@/lib/actions/qa.actions'
+import { getMySellerShop } from '@/lib/actions/shop.actions'
 import ProductPrice from '@/components/shared/product/product-price'
+import SellerShopProfileForm from './seller-shop-profile-form'
 
 export const metadata = { title: 'Seller dashboard' }
 
@@ -9,6 +11,7 @@ export default async function SellerHomePage() {
   let analytics: Awaited<ReturnType<typeof getSellerAnalytics>> | null = null
   let unansweredQuestions = 0
   let error: string | null = null
+  const shop = await getMySellerShop()
 
   try {
     analytics = await getSellerAnalytics()
@@ -31,6 +34,14 @@ export default async function SellerHomePage() {
           your product lines only (multi-seller orders count your share).
         </p>
       </div>
+
+      {shop ? (
+        <SellerShopProfileForm
+          accountId={shop.accountId}
+          shopName={shop.shopName}
+          bio={shop.bio}
+        />
+      ) : null}
 
       {error ? (
         <div className='rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive'>

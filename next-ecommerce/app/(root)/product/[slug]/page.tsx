@@ -23,6 +23,8 @@ import Link from 'next/link'
 import { auth } from '@/auth'
 import { getWishlistStatus, getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import { getStockAlertStatus } from '@/lib/actions/stock-alert.actions'
+import { getSellerShopSummary } from '@/lib/actions/shop.actions'
+import { getProductSellerAccountId } from '@/lib/db/product-qa'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -62,6 +64,10 @@ export default async function ProductDetails(props: {
       getWishlistStatus(product._id),
       getStockAlertStatus(product._id),
     ])
+  const sellerAccountId =
+    product.sellerAccountId ||
+    (await getProductSellerAccountId(product._id))
+  const sellerShop = await getSellerShopSummary(sellerAccountId)
   const relatedWishlist = await getWishlistStatusesForProducts(
     (relatedProducts.data || []).map((p) => p._id)
   )
@@ -93,6 +99,17 @@ export default async function ProductDetails(props: {
               >
                 {product.category}
               </Link>
+              {sellerShop ? (
+                <>
+                  <span className='mx-2 text-slate-300'>|</span>
+                  <Link
+                    href={`/shop/${sellerShop.accountId}`}
+                    className='hover:text-chrome hover:underline'
+                  >
+                    Sold by {sellerShop.shopName}
+                  </Link>
+                </>
+              ) : null}
             </p>
             <h1 className='brick-title text-2xl lg:text-3xl'>{product.name}</h1>
             <div className='flex flex-wrap items-center gap-2 text-sm'>

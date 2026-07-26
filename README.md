@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.81](./VERSION.md) — Post-delivery review request emails. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.82](./VERSION.md) — Public seller shop pages. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

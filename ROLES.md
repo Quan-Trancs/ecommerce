@@ -372,3 +372,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Shipment tracking (carrier + tracking number)~~ (v1.3.79)
 - ~~Back-in-stock alerts~~ (v1.3.80)
 - ~~Post-delivery review request emails~~ (v1.3.81)
+- ~~Public seller shop pages~~ (v1.3.82)
