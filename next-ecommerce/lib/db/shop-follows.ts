@@ -5,6 +5,7 @@ export type ShopFollowRow = {
   shopSlug: string
   shopName: string
   bio: string | null
+  shopLogoUrl: string | null
   verified: boolean
   productCount: number
   followedAt: string
@@ -84,6 +85,7 @@ export async function listFollowedShops(
     shop_slug: string | null
     shop_name: string
     bio: string | null
+    shop_logo_url: string | null
     verified: boolean
     product_count: string
     created_at: Date | string
@@ -92,6 +94,7 @@ export async function listFollowedShops(
             sp.shop_slug,
             sp.shop_name,
             sp.bio,
+            sp.shop_logo_url,
             COALESCE(sp.verified, FALSE) AS verified,
             (
               SELECT COUNT(*)::text
@@ -113,6 +116,7 @@ export async function listFollowedShops(
     shopSlug: row.shop_slug?.trim() || row.seller_account_id,
     shopName: row.shop_name?.trim() || 'Shop',
     bio: row.bio?.trim() || null,
+    shopLogoUrl: row.shop_logo_url?.trim() || null,
     verified: Boolean(row.verified),
     productCount: Number(row.product_count) || 0,
     followedAt: new Date(row.created_at).toISOString(),

@@ -80,7 +80,20 @@ export default async function PublicSellerShopPage(props: {
             Seller shop
           </p>
           <div className='flex flex-wrap items-end justify-between gap-3'>
-            <div>
+            <div className='flex min-w-0 items-start gap-4'>
+              {shop.shopLogoUrl ? (
+                <div className='relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-muted md:h-20 md:w-20'>
+                  <Image
+                    src={shop.shopLogoUrl}
+                    alt={`${shop.shopName} logo`}
+                    fill
+                    className='object-cover'
+                    sizes='80px'
+                    unoptimized={shouldUnoptimizeProductImage(shop.shopLogoUrl)}
+                  />
+                </div>
+              ) : null}
+              <div className='min-w-0'>
               <h1 className='font-display text-3xl font-extrabold tracking-tight md:text-4xl'>
                 {shop.shopName}
                 {shop.verified ? (
@@ -109,6 +122,7 @@ export default async function PublicSellerShopPage(props: {
                 <span className='mx-2'>·</span>
                 <span className='font-mono text-xs'>/shop/{shop.shopSlug}</span>
               </p>
+              </div>
             </div>
             <div className='flex flex-wrap items-center gap-3'>
               <ShopFollowButton

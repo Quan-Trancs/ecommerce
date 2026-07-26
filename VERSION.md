@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.89 — 2026-07-26
+
+Seller shop logo/avatar beside the shop name.
+
+### Backend
+- Flyway `V46__seller_shop_logo.sql` — `seller_profiles.shop_logo_url`
+- JPA `SellerProfileEntity.shopLogoUrl`
+
+### Frontend
+- Seller dashboard upload/replace/remove logo
+- Public shop header and Following list show the logo
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.89` |
+| Store API | `store-backend/` | `1.3.89` (`store-api`) |
+
+---
+
 ## v1.3.88 — 2026-07-26
 
 Seller shop cover/banner images on public shop pages.

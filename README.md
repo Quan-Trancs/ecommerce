@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.88](./VERSION.md) — Seller shop cover banners. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.89](./VERSION.md) — Seller shop logos. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

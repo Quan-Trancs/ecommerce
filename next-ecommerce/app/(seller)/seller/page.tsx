@@ -6,6 +6,7 @@ import { countShopFollowers } from '@/lib/db/shop-follows'
 import ProductPrice from '@/components/shared/product/product-price'
 import SellerShopProfileForm from './seller-shop-profile-form'
 import SellerShopBannerForm from './seller-shop-banner-form'
+import SellerShopLogoForm from './seller-shop-logo-form'
 
 export const metadata = { title: 'Seller dashboard' }
 
@@ -48,6 +49,8 @@ export default async function SellerHomePage() {
           bio={shop.bio}
         />
       ) : null}
+
+      {shop ? <SellerShopLogoForm shopLogoUrl={shop.shopLogoUrl} /> : null}
 
       {shop ? <SellerShopBannerForm shopBannerUrl={shop.shopBannerUrl} /> : null}
 

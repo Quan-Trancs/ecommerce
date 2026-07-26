@@ -12,6 +12,7 @@ import {
   parseShopProductSort,
   shopHref,
   updateSellerShopBanner,
+  updateSellerShopLogo,
   updateSellerShopProfile,
   type SellerShop,
   type ShopProductSort,
@@ -186,6 +187,74 @@ export async function removeMyShopBanner(
     }
 
     const shop = await updateSellerShopBanner(session.user.id, null)
+    if (!shop) {
+      return { success: false, message: 'Shop profile not found' }
+    }
+
+    await deleteOrphanedProductImages([previousUrl], [])
+    revalidateShopPaths(shop)
+    return { success: true }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/** Upload/replace the seller shop logo/avatar. */
+export async function replaceMyShopLogo(
+  formData: FormData,
+  previousUrl?: string | null
+): Promise<{ success: true; url: string } | { success: false; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
+      return { success: false, message: 'Seller access required' }
+    }
+
+    const file = formData.get('file')
+    if (!file || !(file instanceof File)) {
+      return { success: false, message: 'Image file required' }
+    }
+    if (!BANNER_ALLOWED[file.type]) {
+      return { success: false, message: 'Use JPEG, PNG, WebP, or GIF' }
+    }
+    if (file.size <= 0 || file.size > MAX_BANNER_BYTES) {
+      return { success: false, message: 'Image must be between 1 byte and 5MB' }
+    }
+
+    const ext = BANNER_ALLOWED[file.type]
+    const filename = `${randomUUID()}${ext}`
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const stored = await storeProductImage({
+      buffer,
+      filename,
+      contentType: file.type,
+    })
+
+    const shop = await updateSellerShopLogo(session.user.id, stored.url)
+    if (!shop) {
+      await deleteManagedProductImage(stored.url)
+      return { success: false, message: 'Shop profile not found' }
+    }
+
+    await deleteOrphanedProductImages([previousUrl], [stored.url])
+    revalidateShopPaths(shop)
+    return { success: true, url: stored.url }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/** Clear the seller shop logo/avatar. */
+export async function removeMyShopLogo(
+  previousUrl?: string | null
+): Promise<{ success: true } | { success: false; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
+      return { success: false, message: 'Seller access required' }
+    }
+
+    const shop = await updateSellerShopLogo(session.user.id, null)
     if (!shop) {
       return { success: false, message: 'Shop profile not found' }
     }
