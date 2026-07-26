@@ -6,29 +6,38 @@ import { Button } from '@/components/ui/button'
 import CompareTable from '@/components/shared/compare/compare-table'
 import useCompareStore from '@/hooks/use-compare-store'
 import { getProductsByIds } from '@/lib/actions/product.actions'
+import { getSellerShopsForProducts } from '@/lib/actions/shop.actions'
 import type { StoreProduct } from '@/lib/catalog/store-product'
+import type { SellerShopCardInfo } from '@/lib/db/seller-shop'
 
 export default function ComparePageClient() {
   const { items, remove, clear } = useCompareStore()
   const [products, setProducts] = useState<StoreProduct[]>([])
+  const [shopsBySellerId, setShopsBySellerId] = useState<
+    Record<string, SellerShopCardInfo>
+  >({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     if (items.length === 0) {
       setProducts([])
+      setShopsBySellerId({})
       setLoading(false)
       return
     }
     setLoading(true)
-    void getProductsByIds(items.map((item) => item.id)).then((rows) => {
+    void getProductsByIds(items.map((item) => item.id)).then(async (rows) => {
       if (cancelled) return
       const byId = new Map(rows.map((p) => [p._id, p]))
       // Keep compare order; drop ids that no longer resolve
       const ordered = items
         .map((item) => byId.get(item.id))
         .filter((p): p is StoreProduct => Boolean(p))
+      const shops = await getSellerShopsForProducts(ordered)
+      if (cancelled) return
       setProducts(ordered)
+      setShopsBySellerId(shops)
       setLoading(false)
     })
     return () => {
@@ -69,7 +78,11 @@ export default function ComparePageClient() {
           Clear all
         </Button>
       </div>
-      <CompareTable products={products} onRemove={remove} />
+      <CompareTable
+        products={products}
+        shopsBySellerId={shopsBySellerId}
+        onRemove={remove}
+      />
     </div>
   )
 }

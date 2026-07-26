@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.97 — 2026-07-26
+
+Seller shop logo and name links on the compare page.
+
+### Frontend
+- Compare loads shops via `getSellerShopsForProducts`
+- Product headers and a Shop comparison row link to `/shop/{slug}`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.97` |
+| Store API | `store-backend/` | `1.3.97` (`store-api`) |
+
+---
+
 ## v1.3.96 — 2026-07-26
 
 Seller shop logo and name links on the wishlist page.

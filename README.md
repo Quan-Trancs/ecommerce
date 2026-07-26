@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.96](./VERSION.md) — Shop links on wishlist. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.97](./VERSION.md) — Shop links on compare. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
