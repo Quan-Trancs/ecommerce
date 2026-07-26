@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.86](./VERSION.md) — Follow shops + new-listing alerts. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.87](./VERSION.md) — Shop follower digests + seller count. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { getSellerAnalytics } from '@/lib/actions/seller.actions'
 import { getSellerQaInbox } from '@/lib/actions/qa.actions'
-import { getMySellerShop } from '@/lib/actions/shop.actions'
+import { getMySellerShop, shopHref } from '@/lib/actions/shop.actions'
+import { countShopFollowers } from '@/lib/db/shop-follows'
 import ProductPrice from '@/components/shared/product/product-price'
 import SellerShopProfileForm from './seller-shop-profile-form'
 
@@ -12,6 +13,9 @@ export default async function SellerHomePage() {
   let unansweredQuestions = 0
   let error: string | null = null
   const shop = await getMySellerShop()
+  const followerCount = shop
+    ? await countShopFollowers(shop.accountId)
+    : 0
 
   try {
     analytics = await getSellerAnalytics()
@@ -42,6 +46,25 @@ export default async function SellerHomePage() {
           shopName={shop.shopName}
           bio={shop.bio}
         />
+      ) : null}
+
+      {shop ? (
+        <div className='rounded-lg border p-4'>
+          <p className='font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
+            Shop followers
+          </p>
+          <p className='mt-2 font-display text-2xl font-extrabold tracking-tight'>
+            {followerCount}
+          </p>
+          <p className='mt-1 text-sm text-muted-foreground'>
+            Buyers following{' '}
+            <Link href={shopHref(shop)} className='underline hover:text-primary'>
+              {shop.shopName}
+            </Link>
+            . They get in-app alerts and batched emails when you publish new
+            products.
+          </p>
+        </div>
       ) : null}
 
       {error ? (

@@ -1,12 +1,13 @@
-import { findUserById } from '@/lib/db/users'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
 import { listShopFollowerAccountIds } from '@/lib/db/shop-follows'
-import { getSellerShop, shopHref } from '@/lib/db/seller-shop'
-import { sendShopNewListingEmail } from '@/emails/index'
-import { query } from '@/lib/db/postgres'
+import { getSellerShop } from '@/lib/db/seller-shop'
+import { enqueueShopListingDigest } from '@/lib/db/shop-listing-digest'
+import { findUserById } from '@/lib/db/users'
 
 /**
- * Notify shop followers when a seller publishes a new product.
+ * Notify shop followers of a new listing:
+ * - immediate in-app notification
+ * - email queued for batched digest (cron)
  */
 export async function notifyShopFollowersOfNewListing(input: {
   sellerAccountId: string
@@ -22,19 +23,8 @@ export async function notifyShopFollowersOfNewListing(input: {
     const shop = await getSellerShop(sellerId)
     if (!shop) return
 
-    const imageResult = await query<{ image_url: string | null }>(
-      `SELECT pi.image_url
-       FROM product_images pi
-       WHERE pi.product_id = $1
-       ORDER BY pi.sort_order NULLS LAST, pi.image_url
-       LIMIT 1`,
-      [input.productId]
-    )
-    const imageUrl = imageResult.rows[0]?.image_url || null
-
     const followers = await listShopFollowerAccountIds(sellerId)
     const productHref = `/product/${input.productSlug}`
-    const shopPath = shopHref(shop)
 
     for (const accountId of followers) {
       const user = await findUserById(accountId)
@@ -49,16 +39,10 @@ export async function notifyShopFollowersOfNewListing(input: {
       })
 
       if (user.email) {
-        await sendShopNewListingEmail({
-          to: user.email,
-          displayName: user.name,
-          shopName: shop.shopName,
-          shopSlug: shop.shopSlug,
-          shopHref: shopPath,
-          productName: input.productName,
-          productSlug: input.productSlug,
-          imageUrl,
-          price: input.price ?? null,
+        await enqueueShopListingDigest({
+          followerAccountId: accountId,
+          sellerAccountId: sellerId,
+          productId: input.productId,
         })
       }
     }

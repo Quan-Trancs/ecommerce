@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.87 — 2026-07-26
+
+Seller follower count and batched new-listing email digests.
+
+### Backend
+- Flyway `V44__shop_listing_digest_queue.sql` — per-follower listing digest queue
+- Cron `/api/cron/shop-follow-digests` every 6h; in-app alerts stay immediate
+
+### Frontend
+- Seller dashboard shows shop follower count
+- Follow emails batched into digests instead of one-per-listing
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.87` |
+| Store API | `store-backend/` | `1.3.87` (`store-api`) |
+
+---
+
 ## v1.3.86 — 2026-07-26
 
 Follow seller shops and get new-listing alerts.

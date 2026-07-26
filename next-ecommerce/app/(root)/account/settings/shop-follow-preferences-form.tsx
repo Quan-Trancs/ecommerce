@@ -37,7 +37,8 @@ export default function ShopFollowPreferencesForm({
         <p className='text-sm font-medium'>Followed shop alerts</p>
         <p className='mt-1 text-sm text-muted-foreground'>
           Email and in-app notice when a shop you follow publishes a new
-          product (requires RESEND_API_KEY for email).
+          product. Emails are batched into digests a few times a day
+          (requires RESEND_API_KEY + cron).
         </p>
       </div>
       <label className='flex items-start gap-2 text-sm'>
