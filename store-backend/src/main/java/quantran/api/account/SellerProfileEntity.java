@@ -46,6 +46,12 @@ public class SellerProfileEntity {
     @Column(name = "x_url", length = 500)
     private String xUrl;
 
+    @Column(name = "shipping_policy", length = 2000)
+    private String shippingPolicy;
+
+    @Column(name = "returns_policy", length = 2000)
+    private String returnsPolicy;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean verified = false;

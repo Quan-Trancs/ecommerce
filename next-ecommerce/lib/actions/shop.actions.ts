@@ -93,6 +93,8 @@ export async function updateMySellerShop(input: {
   websiteUrl?: string
   instagramUrl?: string
   xUrl?: string
+  shippingPolicy?: string
+  returnsPolicy?: string
 }): Promise<{ success: boolean; message: string; shop?: SellerShop }> {
   try {
     const session = await auth()
@@ -107,6 +109,8 @@ export async function updateMySellerShop(input: {
       websiteUrl: input.websiteUrl,
       instagramUrl: input.instagramUrl,
       xUrl: input.xUrl,
+      shippingPolicy: input.shippingPolicy,
+      returnsPolicy: input.returnsPolicy,
     })
     if (result.error || !result.shop) {
       return {

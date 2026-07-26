@@ -206,6 +206,37 @@ export default async function PublicSellerShopPage(props: {
             ))}
           </div>
         )}
+
+        {shop.shippingPolicy || shop.returnsPolicy ? (
+          <section className='space-y-4 border-t pt-8'>
+            <div>
+              <h2 className='font-display text-xl font-extrabold tracking-tight'>
+                Shop policies
+              </h2>
+              <p className='mt-1 text-sm text-muted-foreground'>
+                Shipping and returns for {shop.shopName}.
+              </p>
+            </div>
+            <div className='grid gap-6 md:grid-cols-2'>
+              {shop.shippingPolicy ? (
+                <div className='space-y-2'>
+                  <h3 className='text-sm font-medium'>Shipping</h3>
+                  <p className='whitespace-pre-wrap text-sm text-muted-foreground'>
+                    {shop.shippingPolicy}
+                  </p>
+                </div>
+              ) : null}
+              {shop.returnsPolicy ? (
+                <div className='space-y-2'>
+                  <h3 className='text-sm font-medium'>Returns</h3>
+                  <p className='whitespace-pre-wrap text-sm text-muted-foreground'>
+                    {shop.returnsPolicy}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   )

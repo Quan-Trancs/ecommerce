@@ -16,6 +16,8 @@ export type SellerShop = {
   websiteUrl: string | null
   instagramUrl: string | null
   xUrl: string | null
+  shippingPolicy: string | null
+  returnsPolicy: string | null
   verified: boolean
   productCount: number
 }
@@ -48,6 +50,8 @@ function mapShop(row: {
   website_url: string | null
   instagram_url: string | null
   x_url: string | null
+  shipping_policy: string | null
+  returns_policy: string | null
   verified: boolean
   product_count: string
 }): SellerShop {
@@ -61,6 +65,8 @@ function mapShop(row: {
     websiteUrl: row.website_url?.trim() || null,
     instagramUrl: row.instagram_url?.trim() || null,
     xUrl: row.x_url?.trim() || null,
+    shippingPolicy: row.shipping_policy?.trim() || null,
+    returnsPolicy: row.returns_policy?.trim() || null,
     verified: Boolean(row.verified),
     productCount: Number(row.product_count) || 0,
   }
@@ -76,6 +82,8 @@ const SHOP_SELECT = `
          sp.website_url,
          sp.instagram_url,
          sp.x_url,
+         sp.shipping_policy,
+         sp.returns_policy,
          COALESCE(sp.verified, FALSE) AS verified,
          (
            SELECT COUNT(*)::text
@@ -104,6 +112,8 @@ export async function getSellerShop(
     website_url: string | null
     instagram_url: string | null
     x_url: string | null
+    shipping_policy: string | null
+    returns_policy: string | null
     verified: boolean
     product_count: string
   }>(
@@ -230,10 +240,16 @@ export async function updateSellerShopProfile(input: {
   websiteUrl?: string | null
   instagramUrl?: string | null
   xUrl?: string | null
+  shippingPolicy?: string | null
+  returnsPolicy?: string | null
 }): Promise<{ shop: SellerShop | null; error?: string }> {
   const shopName = input.shopName.trim().slice(0, 200)
   if (!shopName) return { shop: null, error: 'Shop name required' }
   const bio = (input.bio || '').trim().slice(0, 500) || null
+  const shippingPolicy =
+    (input.shippingPolicy || '').trim().slice(0, 2000) || null
+  const returnsPolicy =
+    (input.returnsPolicy || '').trim().slice(0, 2000) || null
 
   const website = normalizeWebsiteUrl(input.websiteUrl)
   if (website.error) return { shop: null, error: website.error }
@@ -269,6 +285,8 @@ export async function updateSellerShopProfile(input: {
          website_url = $5,
          instagram_url = $6,
          x_url = $7,
+         shipping_policy = $8,
+         returns_policy = $9,
          updated_at = NOW()
      WHERE account_id = $1`,
     [
@@ -279,6 +297,8 @@ export async function updateSellerShopProfile(input: {
       website.url,
       instagram.url,
       x.url,
+      shippingPolicy,
+      returnsPolicy,
     ]
   )
   return { shop: await getSellerShop(input.accountId) }

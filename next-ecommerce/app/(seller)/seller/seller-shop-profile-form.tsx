@@ -16,6 +16,8 @@ export default function SellerShopProfileForm({
   websiteUrl,
   instagramUrl,
   xUrl,
+  shippingPolicy,
+  returnsPolicy,
 }: {
   accountId: string
   shopSlug: string
@@ -24,6 +26,8 @@ export default function SellerShopProfileForm({
   websiteUrl: string | null
   instagramUrl: string | null
   xUrl: string | null
+  shippingPolicy: string | null
+  returnsPolicy: string | null
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -33,6 +37,8 @@ export default function SellerShopProfileForm({
   const [website, setWebsite] = useState(websiteUrl || '')
   const [instagram, setInstagram] = useState(instagramUrl || '')
   const [x, setX] = useState(xUrl || '')
+  const [shipping, setShipping] = useState(shippingPolicy || '')
+  const [returns, setReturns] = useState(returnsPolicy || '')
   const previewSlug = toSlug(slug) || shopSlug
 
   return (
@@ -48,6 +54,8 @@ export default function SellerShopProfileForm({
             websiteUrl: website,
             instagramUrl: instagram,
             xUrl: x,
+            shippingPolicy: shipping,
+            returnsPolicy: returns,
           })
           if (result.success) {
             toast.success(result.message)
@@ -56,6 +64,8 @@ export default function SellerShopProfileForm({
               setWebsite(result.shop.websiteUrl || '')
               setInstagram(result.shop.instagramUrl || '')
               setX(result.shop.xUrl || '')
+              setShipping(result.shop.shippingPolicy || '')
+              setReturns(result.shop.returnsPolicy || '')
             }
             router.refresh()
           } else {
@@ -151,6 +161,28 @@ export default function SellerShopProfileForm({
           onChange={(e) => setX(e.target.value)}
           maxLength={500}
           placeholder='@handle or profile URL'
+          disabled={pending}
+        />
+      </label>
+      <label className='block space-y-1 text-sm'>
+        <span className='text-muted-foreground'>Shipping policy (optional)</span>
+        <textarea
+          className='min-h-[88px] w-full rounded-md border bg-background px-3 py-2'
+          value={shipping}
+          onChange={(e) => setShipping(e.target.value)}
+          maxLength={2000}
+          placeholder='Processing times, carriers, regions…'
+          disabled={pending}
+        />
+      </label>
+      <label className='block space-y-1 text-sm'>
+        <span className='text-muted-foreground'>Returns policy (optional)</span>
+        <textarea
+          className='min-h-[88px] w-full rounded-md border bg-background px-3 py-2'
+          value={returns}
+          onChange={(e) => setReturns(e.target.value)}
+          maxLength={2000}
+          placeholder='Return window, condition, how to start a return…'
           disabled={pending}
         />
       </label>

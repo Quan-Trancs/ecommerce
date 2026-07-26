@@ -50,6 +50,8 @@ export default async function SellerHomePage() {
           websiteUrl={shop.websiteUrl}
           instagramUrl={shop.instagramUrl}
           xUrl={shop.xUrl}
+          shippingPolicy={shop.shippingPolicy}
+          returnsPolicy={shop.returnsPolicy}
         />
       ) : null}
 
