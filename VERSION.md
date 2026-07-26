@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.84 — 2026-07-26
+
+Pretty seller shop URLs.
+
+### Backend
+- Flyway `V42__seller_shop_slug.sql` — unique `shop_slug` on `seller_profiles` (backfilled)
+- Spring `SellerProfileEntity.shopSlug` required on profile create
+
+### Frontend
+- Canonical `/shop/{slug}`; legacy `/shop/{accountId}` redirects
+- Sellers can edit URL slug on the dashboard
+- PDP “Sold by” links use the pretty slug
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.84` |
+| Store API | `store-backend/` | `1.3.84` (`store-api`) |
+
+---
+
 ## v1.3.83 — 2026-07-26
 
 Wishlist price-drop alerts.

@@ -6,6 +6,7 @@ import {
   type QuietHoursPrefs,
 } from '@/lib/email/quiet-hours'
 import { query, withClient } from './postgres'
+import { toSlug } from '@/lib/utils'
 
 export type OrderNoteEmailMode = 'DIGEST' | 'IMMEDIATE'
 
@@ -208,11 +209,16 @@ export async function createUser(input: {
 
       if (role === 'SELLER' || role === 'ADMIN') {
         const shopName = `${input.name.trim()}'s shop`
+        const base = toSlug(`${input.name.trim()}-shop`) || 'shop'
+        const shopSlug = `${base}-${id.replace(/-/g, '').slice(0, 8)}`.slice(
+          0,
+          120
+        )
         await client.query(
-          `INSERT INTO seller_profiles (account_id, shop_name, bio, verified, created_at, updated_at)
-           VALUES ($1, $2, NULL, $3, $4, $4)
+          `INSERT INTO seller_profiles (account_id, shop_name, shop_slug, bio, verified, created_at, updated_at)
+           VALUES ($1, $2, $3, NULL, $4, $5, $5)
            ON CONFLICT (account_id) DO NOTHING`,
-          [id, shopName, role === 'ADMIN', now]
+          [id, shopName, shopSlug, role === 'ADMIN', now]
         )
       }
 
@@ -327,11 +333,17 @@ export async function updateUser(
       )
 
       if (role === 'SELLER' || role === 'ADMIN') {
+        const shopName = `${name}'s shop`
+        const base = toSlug(`${name}-shop`) || 'shop'
+        const shopSlug = `${base}-${id.replace(/-/g, '').slice(0, 8)}`.slice(
+          0,
+          120
+        )
         await client.query(
-          `INSERT INTO seller_profiles (account_id, shop_name, bio, verified, created_at, updated_at)
-           VALUES ($1, $2, NULL, $3, $4, $4)
+          `INSERT INTO seller_profiles (account_id, shop_name, shop_slug, bio, verified, created_at, updated_at)
+           VALUES ($1, $2, $3, NULL, $4, $5, $5)
            ON CONFLICT (account_id) DO NOTHING`,
-          [id, `${name}'s shop`, role === 'ADMIN', now]
+          [id, shopName, shopSlug, role === 'ADMIN', now]
         )
       }
 

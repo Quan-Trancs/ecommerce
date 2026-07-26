@@ -1,34 +1,38 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import ProductCard from '@/components/shared/product/product-card'
-import { getPublicSellerShop } from '@/lib/actions/shop.actions'
+import { getPublicSellerShop, shopHref } from '@/lib/actions/shop.actions'
 import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import { auth } from '@/auth'
 
 export async function generateMetadata(props: {
-  params: Promise<{ id: string }>
+  params: Promise<{ slug: string }>
 }) {
-  const { id } = await props.params
-  const data = await getPublicSellerShop(id)
+  const { slug } = await props.params
+  const data = await getPublicSellerShop(slug)
   if (!data) {
     return { title: 'Shop not found' }
   }
   return {
     title: data.shop.shopName,
     description:
-      data.shop.bio ||
-      `Browse products from ${data.shop.shopName}`,
+      data.shop.bio || `Browse products from ${data.shop.shopName}`,
   }
 }
 
 export default async function PublicSellerShopPage(props: {
-  params: Promise<{ id: string }>
+  params: Promise<{ slug: string }>
 }) {
-  const { id } = await props.params
-  const data = await getPublicSellerShop(id)
+  const { slug } = await props.params
+  const data = await getPublicSellerShop(slug)
   if (!data) notFound()
 
   const { shop, products } = data
+  // Canonicalize legacy /shop/{accountId} → /shop/{slug}
+  if (slug === shop.accountId && shop.shopSlug && shop.shopSlug !== slug) {
+    redirect(shopHref(shop))
+  }
+
   const session = await auth()
   const wishlist = await getWishlistStatusesForProducts(
     products.map((p) => p._id)
@@ -57,6 +61,8 @@ export default async function PublicSellerShopPage(props: {
             <p className='mt-2 text-sm text-muted-foreground'>
               {shop.productCount} published product
               {shop.productCount === 1 ? '' : 's'}
+              <span className='mx-2'>·</span>
+              <span className='font-mono text-xs'>/shop/{shop.shopSlug}</span>
             </p>
           </div>
           <Link

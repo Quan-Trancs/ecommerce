@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.83](./VERSION.md) — Wishlist price-drop alerts. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.84](./VERSION.md) — Pretty seller shop slugs. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

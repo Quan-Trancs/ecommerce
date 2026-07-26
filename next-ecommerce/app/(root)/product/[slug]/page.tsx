@@ -23,7 +23,7 @@ import Link from 'next/link'
 import { auth } from '@/auth'
 import { getWishlistStatus, getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import { getStockAlertStatus } from '@/lib/actions/stock-alert.actions'
-import { getSellerShopSummary } from '@/lib/actions/shop.actions'
+import { getSellerShopSummary, shopHref } from '@/lib/actions/shop.actions'
 import { getProductSellerAccountId } from '@/lib/db/product-qa'
 
 export async function generateMetadata(props: {
@@ -103,7 +103,7 @@ export default async function ProductDetails(props: {
                 <>
                   <span className='mx-2 text-slate-300'>|</span>
                   <Link
-                    href={`/shop/${sellerShop.accountId}`}
+                    href={shopHref(sellerShop)}
                     className='hover:text-chrome hover:underline'
                   >
                     Sold by {sellerShop.shopName}

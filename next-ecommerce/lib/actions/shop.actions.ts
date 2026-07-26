@@ -7,6 +7,7 @@ import { formatError } from '@/lib/utils'
 import {
   getSellerShop,
   listSellerShopProductIds,
+  shopHref,
   updateSellerShopProfile,
   type SellerShop,
 } from '@/lib/db/seller-shop'
@@ -14,16 +15,17 @@ import { getProductsByIds } from '@/lib/actions/product.actions'
 import type { StoreProduct } from '@/lib/catalog/store-product'
 
 export type { SellerShop }
+export { shopHref }
 
-export async function getPublicSellerShop(accountId: string): Promise<{
+/** Load public shop by pretty slug or account id. */
+export async function getPublicSellerShop(slugOrId: string): Promise<{
   shop: SellerShop
   products: StoreProduct[]
 } | null> {
-  const shop = await getSellerShop(accountId)
+  const shop = await getSellerShop(slugOrId)
   if (!shop) return null
-  const ids = await listSellerShopProductIds(accountId, { limit: 48 })
+  const ids = await listSellerShopProductIds(shop.accountId, { limit: 48 })
   const products = ids.length ? await getProductsByIds(ids) : []
-  // Preserve shop order from id list
   const byId = new Map(products.map((p) => [p._id, p]))
   const ordered = ids
     .map((id) => byId.get(id))
@@ -40,6 +42,7 @@ export async function getSellerShopSummary(
 
 export async function updateMySellerShop(input: {
   shopName: string
+  shopSlug?: string
   bio?: string
 }): Promise<{ success: boolean; message: string; shop?: SellerShop }> {
   try {
@@ -47,14 +50,20 @@ export async function updateMySellerShop(input: {
     if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
       return { success: false, message: 'Seller access required' }
     }
-    const shop = await updateSellerShopProfile({
+    const result = await updateSellerShopProfile({
       accountId: session.user.id,
       shopName: input.shopName,
+      shopSlug: input.shopSlug,
       bio: input.bio,
     })
-    if (!shop) {
-      return { success: false, message: 'Shop profile not found' }
+    if (result.error || !result.shop) {
+      return {
+        success: false,
+        message: result.error || 'Shop profile not found',
+      }
     }
+    const shop = result.shop
+    revalidatePath(shopHref(shop))
     revalidatePath(`/shop/${shop.accountId}`)
     revalidatePath('/seller')
     revalidatePath('/seller/products')

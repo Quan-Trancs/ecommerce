@@ -38,6 +38,7 @@ export default async function SellerHomePage() {
       {shop ? (
         <SellerShopProfileForm
           accountId={shop.accountId}
+          shopSlug={shop.shopSlug}
           shopName={shop.shopName}
           bio={shop.bio}
         />

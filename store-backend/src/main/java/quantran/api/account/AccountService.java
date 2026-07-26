@@ -73,9 +73,20 @@ public class AccountService {
         String shopName = account.getDisplayName() == null || account.getDisplayName().trim().isEmpty()
                 ? "Shop " + account.getId()
                 : account.getDisplayName() + "'s shop";
+        String idPart = account.getId() == null
+                ? String.valueOf(System.currentTimeMillis())
+                : account.getId().replace("-", "");
+        if (idPart.length() > 12) {
+            idPart = idPart.substring(0, 12);
+        }
+        String shopSlug = ("shop-" + idPart.toLowerCase()).replaceAll("[^a-z0-9-]", "");
+        if (shopSlug.length() < 3) {
+            shopSlug = "shop-" + System.currentTimeMillis();
+        }
         sellerProfileRepository.save(SellerProfileEntity.builder()
                 .account(account)
                 .shopName(shopName)
+                .shopSlug(shopSlug)
                 .verified(account.getRole().isAdmin())
                 .build());
     }

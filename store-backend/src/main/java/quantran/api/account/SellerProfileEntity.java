@@ -25,6 +25,9 @@ public class SellerProfileEntity {
     @Column(name = "shop_name", nullable = false, length = 200)
     private String shopName;
 
+    @Column(name = "shop_slug", nullable = false, length = 120, unique = true)
+    private String shopSlug;
+
     @Column(length = 500)
     private String bio;
 
