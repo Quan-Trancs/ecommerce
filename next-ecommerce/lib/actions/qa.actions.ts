@@ -22,6 +22,7 @@ import {
   listProductQuestions,
   listUnansweredQuestionsForAdmin,
   listUnansweredQuestionsForSeller,
+  normalizeQaSearch,
   type AdminInboxQuestion,
   type ProductQuestion,
   type SellerInboxQuestion,
@@ -185,33 +186,43 @@ export async function answerProductQuestionAction(input: {
   }
 }
 
-export async function getSellerQaInbox(): Promise<{
+export async function getSellerQaInbox(options?: {
+  q?: string | null
+}): Promise<{
   questions: SellerInboxQuestion[]
   unansweredCount: number
+  query: string | null
 }> {
   const session = await auth()
   if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
-    return { questions: [], unansweredCount: 0 }
+    return { questions: [], unansweredCount: 0, query: null }
   }
+  const query = normalizeQaSearch(options?.q)
   const [questions, unansweredCount] = await Promise.all([
-    listUnansweredQuestionsForSeller(session.user.id, { limit: 50 }),
+    listUnansweredQuestionsForSeller(session.user.id, {
+      limit: 50,
+      q: query,
+    }),
     countUnansweredQuestionsForSeller(session.user.id),
   ])
   return JSON.parse(
     JSON.stringify({
       questions,
       unansweredCount,
+      query,
     })
   )
 }
 
 export async function getStaffQaInbox(options?: {
   all?: boolean
+  q?: string | null
 }): Promise<{
   questions: AdminInboxQuestion[]
   platformCount: number
   allCount: number
   showingAll: boolean
+  query: string | null
 }> {
   const session = await auth()
   if (!session?.user?.id || !hasSupportAccess(session.user.role)) {
@@ -220,11 +231,17 @@ export async function getStaffQaInbox(options?: {
       platformCount: 0,
       allCount: 0,
       showingAll: false,
+      query: null,
     }
   }
   const showingAll = Boolean(options?.all)
+  const query = normalizeQaSearch(options?.q)
   const [questions, platformCount, allCount] = await Promise.all([
-    listUnansweredQuestionsForAdmin({ limit: 50, all: showingAll }),
+    listUnansweredQuestionsForAdmin({
+      limit: 50,
+      all: showingAll,
+      q: query,
+    }),
     countUnansweredQuestionsForAdmin({ platformOnly: true }),
     countUnansweredQuestionsForAdmin({ platformOnly: false }),
   ])
@@ -234,6 +251,7 @@ export async function getStaffQaInbox(options?: {
       platformCount,
       allCount,
       showingAll,
+      query,
     })
   )
 }

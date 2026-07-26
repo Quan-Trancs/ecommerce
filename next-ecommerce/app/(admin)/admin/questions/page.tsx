@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getStaffQaInbox } from '@/lib/actions/qa.actions'
+import QaInboxSearchForm from '@/components/shared/product/qa-inbox-search-form'
 import AdminQuestionsInboxClient from './admin-questions-inbox-client'
 
 export const metadata = { title: 'Product questions' }
@@ -7,11 +8,19 @@ export const metadata = { title: 'Product questions' }
 export default async function AdminQuestionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ scope?: string }>
+  searchParams: Promise<{ scope?: string; q?: string }>
 }) {
-  const { scope } = await searchParams
+  const { scope, q } = await searchParams
   const showAll = scope === 'all'
-  const inbox = await getStaffQaInbox({ all: showAll })
+  const inbox = await getStaffQaInbox({ all: showAll, q })
+  const scopeQuery = showAll ? 'scope=all' : ''
+  const qQuery = inbox.query
+    ? `q=${encodeURIComponent(inbox.query)}`
+    : ''
+  const join = (parts: string[]) => {
+    const filtered = parts.filter(Boolean)
+    return filtered.length ? `?${filtered.join('&')}` : ''
+  }
 
   return (
     <div className='space-y-6'>
@@ -27,12 +36,17 @@ export default async function AdminQuestionsPage({
             {inbox.allCount > inbox.platformCount
               ? ` · ${inbox.allCount - inbox.platformCount} on seller listings`
               : ''}
+            {inbox.query
+              ? ` · showing ${inbox.questions.length} match${
+                  inbox.questions.length === 1 ? '' : 'es'
+                } for “${inbox.query}”`
+              : ''}
             .
           </p>
         </div>
         <div className='flex flex-wrap gap-2 text-sm'>
           <Link
-            href='/admin/questions'
+            href={`/admin/questions${join([qQuery])}`}
             className={
               !showAll
                 ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
@@ -42,7 +56,7 @@ export default async function AdminQuestionsPage({
             Platform ({inbox.platformCount})
           </Link>
           <Link
-            href='/admin/questions?scope=all'
+            href={`/admin/questions${join([scopeQuery, qQuery])}`}
             className={
               showAll
                 ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
@@ -53,6 +67,11 @@ export default async function AdminQuestionsPage({
           </Link>
         </div>
       </div>
+      <QaInboxSearchForm
+        action='/admin/questions'
+        query={inbox.query}
+        hiddenFields={showAll ? { scope: 'all' } : undefined}
+      />
       <AdminQuestionsInboxClient questions={inbox.questions} />
     </div>
   )

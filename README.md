@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.67](./VERSION.md) — seller Q&A hide. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.68](./VERSION.md) — Q&A inbox search. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

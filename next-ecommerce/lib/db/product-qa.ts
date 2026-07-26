@@ -270,12 +270,35 @@ type InboxRow = Row & {
   product_slug: string | null
 }
 
+/** Trim/limit search text; strip ILIKE wildcards from user input. */
+export function normalizeQaSearch(q?: string | null): string | null {
+  const trimmed = (q || '').trim().slice(0, 80)
+  if (!trimmed) return null
+  const cleaned = trimmed.replace(/[%_]/g, ' ').replace(/\s+/g, ' ').trim()
+  return cleaned || null
+}
+
 /** Unanswered questions on products owned by this seller. */
 export async function listUnansweredQuestionsForSeller(
   sellerAccountId: string,
-  options?: { limit?: number }
+  options?: { limit?: number; q?: string | null }
 ): Promise<SellerInboxQuestion[]> {
   const limit = Math.max(1, Math.min(options?.limit ?? 50, 200))
+  const search = normalizeQaSearch(options?.q)
+  const params: unknown[] = [sellerAccountId]
+  let searchClause = ''
+  if (search) {
+    params.push(`%${search}%`)
+    searchClause = ` AND (
+      p.name ILIKE $2
+      OR q.body ILIKE $2
+      OR COALESCE(asker.display_name, '') ILIKE $2
+      OR COALESCE(asker.email, '') ILIKE $2
+    )`
+  }
+  params.push(limit)
+  const limitParam = `$${params.length}`
+
   const result = await query<InboxRow>(
     `SELECT q.id, q.product_id, q.asker_account_id, q.body,
             q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
@@ -287,9 +310,10 @@ export async function listUnansweredQuestionsForSeller(
      LEFT JOIN accounts asker ON asker.id = q.asker_account_id
      WHERE p.seller_account_id = $1
        AND q.answer_body IS NULL
+       ${searchClause}
      ORDER BY q.created_at ASC
-     LIMIT $2`,
-    [sellerAccountId, limit]
+     LIMIT ${limitParam}`,
+    params
   )
   return result.rows.map((row) => ({
     ...mapRow(row),
@@ -325,43 +349,52 @@ type AdminInboxRow = InboxRow & {
 export async function listUnansweredQuestionsForAdmin(options?: {
   limit?: number
   all?: boolean
+  q?: string | null
 }): Promise<AdminInboxQuestion[]> {
   const limit = Math.max(1, Math.min(options?.limit ?? 50, 200))
   const all = Boolean(options?.all)
-  const result = await query<AdminInboxRow>(
-    all
-      ? `SELECT q.id, q.product_id, q.asker_account_id, q.body,
-                q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
-                asker.display_name AS asker_name, asker.email AS asker_email,
-                NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
-                p.name AS product_name, p.slug AS product_slug,
-                p.seller_account_id,
-                seller.display_name AS seller_name, seller.email AS seller_email
-         FROM product_questions q
-         JOIN products p ON p.id = q.product_id
-         LEFT JOIN accounts asker ON asker.id = q.asker_account_id
-         LEFT JOIN accounts seller ON seller.id = p.seller_account_id
-         WHERE q.answer_body IS NULL
-         ORDER BY
+  const search = normalizeQaSearch(options?.q)
+  const params: unknown[] = []
+  let searchClause = ''
+  if (search) {
+    params.push(`%${search}%`)
+    const p = `$${params.length}`
+    searchClause = ` AND (
+      p.name ILIKE ${p}
+      OR q.body ILIKE ${p}
+      OR COALESCE(asker.display_name, '') ILIKE ${p}
+      OR COALESCE(asker.email, '') ILIKE ${p}
+      OR COALESCE(seller.display_name, '') ILIKE ${p}
+      OR COALESCE(seller.email, '') ILIKE ${p}
+    )`
+  }
+  params.push(limit)
+  const limitParam = `$${params.length}`
+  const platformClause = all ? '' : ' AND p.seller_account_id IS NULL'
+  const orderClause = all
+    ? `ORDER BY
            CASE WHEN p.seller_account_id IS NULL THEN 0 ELSE 1 END,
-           q.created_at ASC
-         LIMIT $1`
-      : `SELECT q.id, q.product_id, q.asker_account_id, q.body,
-                q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
-                asker.display_name AS asker_name, asker.email AS asker_email,
-                NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
-                p.name AS product_name, p.slug AS product_slug,
-                p.seller_account_id,
-                seller.display_name AS seller_name, seller.email AS seller_email
-         FROM product_questions q
-         JOIN products p ON p.id = q.product_id
-         LEFT JOIN accounts asker ON asker.id = q.asker_account_id
-         LEFT JOIN accounts seller ON seller.id = p.seller_account_id
-         WHERE q.answer_body IS NULL
-           AND p.seller_account_id IS NULL
-         ORDER BY q.created_at ASC
-         LIMIT $1`,
-    [limit]
+           q.created_at ASC`
+    : 'ORDER BY q.created_at ASC'
+
+  const result = await query<AdminInboxRow>(
+    `SELECT q.id, q.product_id, q.asker_account_id, q.body,
+            q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
+            asker.display_name AS asker_name, asker.email AS asker_email,
+            NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
+            p.name AS product_name, p.slug AS product_slug,
+            p.seller_account_id,
+            seller.display_name AS seller_name, seller.email AS seller_email
+     FROM product_questions q
+     JOIN products p ON p.id = q.product_id
+     LEFT JOIN accounts asker ON asker.id = q.asker_account_id
+     LEFT JOIN accounts seller ON seller.id = p.seller_account_id
+     WHERE q.answer_body IS NULL
+       ${platformClause}
+       ${searchClause}
+     ${orderClause}
+     LIMIT ${limitParam}`,
+    params
   )
   return result.rows.map((row) => {
     const sellerAccountId = row.seller_account_id || null

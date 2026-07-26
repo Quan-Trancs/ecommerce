@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.68 — 2026-07-26
+
+Search/filter unanswered Q&A on seller and staff inboxes.
+
+### Frontend
+- `?q=` filters by product name, question body, asker (staff also seller label)
+- Shared `QaInboxSearchForm`; scope tabs preserve the query
+- Match count shown when filtered
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.68` |
+| Store API | `store-backend/` | `1.3.68` (`store-api`) |
+
+---
+
 ## v1.3.67 — 2026-07-26
 
 Sellers can hide unanswered Q&A on their own listings.
