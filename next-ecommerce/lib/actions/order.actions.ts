@@ -38,6 +38,7 @@ import {
   redeemGiftCardForOrder,
 } from '@/lib/db/gift-cards'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
+import { checkAndNotifyBackInStock } from '@/lib/notify/back-in-stock'
 import { recordOrderRefund, listOrderRefunds } from '@/lib/db/order-refunds'
 import { logStaffAction } from '@/lib/audit/log-staff-action'
 
@@ -502,6 +503,17 @@ export async function cancelOrder(orderId: string) {
     await notifyOrderCancelled(orderId, {
       excludeAccountId: session.user.id,
     })
+    const cancelProductIds = [
+      ...new Set(
+        (storeOrder.items || [])
+          .map((item) => item.productId)
+          .filter(Boolean)
+      ),
+    ]
+    if (cancelProductIds.length) {
+      await checkAndNotifyLowStock(cancelProductIds)
+      await checkAndNotifyBackInStock(cancelProductIds)
+    }
     if (elevate) {
       await logStaffAction({
         actorId: session.user.id,
@@ -706,6 +718,7 @@ export async function partialRefundOrder(
     })
 
     await checkAndNotifyLowStock(productIds)
+    await checkAndNotifyBackInStock(productIds)
 
     if (!options?.skipStaffAudit) {
       await logStaffAction({

@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.80 — 2026-07-26
+
+Buyer back-in-stock alerts for out-of-stock products.
+
+### Backend
+- Flyway `V39__stock_alert_subscriptions.sql` — subscriptions + `accounts.notify_back_in_stock`
+- Event-driven notify on seller/admin stock updates, cancel restock, and partial refund restock
+
+### Frontend
+- PDP “Notify me when available” when out of stock
+- Email + in-app `BACK_IN_STOCK`; account setting to opt out
+- One-shot: subscription cleared after notify
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.80` |
+| Store API | `store-backend/` | `1.3.80` (`store-api`) |
+
+---
+
 ## v1.3.79 — 2026-07-26
 
 Shipment carrier + tracking on seller mark-shipped.

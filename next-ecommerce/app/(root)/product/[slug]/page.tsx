@@ -16,11 +16,13 @@ import { Separator } from '@/components/ui/separator'
 import AddToBrowsingHistory from '@/components/shared/product/add-to-browsing-history'
 import AddToCart from '@/components/shared/product/add-to-cart'
 import WishlistToggleButton from '@/components/shared/product/wishlist-toggle-button'
+import StockAlertButton from '@/components/shared/product/stock-alert-button'
 import CompareAddButton from '@/components/shared/product/compare-add-button'
 import { roundToTwoDecimals } from '@/lib/utils'
 import Link from 'next/link'
 import { auth } from '@/auth'
 import { getWishlistStatus, getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
+import { getStockAlertStatus } from '@/lib/actions/stock-alert.actions'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -48,7 +50,7 @@ export default async function ProductDetails(props: {
   const { slug } = params
   const product = await getProductBySlug(slug)
   const session = await auth()
-  const [relatedProducts, reviewsPanel, qaPanel, wishlistStatus] =
+  const [relatedProducts, reviewsPanel, qaPanel, wishlistStatus, stockAlert] =
     await Promise.all([
       getRelatedProductsByCategory({
         category: product.category,
@@ -58,6 +60,7 @@ export default async function ProductDetails(props: {
       getProductReviewsPanel(product._id),
       getProductQaPanel(product._id),
       getWishlistStatus(product._id),
+      getStockAlertStatus(product._id),
     ])
   const relatedWishlist = await getWishlistStatusesForProducts(
     (relatedProducts.data || []).map((p) => p._id)
@@ -162,6 +165,13 @@ export default async function ProductDetails(props: {
                 }}
               />
             )}
+            {product.countInStock === 0 ? (
+              <StockAlertButton
+                productId={product._id}
+                initialSubscribed={stockAlert.subscribed}
+                signedIn={stockAlert.signedIn}
+              />
+            ) : null}
             <WishlistToggleButton
               productId={product._id}
               initialWishlisted={wishlistStatus.wishlisted}

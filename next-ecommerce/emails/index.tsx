@@ -9,6 +9,7 @@ import OrderReturnEmail, {
   type OrderReturnEmailKind,
 } from './order-return'
 import AbandonedCartEmail from './abandoned-cart'
+import BackInStockEmail from './back-in-stock'
 import ProductQaAnswerEmail from './product-qa-answer'
 import ProductQaAskedEmail from './product-qa-asked'
 import ProductQaDigestEmail from './product-qa-digest'
@@ -205,6 +206,41 @@ export const sendAbandonedCartEmail = async (input: {
         displayName={input.displayName}
         items={input.items}
         itemsTotal={input.itemsTotal}
+      />
+    ),
+  })
+  return { sent: true as const }
+}
+
+export const sendBackInStockEmail = async (input: {
+  to: string
+  displayName?: string | null
+  productName: string
+  productSlug: string
+  imageUrl?: string | null
+  price?: number | null
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to) {
+    console.warn(
+      'Skipping back-in-stock email:',
+      !resend ? 'RESEND_API_KEY missing' : 'buyer email missing'
+    )
+    return { sent: false as const }
+  }
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject: `${input.productName} is back in stock`,
+    react: (
+      <BackInStockEmail
+        displayName={input.displayName}
+        productName={input.productName}
+        productSlug={input.productSlug}
+        imageUrl={input.imageUrl}
+        price={input.price}
       />
     ),
   })

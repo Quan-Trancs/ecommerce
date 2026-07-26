@@ -4,6 +4,7 @@ import { getNotificationPreferences } from '@/lib/actions/account.actions'
 import DesktopAlertsPreference from './desktop-alerts-preference'
 import LowStockPreferencesForm from './low-stock-preferences-form'
 import AbandonedCartPreferencesForm from './abandoned-cart-preferences-form'
+import BackInStockPreferencesForm from './back-in-stock-preferences-form'
 import QaDigestPreferencesForm from './qa-digest-preferences-form'
 import NotificationPreferencesForm from './notification-preferences-form'
 
@@ -39,6 +40,9 @@ export default async function AccountSettingsPage() {
         />
         <AbandonedCartPreferencesForm
           notifyAbandonedCart={prefs.notifyAbandonedCart}
+        />
+        <BackInStockPreferencesForm
+          notifyBackInStock={prefs.notifyBackInStock}
         />
         <QaDigestPreferencesForm notifyQaDigest={prefs.notifyQaDigest} />
         <div className='rounded-lg border p-4'>

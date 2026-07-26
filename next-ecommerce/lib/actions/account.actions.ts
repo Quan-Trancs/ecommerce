@@ -6,6 +6,7 @@ import {
   findUserById,
   normalizeOrderNoteEmailMode,
   updateAbandonedCartPreferences,
+  updateBackInStockPreferences,
   updateLowStockPreferences,
   updateOrderNoteNotificationPreferences,
   updateQaDigestPreferences,
@@ -35,6 +36,7 @@ export async function getNotificationPreferences(): Promise<{
   lowStockThreshold: number
   notifyAbandonedCart: boolean
   notifyQaDigest: boolean
+  notifyBackInStock: boolean
   vapidPublicKey: string | null
 } | null> {
   const session = await auth()
@@ -56,6 +58,7 @@ export async function getNotificationPreferences(): Promise<{
     lowStockThreshold: user.lowStockThreshold,
     notifyAbandonedCart: user.notifyAbandonedCart,
     notifyQaDigest: user.notifyQaDigest,
+    notifyBackInStock: user.notifyBackInStock,
     vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
@@ -220,6 +223,30 @@ export async function setQaDigestPreferences(input: {
       message: updated.notifyQaDigest
         ? 'Product Q&A digest emails enabled'
         : 'Product Q&A digest emails disabled',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function setBackInStockPreferences(input: {
+  notifyBackInStock: boolean
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    const updated = await updateBackInStockPreferences(session.user.id, {
+      notifyBackInStock: Boolean(input.notifyBackInStock),
+    })
+    if (!updated) return { success: false, message: 'Account not found' }
+    revalidatePath('/account/settings')
+    return {
+      success: true,
+      message: updated.notifyBackInStock
+        ? 'Back-in-stock alerts enabled'
+        : 'Back-in-stock alerts disabled',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }

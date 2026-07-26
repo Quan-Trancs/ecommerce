@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.79](./VERSION.md) — Shipment carrier + tracking. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.80](./VERSION.md) — Back-in-stock alerts. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 

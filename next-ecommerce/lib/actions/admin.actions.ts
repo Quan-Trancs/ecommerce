@@ -7,6 +7,7 @@ import { mintStoreAccessToken } from '@/lib/auth/store-token'
 import { formatError } from '@/lib/utils'
 import { listUsers, updateUser } from '@/lib/db/users'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
+import { checkAndNotifyBackInStock } from '@/lib/notify/back-in-stock'
 import { logStaffAction } from '@/lib/audit/log-staff-action'
 import {
   getAdminDashboardKpis,
@@ -220,6 +221,7 @@ export async function updateAdminCatalogProduct(
     revalidatePath('/admin/audit')
     if (patch.stockQuantity !== undefined) {
       await checkAndNotifyLowStock([product.id])
+      await checkAndNotifyBackInStock([product.id])
     }
     return { success: true as const, product }
   } catch (error) {
