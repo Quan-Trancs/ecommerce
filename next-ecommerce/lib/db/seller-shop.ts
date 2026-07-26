@@ -6,6 +6,7 @@ export type SellerShop = {
   shopSlug: string
   shopName: string
   bio: string | null
+  shopBannerUrl: string | null
   verified: boolean
   productCount: number
 }
@@ -33,6 +34,7 @@ function mapShop(row: {
   shop_slug: string | null
   shop_name: string
   bio: string | null
+  shop_banner_url: string | null
   verified: boolean
   product_count: string
 }): SellerShop {
@@ -41,6 +43,7 @@ function mapShop(row: {
     shopSlug: row.shop_slug?.trim() || row.account_id,
     shopName: row.shop_name?.trim() || 'Shop',
     bio: row.bio?.trim() || null,
+    shopBannerUrl: row.shop_banner_url?.trim() || null,
     verified: Boolean(row.verified),
     productCount: Number(row.product_count) || 0,
   }
@@ -51,6 +54,7 @@ const SHOP_SELECT = `
          sp.shop_slug,
          sp.shop_name,
          sp.bio,
+         sp.shop_banner_url,
          COALESCE(sp.verified, FALSE) AS verified,
          (
            SELECT COUNT(*)::text
@@ -74,6 +78,7 @@ export async function getSellerShop(
     shop_slug: string | null
     shop_name: string
     bio: string | null
+    shop_banner_url: string | null
     verified: boolean
     product_count: string
   }>(
@@ -231,4 +236,19 @@ export async function updateSellerShopProfile(input: {
     [input.accountId, shopName, shopSlug, bio]
   )
   return { shop: await getSellerShop(input.accountId) }
+}
+
+export async function updateSellerShopBanner(
+  accountId: string,
+  shopBannerUrl: string | null
+): Promise<SellerShop | null> {
+  const url = shopBannerUrl?.trim().slice(0, 1000) || null
+  await query(
+    `UPDATE seller_profiles
+     SET shop_banner_url = $2,
+         updated_at = NOW()
+     WHERE account_id = $1`,
+    [accountId, url]
+  )
+  return getSellerShop(accountId)
 }

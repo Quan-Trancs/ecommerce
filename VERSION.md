@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.88 — 2026-07-26
+
+Seller shop cover/banner images on public shop pages.
+
+### Backend
+- Flyway `V45__seller_shop_banner.sql` — `seller_profiles.shop_banner_url`
+- JPA `SellerProfileEntity.shopBannerUrl`
+
+### Frontend
+- Seller dashboard upload/replace/remove banner (reuses product image storage)
+- Public `/shop/{slug}` full-bleed banner above shop header
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.88` |
+| Store API | `store-backend/` | `1.3.88` (`store-api`) |
+
+---
+
 ## v1.3.87 — 2026-07-26
 
 Seller follower count and batched new-listing email digests.

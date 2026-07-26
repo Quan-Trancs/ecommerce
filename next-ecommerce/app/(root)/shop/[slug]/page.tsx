@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 import ProductCard from '@/components/shared/product/product-card'
 import ShopCatalogControls from '@/components/shared/product/shop-catalog-controls'
@@ -7,6 +8,7 @@ import { getPublicSellerShop, shopHref } from '@/lib/actions/shop.actions'
 import { getShopFollowStatus } from '@/lib/actions/shop-follow.actions'
 import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import { countShopFollowers } from '@/lib/db/shop-follows'
+import { shouldUnoptimizeProductImage } from '@/lib/storage/product-image-url'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -54,92 +56,109 @@ export default async function PublicSellerShopPage(props: {
   ])
   const wishlisted = new Set(wishlist.wishlistedIds)
   const filteredEmpty = products.length === 0 && shop.productCount > 0
+  const bannerUrl = shop.shopBannerUrl
 
   return (
-    <div className='page-shell space-y-8 p-4 md:p-6'>
-      <div className='space-y-3'>
-        <p className='font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground'>
-          Seller shop
-        </p>
-        <div className='flex flex-wrap items-end justify-between gap-3'>
-          <div>
-            <h1 className='font-display text-3xl font-extrabold tracking-tight md:text-4xl'>
-              {shop.shopName}
-              {shop.verified ? (
-                <span className='ml-3 align-middle text-sm font-medium text-emerald-700'>
-                  Verified
-                </span>
-              ) : null}
-            </h1>
-            {shop.bio ? (
-              <p className='mt-2 max-w-2xl text-muted-foreground'>{shop.bio}</p>
-            ) : null}
-            <p className='mt-2 text-sm text-muted-foreground'>
-              {shop.productCount} published product
-              {shop.productCount === 1 ? '' : 's'}
-              {followerCount > 0
-                ? ` · ${followerCount} follower${followerCount === 1 ? '' : 's'}`
-                : ''}
-              {query
-                ? ` · ${products.length} match${
-                    products.length === 1 ? '' : 'es'
-                  } for “${query}”`
-                : ''}
-              {inStockOnly && !query
-                ? ` · showing ${products.length} in stock`
-                : ''}
-              <span className='mx-2'>·</span>
-              <span className='font-mono text-xs'>/shop/{shop.shopSlug}</span>
-            </p>
-          </div>
-          <div className='flex flex-wrap items-center gap-3'>
-            <ShopFollowButton
-              sellerAccountId={shop.accountId}
-              initialFollowing={followStatus.following}
-              signedIn={followStatus.signedIn}
-              isOwnShop={followStatus.isOwnShop}
-            />
-            <Link
-              href='/search'
-              className='text-sm text-muted-foreground underline hover:text-primary'
-            >
-              Browse all products
-            </Link>
-          </div>
-        </div>
-        {shop.productCount > 0 ? (
-          <ShopCatalogControls
-            basePath={basePath}
-            query={query}
-            sort={sort}
-            inStockOnly={inStockOnly}
+    <div className='space-y-8'>
+      {bannerUrl ? (
+        <div className='relative -mx-4 -mt-4 h-44 w-auto overflow-hidden md:h-60'>
+          <Image
+            src={bannerUrl}
+            alt={`${shop.shopName} banner`}
+            fill
+            priority
+            className='object-cover'
+            sizes='100vw'
+            unoptimized={shouldUnoptimizeProductImage(bannerUrl)}
           />
-        ) : null}
-      </div>
-
-      {products.length === 0 ? (
-        <p className='rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground'>
-          {filteredEmpty
-            ? 'No products match these filters.'
-            : 'This shop has no published products yet.'}{' '}
-          {filteredEmpty ? (
-            <Link href={basePath} className='underline'>
-              Clear filters
-            </Link>
-          ) : null}
-        </p>
-      ) : (
-        <div className='grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4'>
-          {products.map((product) => (
-            <ProductCard
-              key={product._id}
-              product={product}
-              wishlisted={wishlisted.has(product._id)}
-              signedIn={wishlist.signedIn}
-            />
-          ))}
         </div>
-      )}
+      ) : null}
+
+      <div className='page-shell space-y-8 px-0 md:px-2'>
+        <div className='space-y-3'>
+          <p className='font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground'>
+            Seller shop
+          </p>
+          <div className='flex flex-wrap items-end justify-between gap-3'>
+            <div>
+              <h1 className='font-display text-3xl font-extrabold tracking-tight md:text-4xl'>
+                {shop.shopName}
+                {shop.verified ? (
+                  <span className='ml-3 align-middle text-sm font-medium text-emerald-700'>
+                    Verified
+                  </span>
+                ) : null}
+              </h1>
+              {shop.bio ? (
+                <p className='mt-2 max-w-2xl text-muted-foreground'>{shop.bio}</p>
+              ) : null}
+              <p className='mt-2 text-sm text-muted-foreground'>
+                {shop.productCount} published product
+                {shop.productCount === 1 ? '' : 's'}
+                {followerCount > 0
+                  ? ` · ${followerCount} follower${followerCount === 1 ? '' : 's'}`
+                  : ''}
+                {query
+                  ? ` · ${products.length} match${
+                      products.length === 1 ? '' : 'es'
+                    } for “${query}”`
+                  : ''}
+                {inStockOnly && !query
+                  ? ` · showing ${products.length} in stock`
+                  : ''}
+                <span className='mx-2'>·</span>
+                <span className='font-mono text-xs'>/shop/{shop.shopSlug}</span>
+              </p>
+            </div>
+            <div className='flex flex-wrap items-center gap-3'>
+              <ShopFollowButton
+                sellerAccountId={shop.accountId}
+                initialFollowing={followStatus.following}
+                signedIn={followStatus.signedIn}
+                isOwnShop={followStatus.isOwnShop}
+              />
+              <Link
+                href='/search'
+                className='text-sm text-muted-foreground underline hover:text-primary'
+              >
+                Browse all products
+              </Link>
+            </div>
+          </div>
+          {shop.productCount > 0 ? (
+            <ShopCatalogControls
+              basePath={basePath}
+              query={query}
+              sort={sort}
+              inStockOnly={inStockOnly}
+            />
+          ) : null}
+        </div>
+
+        {products.length === 0 ? (
+          <p className='rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground'>
+            {filteredEmpty
+              ? 'No products match these filters.'
+              : 'This shop has no published products yet.'}{' '}
+            {filteredEmpty ? (
+              <Link href={basePath} className='underline'>
+                Clear filters
+              </Link>
+            ) : null}
+          </p>
+        ) : (
+          <div className='grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4'>
+            {products.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                wishlisted={wishlisted.has(product._id)}
+                signedIn={wishlist.signedIn}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

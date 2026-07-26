@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
 import { hasSellerAccess } from '@/lib/auth/roles'
@@ -10,12 +11,26 @@ import {
   normalizeShopSearch,
   parseShopProductSort,
   shopHref,
+  updateSellerShopBanner,
   updateSellerShopProfile,
   type SellerShop,
   type ShopProductSort,
 } from '@/lib/db/seller-shop'
 import { getProductsByIds } from '@/lib/actions/product.actions'
 import type { StoreProduct } from '@/lib/catalog/store-product'
+import {
+  deleteManagedProductImage,
+  deleteOrphanedProductImages,
+  storeProductImage,
+} from '@/lib/storage/product-images'
+
+const MAX_BANNER_BYTES = 5 * 1024 * 1024
+const BANNER_ALLOWED: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+}
 
 export type { SellerShop, ShopProductSort }
 export { shopHref, parseShopProductSort, normalizeShopSearch }
@@ -107,4 +122,78 @@ export async function getMySellerShop(): Promise<SellerShop | null> {
   const session = await auth()
   if (!session?.user?.id || !hasSellerAccess(session.user.role)) return null
   return getSellerShop(session.user.id)
+}
+
+function revalidateShopPaths(shop: SellerShop) {
+  revalidatePath(shopHref(shop))
+  revalidatePath(`/shop/${shop.accountId}`)
+  revalidatePath('/seller')
+}
+
+/** Upload/replace the seller shop cover banner. */
+export async function replaceMyShopBanner(
+  formData: FormData,
+  previousUrl?: string | null
+): Promise<{ success: true; url: string } | { success: false; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
+      return { success: false, message: 'Seller access required' }
+    }
+
+    const file = formData.get('file')
+    if (!file || !(file instanceof File)) {
+      return { success: false, message: 'Image file required' }
+    }
+    if (!BANNER_ALLOWED[file.type]) {
+      return { success: false, message: 'Use JPEG, PNG, WebP, or GIF' }
+    }
+    if (file.size <= 0 || file.size > MAX_BANNER_BYTES) {
+      return { success: false, message: 'Image must be between 1 byte and 5MB' }
+    }
+
+    const ext = BANNER_ALLOWED[file.type]
+    const filename = `${randomUUID()}${ext}`
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const stored = await storeProductImage({
+      buffer,
+      filename,
+      contentType: file.type,
+    })
+
+    const shop = await updateSellerShopBanner(session.user.id, stored.url)
+    if (!shop) {
+      await deleteManagedProductImage(stored.url)
+      return { success: false, message: 'Shop profile not found' }
+    }
+
+    await deleteOrphanedProductImages([previousUrl], [stored.url])
+    revalidateShopPaths(shop)
+    return { success: true, url: stored.url }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/** Clear the seller shop cover banner. */
+export async function removeMyShopBanner(
+  previousUrl?: string | null
+): Promise<{ success: true } | { success: false; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !hasSellerAccess(session.user.role)) {
+      return { success: false, message: 'Seller access required' }
+    }
+
+    const shop = await updateSellerShopBanner(session.user.id, null)
+    if (!shop) {
+      return { success: false, message: 'Shop profile not found' }
+    }
+
+    await deleteOrphanedProductImages([previousUrl], [])
+    revalidateShopPaths(shop)
+    return { success: true }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
 }
