@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.81 — 2026-07-26
+
+Post-delivery product review request emails.
+
+### Backend
+- Flyway `V40__review_request_emails.sql` — `notify_review_requests` + per-order dedupe
+- Cron `/api/cron/review-requests` daily 15:00 UTC; delay via `REVIEW_REQUEST_DAYS` (default 7)
+
+### Frontend
+- One email per fully shipped order listing unreviewed products
+- Account setting to opt out
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.81` |
+| Store API | `store-backend/` | `1.3.81` (`store-api`) |
+
+---
+
 ## v1.3.80 — 2026-07-26
 
 Buyer back-in-stock alerts for out-of-stock products.

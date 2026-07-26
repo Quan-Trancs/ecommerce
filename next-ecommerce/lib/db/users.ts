@@ -39,6 +39,8 @@ export type DbUser = {
   notifyQaDigest: boolean
   /** Opt-out (default true): email + in-app when subscribed OOS products restock. */
   notifyBackInStock: boolean
+  /** Opt-out (default true): email asking for reviews after shipped orders. */
+  notifyReviewRequests: boolean
   image: string | null
   active: boolean
   createdAt: Date
@@ -67,6 +69,7 @@ type AccountRow = {
   notify_abandoned_cart: boolean
   notify_qa_digest: boolean
   notify_back_in_stock: boolean
+  notify_review_requests: boolean
   image: string | null
   active: boolean
   created_at: Date
@@ -113,6 +116,7 @@ function mapRow(row: AccountRow): DbUser {
     notifyAbandonedCart: row.notify_abandoned_cart !== false,
     notifyQaDigest: row.notify_qa_digest !== false,
     notifyBackInStock: row.notify_back_in_stock !== false,
+    notifyReviewRequests: row.notify_review_requests !== false,
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -137,6 +141,7 @@ const SELECT_COLS = `
   COALESCE(notify_abandoned_cart, TRUE) AS notify_abandoned_cart,
   COALESCE(notify_qa_digest, TRUE) AS notify_qa_digest,
   COALESCE(notify_back_in_stock, TRUE) AS notify_back_in_stock,
+  COALESCE(notify_review_requests, TRUE) AS notify_review_requests,
   image, active, created_at, updated_at
 `
 
@@ -429,6 +434,22 @@ export async function updateBackInStockPreferences(
          updated_at = NOW()
      WHERE id = $1`,
     [id, Boolean(prefs.notifyBackInStock)]
+  )
+  return findUserById(id)
+}
+
+export async function updateReviewRequestPreferences(
+  id: string,
+  prefs: { notifyReviewRequests: boolean }
+): Promise<DbUser | null> {
+  const existing = await findUserById(id)
+  if (!existing) return null
+  await query(
+    `UPDATE accounts
+     SET notify_review_requests = $2,
+         updated_at = NOW()
+     WHERE id = $1`,
+    [id, Boolean(prefs.notifyReviewRequests)]
   )
   return findUserById(id)
 }

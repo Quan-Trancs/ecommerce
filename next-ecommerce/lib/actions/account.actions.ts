@@ -10,6 +10,7 @@ import {
   updateLowStockPreferences,
   updateOrderNoteNotificationPreferences,
   updateQaDigestPreferences,
+  updateReviewRequestPreferences,
   type OrderNoteEmailMode,
 } from '@/lib/db/users'
 import { flushOrderNoteDigestsForEmail } from '@/lib/email/order-notifications'
@@ -37,6 +38,7 @@ export async function getNotificationPreferences(): Promise<{
   notifyAbandonedCart: boolean
   notifyQaDigest: boolean
   notifyBackInStock: boolean
+  notifyReviewRequests: boolean
   vapidPublicKey: string | null
 } | null> {
   const session = await auth()
@@ -59,6 +61,7 @@ export async function getNotificationPreferences(): Promise<{
     notifyAbandonedCart: user.notifyAbandonedCart,
     notifyQaDigest: user.notifyQaDigest,
     notifyBackInStock: user.notifyBackInStock,
+    notifyReviewRequests: user.notifyReviewRequests,
     vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
@@ -247,6 +250,30 @@ export async function setBackInStockPreferences(input: {
       message: updated.notifyBackInStock
         ? 'Back-in-stock alerts enabled'
         : 'Back-in-stock alerts disabled',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function setReviewRequestPreferences(input: {
+  notifyReviewRequests: boolean
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    const updated = await updateReviewRequestPreferences(session.user.id, {
+      notifyReviewRequests: Boolean(input.notifyReviewRequests),
+    })
+    if (!updated) return { success: false, message: 'Account not found' }
+    revalidatePath('/account/settings')
+    return {
+      success: true,
+      message: updated.notifyReviewRequests
+        ? 'Review request emails enabled'
+        : 'Review request emails disabled',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }

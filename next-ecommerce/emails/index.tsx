@@ -10,6 +10,7 @@ import OrderReturnEmail, {
 } from './order-return'
 import AbandonedCartEmail from './abandoned-cart'
 import BackInStockEmail from './back-in-stock'
+import ReviewRequestEmail from './review-request'
 import ProductQaAnswerEmail from './product-qa-answer'
 import ProductQaAskedEmail from './product-qa-asked'
 import ProductQaDigestEmail from './product-qa-digest'
@@ -241,6 +242,41 @@ export const sendBackInStockEmail = async (input: {
         productSlug={input.productSlug}
         imageUrl={input.imageUrl}
         price={input.price}
+      />
+    ),
+  })
+  return { sent: true as const }
+}
+
+export const sendReviewRequestEmail = async (input: {
+  to: string
+  displayName?: string | null
+  orderId: string
+  products: import('@/lib/db/review-requests').ReviewRequestProduct[]
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to || !input.products.length) {
+    console.warn(
+      'Skipping review request email:',
+      !resend
+        ? 'RESEND_API_KEY missing'
+        : !to
+          ? 'buyer email missing'
+          : 'no products'
+    )
+    return { sent: false as const }
+  }
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject: 'How was your order? Leave a review',
+    react: (
+      <ReviewRequestEmail
+        displayName={input.displayName}
+        orderId={input.orderId}
+        products={input.products}
       />
     ),
   })
