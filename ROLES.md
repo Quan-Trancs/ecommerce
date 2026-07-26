@@ -375,3 +375,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Public seller shop pages~~ (v1.3.82)
 - ~~Wishlist price-drop alerts~~ (v1.3.83)
 - ~~Pretty seller shop slugs~~ (v1.3.84)
+- ~~Seller shop search / sort / in-stock filter~~ (v1.3.85)

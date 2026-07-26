@@ -1,9 +1,9 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import ProductCard from '@/components/shared/product/product-card'
+import ShopCatalogControls from '@/components/shared/product/shop-catalog-controls'
 import { getPublicSellerShop, shopHref } from '@/lib/actions/shop.actions'
 import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
-import { auth } from '@/auth'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -22,22 +22,33 @@ export async function generateMetadata(props: {
 
 export default async function PublicSellerShopPage(props: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ q?: string; sort?: string; stock?: string }>
 }) {
   const { slug } = await props.params
-  const data = await getPublicSellerShop(slug)
+  const searchParams = await props.searchParams
+  const data = await getPublicSellerShop(slug, {
+    q: searchParams.q,
+    sort: searchParams.sort,
+    inStock: searchParams.stock,
+  })
   if (!data) notFound()
 
-  const { shop, products } = data
-  // Canonicalize legacy /shop/{accountId} → /shop/{slug}
+  const { shop, products, query, sort, inStockOnly } = data
   if (slug === shop.accountId && shop.shopSlug && shop.shopSlug !== slug) {
-    redirect(shopHref(shop))
+    const params = new URLSearchParams()
+    if (query) params.set('q', query)
+    if (sort !== 'newest') params.set('sort', sort)
+    if (inStockOnly) params.set('stock', '1')
+    const qs = params.toString()
+    redirect(qs ? `${shopHref(shop)}?${qs}` : shopHref(shop))
   }
 
-  const session = await auth()
+  const basePath = shopHref(shop)
   const wishlist = await getWishlistStatusesForProducts(
     products.map((p) => p._id)
   )
   const wishlisted = new Set(wishlist.wishlistedIds)
+  const filteredEmpty = products.length === 0 && shop.productCount > 0
 
   return (
     <div className='page-shell space-y-8 p-4 md:p-6'>
@@ -61,6 +72,14 @@ export default async function PublicSellerShopPage(props: {
             <p className='mt-2 text-sm text-muted-foreground'>
               {shop.productCount} published product
               {shop.productCount === 1 ? '' : 's'}
+              {query
+                ? ` · ${products.length} match${
+                    products.length === 1 ? '' : 'es'
+                  } for “${query}”`
+                : ''}
+              {inStockOnly && !query
+                ? ` · showing ${products.length} in stock`
+                : ''}
               <span className='mx-2'>·</span>
               <span className='font-mono text-xs'>/shop/{shop.shopSlug}</span>
             </p>
@@ -72,11 +91,26 @@ export default async function PublicSellerShopPage(props: {
             Browse all products
           </Link>
         </div>
+        {shop.productCount > 0 ? (
+          <ShopCatalogControls
+            basePath={basePath}
+            query={query}
+            sort={sort}
+            inStockOnly={inStockOnly}
+          />
+        ) : null}
       </div>
 
       {products.length === 0 ? (
         <p className='rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground'>
-          This shop has no published products yet.
+          {filteredEmpty
+            ? 'No products match these filters.'
+            : 'This shop has no published products yet.'}{' '}
+          {filteredEmpty ? (
+            <Link href={basePath} className='underline'>
+              Clear filters
+            </Link>
+          ) : null}
         </p>
       ) : (
         <div className='grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4'>

@@ -7,30 +7,60 @@ import { formatError } from '@/lib/utils'
 import {
   getSellerShop,
   listSellerShopProductIds,
+  normalizeShopSearch,
+  parseShopProductSort,
   shopHref,
   updateSellerShopProfile,
   type SellerShop,
+  type ShopProductSort,
 } from '@/lib/db/seller-shop'
 import { getProductsByIds } from '@/lib/actions/product.actions'
 import type { StoreProduct } from '@/lib/catalog/store-product'
 
-export type { SellerShop }
-export { shopHref }
+export type { SellerShop, ShopProductSort }
+export { shopHref, parseShopProductSort, normalizeShopSearch }
 
 /** Load public shop by pretty slug or account id. */
-export async function getPublicSellerShop(slugOrId: string): Promise<{
+export async function getPublicSellerShop(
+  slugOrId: string,
+  options?: {
+    q?: string | null
+    sort?: string | null
+    inStock?: string | null
+  }
+): Promise<{
   shop: SellerShop
   products: StoreProduct[]
+  query: string | null
+  sort: ShopProductSort
+  inStockOnly: boolean
 } | null> {
   const shop = await getSellerShop(slugOrId)
   if (!shop) return null
-  const ids = await listSellerShopProductIds(shop.accountId, { limit: 48 })
+  const queryText = normalizeShopSearch(options?.q)
+  const sort = parseShopProductSort(options?.sort)
+  const inStockOnly =
+    options?.inStock === '1' ||
+    options?.inStock === 'true' ||
+    options?.inStock === 'yes'
+  const ids = await listSellerShopProductIds(shop.accountId, {
+    limit: 48,
+    q: queryText,
+    sort,
+    inStockOnly,
+  })
   const products = ids.length ? await getProductsByIds(ids) : []
   const byId = new Map(products.map((p) => [p._id, p]))
   const ordered = ids
     .map((id) => byId.get(id))
     .filter((p): p is StoreProduct => Boolean(p))
-  return { shop, products: ordered }
+  return {
+    shop,
+    products: ordered,
+    query: queryText,
+    sort,
+    inStockOnly,
+  }
 }
 
 export async function getSellerShopSummary(

@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.85 — 2026-07-26
+
+Search, sort, and in-stock filter on public seller shops.
+
+### Frontend
+- `/shop/{slug}?q=&sort=&stock=1` — name/description search, newest / price / name sort, in-stock toggle
+- Empty-state when filters match nothing
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.85` |
+| Store API | `store-backend/` | `1.3.85` (`store-api`) |
+
+---
+
 ## v1.3.84 — 2026-07-26
 
 Pretty seller shop URLs.

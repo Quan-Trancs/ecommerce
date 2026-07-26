@@ -88,20 +88,70 @@ export async function getSellerShop(
   return row ? mapShop(row) : null
 }
 
-/** Published product ids for a seller shop (newest first). */
+export type ShopProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name'
+
+export function parseShopProductSort(value?: string | null): ShopProductSort {
+  const v = (value || '').trim().toLowerCase()
+  if (v === 'price-asc' || v === 'price-desc' || v === 'name') return v
+  return 'newest'
+}
+
+export function normalizeShopSearch(q?: string | null): string | null {
+  const trimmed = (q || '').trim().slice(0, 80)
+  if (!trimmed) return null
+  const cleaned = trimmed.replace(/[%_]/g, ' ').replace(/\s+/g, ' ').trim()
+  return cleaned || null
+}
+
+/** Published product ids for a seller shop with optional search/sort/stock filter. */
 export async function listSellerShopProductIds(
   accountId: string,
-  options?: { limit?: number }
+  options?: {
+    limit?: number
+    q?: string | null
+    sort?: ShopProductSort
+    inStockOnly?: boolean
+  }
 ): Promise<string[]> {
   const limit = Math.max(1, Math.min(options?.limit ?? 48, 100))
+  const search = normalizeShopSearch(options?.q)
+  const sort = options?.sort || 'newest'
+  const params: unknown[] = [accountId]
+  let searchClause = ''
+  if (search) {
+    params.push(`%${search}%`)
+    searchClause = ` AND (
+      p.name ILIKE $2
+      OR COALESCE(p.description, '') ILIKE $2
+    )`
+  }
+  const stockClause = options?.inStockOnly
+    ? ' AND COALESCE(p.stock_quantity, 0) > 0'
+    : ''
+
+  let orderClause =
+    'ORDER BY p.updated_at DESC NULLS LAST, p.created_at DESC NULLS LAST'
+  if (sort === 'price-asc') {
+    orderClause = 'ORDER BY p.price ASC NULLS LAST, p.name ASC'
+  } else if (sort === 'price-desc') {
+    orderClause = 'ORDER BY p.price DESC NULLS LAST, p.name ASC'
+  } else if (sort === 'name') {
+    orderClause = 'ORDER BY p.name ASC'
+  }
+
+  params.push(limit)
+  const limitParam = `$${params.length}`
+
   const result = await query<{ id: string }>(
-    `SELECT id
-     FROM products
-     WHERE seller_account_id = $1
-       AND COALESCE(is_published, TRUE) = TRUE
-     ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
-     LIMIT $2`,
-    [accountId, limit]
+    `SELECT p.id
+     FROM products p
+     WHERE p.seller_account_id = $1
+       AND COALESCE(p.is_published, TRUE) = TRUE
+       ${searchClause}
+       ${stockClause}
+     ${orderClause}
+     LIMIT ${limitParam}`,
+    params
   )
   return result.rows.map((row) => row.id)
 }
