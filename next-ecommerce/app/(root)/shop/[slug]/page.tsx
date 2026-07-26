@@ -208,7 +208,7 @@ export default async function PublicSellerShopPage(props: {
         )}
 
         {shop.shippingPolicy || shop.returnsPolicy ? (
-          <section className='space-y-4 border-t pt-8'>
+          <section id='shop-policies' className='space-y-4 border-t pt-8'>
             <div>
               <h2 className='font-display text-xl font-extrabold tracking-tight'>
                 Shop policies

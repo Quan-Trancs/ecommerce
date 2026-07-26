@@ -25,6 +25,7 @@ import { getWishlistStatus, getWishlistStatusesForProducts } from '@/lib/actions
 import { getStockAlertStatus } from '@/lib/actions/stock-alert.actions'
 import { getSellerShopSummary, shopHref } from '@/lib/actions/shop.actions'
 import { getProductSellerAccountId } from '@/lib/db/product-qa'
+import ShopPoliciesSnippet from '@/components/shared/product/shop-policies-snippet'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -145,6 +146,15 @@ export default async function ProductDetails(props: {
               {product.description}
             </p>
           </div>
+
+          {sellerShop ? (
+            <ShopPoliciesSnippet
+              shopName={sellerShop.shopName}
+              shopHref={shopHref(sellerShop)}
+              shippingPolicy={sellerShop.shippingPolicy}
+              returnsPolicy={sellerShop.returnsPolicy}
+            />
+          ) : null}
         </div>
 
         <aside className='col-span-1'>

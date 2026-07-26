@@ -1,6 +1,6 @@
 # Ecommerce Commercial Platform
 
-**Version:** [v1.3.91](./VERSION.md) — Seller shop shipping/returns policies. See [ROLES.md](./ROLES.md).
+**Version:** [v1.3.92](./VERSION.md) — PDP shop policies snippet. See [ROLES.md](./ROLES.md).
 
 Monorepo combining a Next.js storefront with a Spring Boot **commercial catalog** API.
 
