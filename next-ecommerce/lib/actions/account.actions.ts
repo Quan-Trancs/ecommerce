@@ -11,6 +11,7 @@ import {
   updateOrderNoteNotificationPreferences,
   updateQaDigestPreferences,
   updateReviewRequestPreferences,
+  updatePriceDropPreferences,
   type OrderNoteEmailMode,
 } from '@/lib/db/users'
 import { flushOrderNoteDigestsForEmail } from '@/lib/email/order-notifications'
@@ -39,6 +40,7 @@ export async function getNotificationPreferences(): Promise<{
   notifyQaDigest: boolean
   notifyBackInStock: boolean
   notifyReviewRequests: boolean
+  notifyPriceDrops: boolean
   vapidPublicKey: string | null
 } | null> {
   const session = await auth()
@@ -62,6 +64,7 @@ export async function getNotificationPreferences(): Promise<{
     notifyQaDigest: user.notifyQaDigest,
     notifyBackInStock: user.notifyBackInStock,
     notifyReviewRequests: user.notifyReviewRequests,
+    notifyPriceDrops: user.notifyPriceDrops,
     vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null,
   }
 }
@@ -274,6 +277,30 @@ export async function setReviewRequestPreferences(input: {
       message: updated.notifyReviewRequests
         ? 'Review request emails enabled'
         : 'Review request emails disabled',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function setPriceDropPreferences(input: {
+  notifyPriceDrops: boolean
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+    const updated = await updatePriceDropPreferences(session.user.id, {
+      notifyPriceDrops: Boolean(input.notifyPriceDrops),
+    })
+    if (!updated) return { success: false, message: 'Account not found' }
+    revalidatePath('/account/settings')
+    return {
+      success: true,
+      message: updated.notifyPriceDrops
+        ? 'Wishlist price-drop alerts enabled'
+        : 'Wishlist price-drop alerts disabled',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }

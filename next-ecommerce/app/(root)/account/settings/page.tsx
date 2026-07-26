@@ -6,6 +6,7 @@ import LowStockPreferencesForm from './low-stock-preferences-form'
 import AbandonedCartPreferencesForm from './abandoned-cart-preferences-form'
 import BackInStockPreferencesForm from './back-in-stock-preferences-form'
 import ReviewRequestPreferencesForm from './review-request-preferences-form'
+import PriceDropPreferencesForm from './price-drop-preferences-form'
 import QaDigestPreferencesForm from './qa-digest-preferences-form'
 import NotificationPreferencesForm from './notification-preferences-form'
 
@@ -48,6 +49,7 @@ export default async function AccountSettingsPage() {
         <ReviewRequestPreferencesForm
           notifyReviewRequests={prefs.notifyReviewRequests}
         />
+        <PriceDropPreferencesForm notifyPriceDrops={prefs.notifyPriceDrops} />
         <QaDigestPreferencesForm notifyQaDigest={prefs.notifyQaDigest} />
         <div className='rounded-lg border p-4'>
           <NotificationPreferencesForm

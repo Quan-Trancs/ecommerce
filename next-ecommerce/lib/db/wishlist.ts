@@ -6,8 +6,10 @@ export type WishlistItemRow = {
   name: string | null
   slug: string | null
   price: number | null
+  watchedPrice: number | null
   imageUrl: string | null
   isPublished: boolean
+  priceDropped: boolean
 }
 
 type Row = {
@@ -16,6 +18,7 @@ type Row = {
   name: string | null
   slug: string | null
   price: number | string | null
+  watched_price: number | string | null
   image_url: string | null
   is_published: boolean | null
 }
@@ -26,6 +29,7 @@ export async function listWishlistItems(
   const result = await query<Row>(
     `SELECT w.product_id,
             w.created_at,
+            w.watched_price,
             p.name,
             p.slug,
             p.price,
@@ -43,15 +47,25 @@ export async function listWishlistItems(
      ORDER BY w.created_at DESC`,
     [accountId]
   )
-  return result.rows.map((row) => ({
-    productId: row.product_id,
-    createdAt: new Date(row.created_at).toISOString(),
-    name: row.name,
-    slug: row.slug,
-    price: row.price == null ? null : Number(row.price),
-    imageUrl: row.image_url,
-    isPublished: row.is_published !== false,
-  }))
+  return result.rows.map((row) => {
+    const price = row.price == null ? null : Number(row.price)
+    const watchedPrice =
+      row.watched_price == null ? null : Number(row.watched_price)
+    return {
+      productId: row.product_id,
+      createdAt: new Date(row.created_at).toISOString(),
+      name: row.name,
+      slug: row.slug,
+      price,
+      watchedPrice,
+      imageUrl: row.image_url,
+      isPublished: row.is_published !== false,
+      priceDropped:
+        price != null &&
+        watchedPrice != null &&
+        price < watchedPrice - 0.009,
+    }
+  })
 }
 
 export async function isProductWishlisted(
@@ -91,8 +105,10 @@ export async function addWishlistItem(
   productId: string
 ): Promise<void> {
   await query(
-    `INSERT INTO wishlist_items (account_id, product_id, created_at)
-     VALUES ($1, $2, NOW())
+    `INSERT INTO wishlist_items (account_id, product_id, created_at, watched_price)
+     SELECT $1, $2, NOW(), p.price
+     FROM products p
+     WHERE p.id = $2
      ON CONFLICT (account_id, product_id) DO NOTHING`,
     [accountId, productId]
   )

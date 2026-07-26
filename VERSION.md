@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.83 — 2026-07-26
+
+Wishlist price-drop alerts.
+
+### Backend
+- Flyway `V41__wishlist_price_drops.sql` — `watched_price` + alert state; `notify_price_drops`
+- Event-driven notify when seller/admin lowers a product price
+
+### Frontend
+- Email + in-app `PRICE_DROP` vs wishlist baseline
+- Wishlist shows “Down from …” when cheaper than saved price
+- Account setting to opt out
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.83` |
+| Store API | `store-backend/` | `1.3.83` (`store-api`) |
+
+---
+
 ## v1.3.82 — 2026-07-26
 
 Public seller shop pages.

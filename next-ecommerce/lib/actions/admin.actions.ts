@@ -8,6 +8,7 @@ import { formatError } from '@/lib/utils'
 import { listUsers, updateUser } from '@/lib/db/users'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 import { checkAndNotifyBackInStock } from '@/lib/notify/back-in-stock'
+import { checkAndNotifyPriceDrops } from '@/lib/notify/price-drop'
 import { logStaffAction } from '@/lib/audit/log-staff-action'
 import {
   getAdminDashboardKpis,
@@ -222,6 +223,9 @@ export async function updateAdminCatalogProduct(
     if (patch.stockQuantity !== undefined) {
       await checkAndNotifyLowStock([product.id])
       await checkAndNotifyBackInStock([product.id])
+    }
+    if (patch.price !== undefined) {
+      await checkAndNotifyPriceDrops([product.id])
     }
     return { success: true as const, product }
   } catch (error) {

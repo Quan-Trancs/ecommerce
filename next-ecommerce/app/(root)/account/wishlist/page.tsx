@@ -26,7 +26,12 @@ export default async function WishlistPage() {
           Wishlist
         </h1>
         <p className='mt-1 text-sm text-muted-foreground'>
-          Products you saved for later.
+          Products you saved for later. We can email you if the price drops —
+          manage that in{' '}
+          <Link href='/account/settings' className='underline'>
+            notification settings
+          </Link>
+          .
         </p>
       </div>
 
@@ -65,7 +70,15 @@ export default async function WishlistPage() {
                       {item.name || 'Unavailable product'}
                     </p>
                     {item.price != null ? (
-                      <ProductPrice price={item.price} plain />
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <ProductPrice price={item.price} plain />
+                        {item.priceDropped && item.watchedPrice != null ? (
+                          <span className='text-xs font-medium text-emerald-700'>
+                            Down from{' '}
+                            <ProductPrice price={item.watchedPrice} plain />
+                          </span>
+                        ) : null}
+                      </div>
                     ) : null}
                     {!item.isPublished ? (
                       <p className='text-xs text-destructive'>
