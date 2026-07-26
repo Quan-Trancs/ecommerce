@@ -13,17 +13,26 @@ export default function SellerShopProfileForm({
   shopSlug,
   shopName,
   bio,
+  websiteUrl,
+  instagramUrl,
+  xUrl,
 }: {
   accountId: string
   shopSlug: string
   shopName: string
   bio: string | null
+  websiteUrl: string | null
+  instagramUrl: string | null
+  xUrl: string | null
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [name, setName] = useState(shopName)
   const [slug, setSlug] = useState(shopSlug)
   const [bioText, setBioText] = useState(bio || '')
+  const [website, setWebsite] = useState(websiteUrl || '')
+  const [instagram, setInstagram] = useState(instagramUrl || '')
+  const [x, setX] = useState(xUrl || '')
   const previewSlug = toSlug(slug) || shopSlug
 
   return (
@@ -36,10 +45,18 @@ export default function SellerShopProfileForm({
             shopName: name,
             shopSlug: slug,
             bio: bioText,
+            websiteUrl: website,
+            instagramUrl: instagram,
+            xUrl: x,
           })
           if (result.success) {
             toast.success(result.message)
             if (result.shop?.shopSlug) setSlug(result.shop.shopSlug)
+            if (result.shop) {
+              setWebsite(result.shop.websiteUrl || '')
+              setInstagram(result.shop.instagramUrl || '')
+              setX(result.shop.xUrl || '')
+            }
             router.refresh()
           } else {
             toast.error(result.message)
@@ -101,6 +118,39 @@ export default function SellerShopProfileForm({
           value={bioText}
           onChange={(e) => setBioText(e.target.value)}
           maxLength={500}
+          disabled={pending}
+        />
+      </label>
+      <label className='block space-y-1 text-sm'>
+        <span className='text-muted-foreground'>Website (optional)</span>
+        <input
+          className='w-full rounded-md border bg-background px-3 py-2'
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          maxLength={500}
+          placeholder='https://example.com'
+          disabled={pending}
+        />
+      </label>
+      <label className='block space-y-1 text-sm'>
+        <span className='text-muted-foreground'>Instagram (optional)</span>
+        <input
+          className='w-full rounded-md border bg-background px-3 py-2'
+          value={instagram}
+          onChange={(e) => setInstagram(e.target.value)}
+          maxLength={500}
+          placeholder='@handle or profile URL'
+          disabled={pending}
+        />
+      </label>
+      <label className='block space-y-1 text-sm'>
+        <span className='text-muted-foreground'>X (optional)</span>
+        <input
+          className='w-full rounded-md border bg-background px-3 py-2'
+          value={x}
+          onChange={(e) => setX(e.target.value)}
+          maxLength={500}
+          placeholder='@handle or profile URL'
           disabled={pending}
         />
       </label>

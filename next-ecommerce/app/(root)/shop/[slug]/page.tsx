@@ -105,6 +105,40 @@ export default async function PublicSellerShopPage(props: {
               {shop.bio ? (
                 <p className='mt-2 max-w-2xl text-muted-foreground'>{shop.bio}</p>
               ) : null}
+              {(shop.websiteUrl || shop.instagramUrl || shop.xUrl) && (
+                <p className='mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm'>
+                  {shop.websiteUrl ? (
+                    <a
+                      href={shop.websiteUrl}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='underline hover:text-primary'
+                    >
+                      Website
+                    </a>
+                  ) : null}
+                  {shop.instagramUrl ? (
+                    <a
+                      href={shop.instagramUrl}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='underline hover:text-primary'
+                    >
+                      Instagram
+                    </a>
+                  ) : null}
+                  {shop.xUrl ? (
+                    <a
+                      href={shop.xUrl}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='underline hover:text-primary'
+                    >
+                      X
+                    </a>
+                  ) : null}
+                </p>
+              )}
               <p className='mt-2 text-sm text-muted-foreground'>
                 {shop.productCount} published product
                 {shop.productCount === 1 ? '' : 's'}

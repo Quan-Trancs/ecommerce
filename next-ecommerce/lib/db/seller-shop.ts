@@ -1,5 +1,10 @@
 import { query } from '@/lib/db/postgres'
 import { toSlug } from '@/lib/utils'
+import {
+  normalizeInstagramUrl,
+  normalizeWebsiteUrl,
+  normalizeXUrl,
+} from '@/lib/shop/shop-social-links'
 
 export type SellerShop = {
   accountId: string
@@ -8,6 +13,9 @@ export type SellerShop = {
   bio: string | null
   shopBannerUrl: string | null
   shopLogoUrl: string | null
+  websiteUrl: string | null
+  instagramUrl: string | null
+  xUrl: string | null
   verified: boolean
   productCount: number
 }
@@ -37,6 +45,9 @@ function mapShop(row: {
   bio: string | null
   shop_banner_url: string | null
   shop_logo_url: string | null
+  website_url: string | null
+  instagram_url: string | null
+  x_url: string | null
   verified: boolean
   product_count: string
 }): SellerShop {
@@ -47,6 +58,9 @@ function mapShop(row: {
     bio: row.bio?.trim() || null,
     shopBannerUrl: row.shop_banner_url?.trim() || null,
     shopLogoUrl: row.shop_logo_url?.trim() || null,
+    websiteUrl: row.website_url?.trim() || null,
+    instagramUrl: row.instagram_url?.trim() || null,
+    xUrl: row.x_url?.trim() || null,
     verified: Boolean(row.verified),
     productCount: Number(row.product_count) || 0,
   }
@@ -59,6 +73,9 @@ const SHOP_SELECT = `
          sp.bio,
          sp.shop_banner_url,
          sp.shop_logo_url,
+         sp.website_url,
+         sp.instagram_url,
+         sp.x_url,
          COALESCE(sp.verified, FALSE) AS verified,
          (
            SELECT COUNT(*)::text
@@ -84,6 +101,9 @@ export async function getSellerShop(
     bio: string | null
     shop_banner_url: string | null
     shop_logo_url: string | null
+    website_url: string | null
+    instagram_url: string | null
+    x_url: string | null
     verified: boolean
     product_count: string
   }>(
@@ -207,10 +227,20 @@ export async function updateSellerShopProfile(input: {
   shopName: string
   shopSlug?: string
   bio?: string | null
+  websiteUrl?: string | null
+  instagramUrl?: string | null
+  xUrl?: string | null
 }): Promise<{ shop: SellerShop | null; error?: string }> {
   const shopName = input.shopName.trim().slice(0, 200)
   if (!shopName) return { shop: null, error: 'Shop name required' }
   const bio = (input.bio || '').trim().slice(0, 500) || null
+
+  const website = normalizeWebsiteUrl(input.websiteUrl)
+  if (website.error) return { shop: null, error: website.error }
+  const instagram = normalizeInstagramUrl(input.instagramUrl)
+  if (instagram.error) return { shop: null, error: instagram.error }
+  const x = normalizeXUrl(input.xUrl)
+  if (x.error) return { shop: null, error: x.error }
 
   let shopSlug: string
   if (input.shopSlug != null && input.shopSlug.trim()) {
@@ -236,9 +266,20 @@ export async function updateSellerShopProfile(input: {
      SET shop_name = $2,
          shop_slug = $3,
          bio = $4,
+         website_url = $5,
+         instagram_url = $6,
+         x_url = $7,
          updated_at = NOW()
      WHERE account_id = $1`,
-    [input.accountId, shopName, shopSlug, bio]
+    [
+      input.accountId,
+      shopName,
+      shopSlug,
+      bio,
+      website.url,
+      instagram.url,
+      x.url,
+    ]
   )
   return { shop: await getSellerShop(input.accountId) }
 }

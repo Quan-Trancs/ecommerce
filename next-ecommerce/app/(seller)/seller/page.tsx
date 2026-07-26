@@ -47,6 +47,9 @@ export default async function SellerHomePage() {
           shopSlug={shop.shopSlug}
           shopName={shop.shopName}
           bio={shop.bio}
+          websiteUrl={shop.websiteUrl}
+          instagramUrl={shop.instagramUrl}
+          xUrl={shop.xUrl}
         />
       ) : null}
 

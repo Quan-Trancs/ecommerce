@@ -37,6 +37,15 @@ public class SellerProfileEntity {
     @Column(name = "shop_logo_url", length = 1000)
     private String shopLogoUrl;
 
+    @Column(name = "website_url", length = 500)
+    private String websiteUrl;
+
+    @Column(name = "instagram_url", length = 500)
+    private String instagramUrl;
+
+    @Column(name = "x_url", length = 500)
+    private String xUrl;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean verified = false;

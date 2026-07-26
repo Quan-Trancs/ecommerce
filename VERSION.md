@@ -1,5 +1,25 @@
 # Version History
 
+## v1.3.90 — 2026-07-26
+
+Seller shop social links (website, Instagram, X) on public shop pages.
+
+### Backend
+- Flyway `V47__seller_shop_social_links.sql` — website / Instagram / X URL columns
+- JPA fields on `SellerProfileEntity`; https + host validation on save
+
+### Frontend
+- Seller profile form fields for website, Instagram, and X (@handle or URL)
+- Public shop header shows outbound links when set
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.90` |
+| Store API | `store-backend/` | `1.3.90` (`store-api`) |
+
+---
+
 ## v1.3.89 — 2026-07-26
 
 Seller shop logo/avatar beside the shop name.
