@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.77 — 2026-07-26
+
+Pin important unanswered product Q&A in seller and staff inboxes.
+
+### Backend
+- Flyway `V37__product_qa_pinned.sql` — `pinned_at` on `product_questions`
+- Answering a question clears its pin
+
+### Frontend
+- Pin / Unpin on seller, admin, and support unanswered inboxes
+- Pinned rows sort first; badge on pinned items
+- Staff pin/unpin writes `PRODUCT_QA_PIN` / `PRODUCT_QA_UNPIN` audit
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.77` |
+| Store API | `store-backend/` | `1.3.77` (`store-api`) |
+
+---
+
 ## v1.3.76 — 2026-07-26
 
 Filter unanswered Q&A inboxes by aging SLA.

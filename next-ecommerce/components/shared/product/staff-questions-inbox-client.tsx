@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
   answerProductQuestionAction,
   moderateDeleteProductQuestion,
+  togglePinProductQuestion,
   type AdminInboxQuestion,
 } from '@/lib/actions/qa.actions'
 import { formatDateTime } from '@/lib/utils'
@@ -56,6 +57,11 @@ export default function StaffQuestionsInboxClient({
                     ? 'Platform listing'
                     : `Seller · ${question.sellerLabel}`}
                 </span>
+                {question.pinned ? (
+                  <span className='rounded bg-sky-500/15 px-2 py-0.5 text-[11px] font-medium text-sky-800 dark:text-sky-200'>
+                    Pinned
+                  </span>
+                ) : null}
                 <QaAgingBadge createdAt={question.createdAt} />
               </div>
               <p className='mt-2 text-sm font-medium text-chrome'>
@@ -115,6 +121,28 @@ export default function StaffQuestionsInboxClient({
             <div className='flex flex-wrap gap-2'>
               <Button type='submit' size='sm' disabled={pending}>
                 {pending ? 'Posting…' : 'Post answer'}
+              </Button>
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                disabled={pending}
+                onClick={() => {
+                  startTransition(async () => {
+                    const result = await togglePinProductQuestion({
+                      questionId: question.id,
+                      pinned: !question.pinned,
+                    })
+                    if (result.success) {
+                      toast.success(result.message)
+                      router.refresh()
+                    } else {
+                      toast.error(result.message)
+                    }
+                  })
+                }}
+              >
+                {question.pinned ? 'Unpin' : 'Pin'}
               </Button>
               <Button
                 type='button'

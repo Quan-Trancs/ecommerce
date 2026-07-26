@@ -14,6 +14,8 @@ export type ProductQuestion = {
   helpfulCount: number
   viewerMarkedHelpful: boolean
   viewerHasReported: boolean
+  pinned: boolean
+  pinnedAt: string | null
 }
 
 export type SellerInboxQuestion = ProductQuestion & {
@@ -43,6 +45,7 @@ type Row = {
   helpful_count?: number | string | null
   viewer_marked_helpful?: boolean | null
   viewer_has_reported?: boolean | null
+  pinned_at?: Date | string | null
 }
 
 function displayName(
@@ -75,6 +78,8 @@ function mapRow(row: Row): ProductQuestion {
     helpfulCount: Number(row.helpful_count) || 0,
     viewerMarkedHelpful: Boolean(row.viewer_marked_helpful),
     viewerHasReported: Boolean(row.viewer_has_reported),
+    pinned: Boolean(row.pinned_at),
+    pinnedAt: row.pinned_at ? new Date(row.pinned_at).toISOString() : null,
   }
 }
 
@@ -109,6 +114,7 @@ export async function listProductQuestions(
   const result = await query<Row>(
     `SELECT q.id, q.product_id, q.asker_account_id, q.body,
             q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
+            q.pinned_at,
             asker.display_name AS asker_name, asker.email AS asker_email,
             answerer.display_name AS answerer_name, answerer.email AS answerer_email,
             (
@@ -182,12 +188,14 @@ export async function answerProductQuestion(input: {
        SET answer_body = $3,
            answer_account_id = $4,
            answered_at = NOW(),
+           pinned_at = NULL,
            updated_at = NOW()
        WHERE id = $1 AND product_id = $2
        RETURNING *
      )
      SELECT u.id, u.product_id, u.asker_account_id, u.body,
             u.answer_body, u.answer_account_id, u.answered_at, u.created_at,
+            u.pinned_at,
             asker.display_name AS asker_name, asker.email AS asker_email,
             answerer.display_name AS answerer_name, answerer.email AS answerer_email
      FROM updated u
@@ -337,6 +345,7 @@ export async function listUnansweredQuestionsForSeller(
   const result = await query<InboxRow>(
     `SELECT q.id, q.product_id, q.asker_account_id, q.body,
             q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
+            q.pinned_at,
             asker.display_name AS asker_name, asker.email AS asker_email,
             NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
             p.name AS product_name, p.slug AS product_slug
@@ -347,7 +356,9 @@ export async function listUnansweredQuestionsForSeller(
        AND q.answer_body IS NULL
        AND q.hidden_at IS NULL
        ${searchClause}
-     ORDER BY q.created_at ASC
+     ORDER BY
+       CASE WHEN q.pinned_at IS NULL THEN 1 ELSE 0 END,
+       q.created_at ASC
      LIMIT ${limitParam}`,
     params
   )
@@ -410,13 +421,17 @@ export async function listUnansweredQuestionsForAdmin(options?: {
   const platformClause = all ? '' : ' AND p.seller_account_id IS NULL'
   const orderClause = all
     ? `ORDER BY
+           CASE WHEN q.pinned_at IS NULL THEN 1 ELSE 0 END,
            CASE WHEN p.seller_account_id IS NULL THEN 0 ELSE 1 END,
            q.created_at ASC`
-    : 'ORDER BY q.created_at ASC'
+    : `ORDER BY
+           CASE WHEN q.pinned_at IS NULL THEN 1 ELSE 0 END,
+           q.created_at ASC`
 
   const result = await query<AdminInboxRow>(
     `SELECT q.id, q.product_id, q.asker_account_id, q.body,
             q.answer_body, q.answer_account_id, q.answered_at, q.created_at,
+            q.pinned_at,
             asker.display_name AS asker_name, asker.email AS asker_email,
             NULL::varchar AS answerer_name, NULL::varchar AS answerer_email,
             p.name AS product_name, p.slug AS product_slug,
@@ -548,6 +563,49 @@ export async function toggleQuestionHelpful(input: {
   )
   const helpfulCount = await countQuestionHelpful(input.questionId)
   return { marked: true, helpfulCount }
+}
+
+export async function setProductQuestionPinned(input: {
+  questionId: number
+  pinned: boolean
+}): Promise<{
+  id: number
+  productId: string
+  productSlug: string
+  sellerAccountId: string | null
+  pinned: boolean
+} | null> {
+  const result = await query<{
+    id: number | string
+    product_id: string
+    product_slug: string | null
+    seller_account_id: string | null
+    pinned_at: Date | string | null
+  }>(
+    `WITH updated AS (
+       UPDATE product_questions
+       SET pinned_at = CASE WHEN $2 THEN COALESCE(pinned_at, NOW()) ELSE NULL END,
+           updated_at = NOW()
+       WHERE id = $1
+         AND answer_body IS NULL
+         AND hidden_at IS NULL
+       RETURNING id, product_id, pinned_at
+     )
+     SELECT u.id, u.product_id, u.pinned_at, p.slug AS product_slug,
+            p.seller_account_id
+     FROM updated u
+     LEFT JOIN products p ON p.id = u.product_id`,
+    [input.questionId, input.pinned]
+  )
+  const row = result.rows[0]
+  if (!row) return null
+  return {
+    id: Number(row.id),
+    productId: row.product_id,
+    productSlug: row.product_slug?.trim() || row.product_id,
+    sellerAccountId: row.seller_account_id,
+    pinned: Boolean(row.pinned_at),
+  }
 }
 
 export function getProductQaAutoHideReportThreshold(): number {

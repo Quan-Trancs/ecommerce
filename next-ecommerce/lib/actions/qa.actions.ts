@@ -27,6 +27,7 @@ import {
   listUnansweredQuestionsForAdmin,
   listUnansweredQuestionsForSeller,
   normalizeQaSearch,
+  setProductQuestionPinned,
   toggleQuestionHelpful,
   unhideProductQuestionIfAutoHidden,
   type AdminInboxQuestion,
@@ -390,6 +391,75 @@ export async function sellerHideProductQuestion(input: {
     revalidatePath('/support/questions')
     revalidatePath('/support')
     return { success: true, message: 'Question hidden' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/** Seller (own listing) or staff: pin/unpin unanswered Q&A in inboxes. */
+export async function togglePinProductQuestion(input: {
+  questionId: number
+  pinned: boolean
+}): Promise<{ success: boolean; message: string; pinned?: boolean }> {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, message: 'Sign in required' }
+    }
+
+    const isStaff = hasSupportAccess(session.user.role)
+    if (!isStaff && !hasSellerAccess(session.user.role)) {
+      return { success: false, message: 'Seller or staff required' }
+    }
+
+    const meta = await getProductQuestionAnswerMeta(input.questionId)
+    if (!meta || meta.answered) {
+      return {
+        success: false,
+        message: 'Question not found or already answered',
+      }
+    }
+
+    const sellerAccountId = await getProductSellerAccountId(meta.productId)
+    const isOwner = sellerAccountId === session.user.id
+    if (!isStaff && !isOwner) {
+      return { success: false, message: 'Not allowed to pin this question' }
+    }
+
+    const updated = await setProductQuestionPinned({
+      questionId: input.questionId,
+      pinned: input.pinned,
+    })
+    if (!updated) {
+      return {
+        success: false,
+        message: 'Question not found, answered, or hidden',
+      }
+    }
+
+    if (isStaff) {
+      await logStaffAction({
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: input.pinned ? 'PRODUCT_QA_PIN' : 'PRODUCT_QA_UNPIN',
+        entityType: 'product_question',
+        entityId: String(updated.id),
+        summary: input.pinned
+          ? `Pinned product Q&A on ${updated.productSlug}`
+          : `Unpinned product Q&A on ${updated.productSlug}`,
+      })
+    }
+
+    revalidatePath(`/product/${updated.productSlug}`)
+    revalidatePath('/seller/questions')
+    revalidatePath('/seller')
+    revalidatePath('/admin/questions')
+    revalidatePath('/support/questions')
+    return {
+      success: true,
+      message: input.pinned ? 'Pinned' : 'Unpinned',
+      pinned: updated.pinned,
+    }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
