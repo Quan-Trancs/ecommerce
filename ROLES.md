@@ -6,7 +6,7 @@ Roles used across **storefront** (`next-ecommerce`) and **store API** (`store-ba
 |------|-----|--------------|--------------|
 | **BUYER** | Shoppers | `/account` | Browse, cart, checkout, own orders |
 | **SELLER** | Merchants | `/seller` | Buyer capabilities + seller workspace + seller APIs |
-| **SUPPORT** | Customer service | `/support` | Buyer capabilities + view any order (no catalog/user admin) |
+| **SUPPORT** | Customer service | `/support` | Buyer capabilities + view any order + product Q&A assist (no catalog/user admin) |
 | **ADMIN** | Platform ops | `/admin` | All of the above + user/role admin + catalog override |
 
 Legacy strings `User` / `Admin` are normalized to `BUYER` / `ADMIN` on login.
@@ -238,7 +238,7 @@ next-ecommerce/
     users.ts              # accounts CRUD for NextAuth
   app/(root)/account/     # Buyer hub + orders
   app/(seller)/seller/    # Seller overview, products, orders (shell)
-  app/(support)/support/  # Support order lookup + recent orders
+  app/(support)/support/  # Support order lookup, tickets, returns, Q&A assist
   app/(admin)/admin/      # Admin overview, orders, users, catalog, audit (shell)
   auth.config.ts          # Route guards for /account /seller /support /admin
 ```
@@ -352,3 +352,4 @@ Flyway: `V4__accounts_roles_seller.sql`, `V5__accounts_auth_credentials.sql`, `V
 - ~~Product Q&A on PDP~~ (v1.3.59)
 - ~~Seller unanswered Q&A inbox~~ (v1.3.60)
 - ~~Admin unanswered Q&A inbox~~ (v1.3.61)
+- ~~Support-role Q&A assist~~ (v1.3.62)

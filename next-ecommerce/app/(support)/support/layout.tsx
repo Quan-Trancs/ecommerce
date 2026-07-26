@@ -12,6 +12,7 @@ export default async function SupportLayout({
     { href: '/support', label: 'Orders' },
     { href: '/support/tickets', label: 'Tickets' },
     { href: '/support/returns', label: 'Returns' },
+    { href: '/support/questions', label: 'Questions' },
     { href: '/account', label: 'Account' },
   ]
 

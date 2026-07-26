@@ -1,10 +1,10 @@
 import Link from 'next/link'
+import StaffQuestionsInboxClient from '@/components/shared/product/staff-questions-inbox-client'
 import { getStaffQaInbox } from '@/lib/actions/qa.actions'
-import AdminQuestionsInboxClient from './admin-questions-inbox-client'
 
 export const metadata = { title: 'Product questions' }
 
-export default async function AdminQuestionsPage({
+export default async function SupportQuestionsPage({
   searchParams,
 }: {
   searchParams: Promise<{ scope?: string }>
@@ -21,9 +21,11 @@ export default async function AdminQuestionsPage({
             Product questions
           </h2>
           <p className='mt-1 text-sm text-muted-foreground'>
+            Help buyers when sellers are slow — platform listings first, or all
+            open Q&amp;A.
             {showAll
-              ? `${inbox.allCount} unanswered across the catalog`
-              : `${inbox.platformCount} unanswered on platform listings`}
+              ? ` ${inbox.allCount} unanswered across the catalog`
+              : ` ${inbox.platformCount} unanswered on platform listings`}
             {inbox.allCount > inbox.platformCount
               ? ` · ${inbox.allCount - inbox.platformCount} on seller listings`
               : ''}
@@ -32,7 +34,7 @@ export default async function AdminQuestionsPage({
         </div>
         <div className='flex flex-wrap gap-2 text-sm'>
           <Link
-            href='/admin/questions'
+            href='/support/questions'
             className={
               !showAll
                 ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
@@ -42,7 +44,7 @@ export default async function AdminQuestionsPage({
             Platform ({inbox.platformCount})
           </Link>
           <Link
-            href='/admin/questions?scope=all'
+            href='/support/questions?scope=all'
             className={
               showAll
                 ? 'rounded-md border border-primary px-3 py-1.5 text-primary'
@@ -53,7 +55,10 @@ export default async function AdminQuestionsPage({
           </Link>
         </div>
       </div>
-      <AdminQuestionsInboxClient questions={inbox.questions} />
+      <StaffQuestionsInboxClient
+        questions={inbox.questions}
+        answerPlaceholder='Write a support answer…'
+      />
     </div>
   )
 }

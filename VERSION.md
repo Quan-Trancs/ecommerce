@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.62 — 2026-07-26
+
+Support-role product Q&A assist (same inbox as admin).
+
+### Frontend
+- SUPPORT (and ADMIN) can answer on PDP; staff inbox at `/support/questions`
+- Shared `StaffQuestionsInboxClient`; `getStaffQaInbox` for admin/support
+- Support nav + overview link with platform open count
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.62` |
+| Store API | `store-backend/` | `1.3.62` (`store-api`) |
+
+---
+
 ## v1.3.61 — 2026-07-26
 
 Admin unanswered product Q&A inbox (platform + all open).

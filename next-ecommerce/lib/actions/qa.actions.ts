@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
-import { hasAdminAccess, hasSellerAccess } from '@/lib/auth/roles'
+import { hasSellerAccess, hasSupportAccess } from '@/lib/auth/roles'
 import { formatError } from '@/lib/utils'
 import { createInAppNotification } from '@/lib/db/in-app-notifications'
 import {
@@ -27,7 +27,7 @@ function canAnswerProduct(
   role: string | undefined,
   sellerAccountId: string | null
 ) {
-  if (hasAdminAccess(role)) return true
+  if (hasSupportAccess(role)) return true
   return Boolean(sellerAccountId && sellerAccountId === sessionUserId)
 }
 
@@ -93,6 +93,8 @@ export async function askProductQuestion(input: {
     revalidatePath('/seller')
     revalidatePath('/admin/questions')
     revalidatePath('/admin')
+    revalidatePath('/support/questions')
+    revalidatePath('/support')
     return {
       success: true,
       message: 'Question posted',
@@ -116,7 +118,10 @@ export async function answerProductQuestionAction(input: {
     }
     const sellerId = await getProductSellerAccountId(input.productId)
     if (!canAnswerProduct(session.user.id, session.user.role, sellerId)) {
-      return { success: false, message: 'Only the seller or admin can answer' }
+      return {
+        success: false,
+        message: 'Only the seller, support, or admin can answer',
+      }
     }
 
     const answerBody = (input.answerBody || '').trim()
@@ -152,6 +157,8 @@ export async function answerProductQuestionAction(input: {
     revalidatePath('/seller')
     revalidatePath('/admin/questions')
     revalidatePath('/admin')
+    revalidatePath('/support/questions')
+    revalidatePath('/support')
     return { success: true, message: 'Answer posted' }
   } catch (error) {
     return { success: false, message: formatError(error) }
@@ -178,7 +185,7 @@ export async function getSellerQaInbox(): Promise<{
   )
 }
 
-export async function getAdminQaInbox(options?: {
+export async function getStaffQaInbox(options?: {
   all?: boolean
 }): Promise<{
   questions: AdminInboxQuestion[]
@@ -187,7 +194,7 @@ export async function getAdminQaInbox(options?: {
   showingAll: boolean
 }> {
   const session = await auth()
-  if (!session?.user?.id || !hasAdminAccess(session.user.role)) {
+  if (!session?.user?.id || !hasSupportAccess(session.user.role)) {
     return {
       questions: [],
       platformCount: 0,
@@ -209,6 +216,13 @@ export async function getAdminQaInbox(options?: {
       showingAll,
     })
   )
+}
+
+/** @deprecated Prefer getStaffQaInbox — same data for admin/support. */
+export async function getAdminQaInbox(options?: {
+  all?: boolean
+}) {
+  return getStaffQaInbox(options)
 }
 
 export async function removeMyProductQuestion(input: {

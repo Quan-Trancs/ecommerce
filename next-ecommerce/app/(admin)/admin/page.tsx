@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/auth/require-role'
 import { getAdminKpis } from '@/lib/actions/admin.actions'
-import { getAdminQaInbox } from '@/lib/actions/qa.actions'
+import { getStaffQaInbox } from '@/lib/actions/qa.actions'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
 export const metadata = { title: 'Admin' }
@@ -47,7 +47,7 @@ export default async function AdminHomePage() {
   await requireAdmin()
   const [kpis, qaInbox] = await Promise.all([
     getAdminKpis(),
-    getAdminQaInbox({ all: false }),
+    getStaffQaInbox({ all: false }),
   ])
 
   return (

@@ -3,6 +3,7 @@ import {
   listSupportOrdersByEmail,
   listSupportRecentOrders,
 } from '@/lib/actions/support.actions'
+import { getStaffQaInbox } from '@/lib/actions/qa.actions'
 import { formatDateTime, formatId } from '@/lib/utils'
 import ProductPrice from '@/components/shared/product/product-price'
 import AssistOrderLookup from '@/components/shared/order/assist-order-lookup'
@@ -17,6 +18,7 @@ export default async function SupportHomePage(props: {
 
   let orders: Awaited<ReturnType<typeof listSupportRecentOrders>> = []
   let error: string | null = null
+  const qaInbox = await getStaffQaInbox({ all: false })
 
   try {
     orders = emailQuery
@@ -35,6 +37,13 @@ export default async function SupportHomePage(props: {
           For open note threads, use{' '}
           <Link href='/support/tickets' className='text-primary underline'>
             Tickets
+          </Link>
+          . Answer product Q&amp;A from{' '}
+          <Link href='/support/questions' className='text-primary underline'>
+            Questions
+            {qaInbox.platformCount > 0
+              ? ` (${qaInbox.platformCount} platform open)`
+              : ''}
           </Link>
           . Support cannot change roles or catalog — ask an admin for that.
         </p>
