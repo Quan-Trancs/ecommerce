@@ -3,6 +3,7 @@ import { formatDateTime, formatId } from '@/lib/utils'
 import ProductPrice from '@/components/shared/product/product-price'
 import SellerShipOrderButton from './seller-ship-order-button'
 import Link from 'next/link'
+import { formatShipmentLabel } from '@/lib/shipping/tracking'
 
 export const metadata = { title: 'Seller orders' }
 
@@ -95,6 +96,19 @@ export default async function SellerOrdersPage() {
                     >
                       {item.isShipped ? 'Shipped' : 'Unshipped'}
                     </span>
+                    {item.isShipped
+                      ? (() => {
+                          const label = formatShipmentLabel({
+                            carrier: item.shippingCarrier,
+                            trackingNumber: item.trackingNumber,
+                          })
+                          return label ? (
+                            <span className='ml-2 text-xs text-muted-foreground'>
+                              {label}
+                            </span>
+                          ) : null
+                        })()
+                      : null}
                   </li>
                 ))}
               </ul>

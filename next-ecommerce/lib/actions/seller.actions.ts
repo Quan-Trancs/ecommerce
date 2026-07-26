@@ -164,6 +164,8 @@ export type SellerOrder = {
     size?: string
     isShipped?: boolean
     shippedAt?: string
+    shippingCarrier?: string | null
+    trackingNumber?: string | null
   }[]
 }
 
@@ -221,16 +223,25 @@ export async function getSellerAnalytics(): Promise<SellerAnalytics> {
   }
 }
 
-export async function markSellerOrderShipped(orderId: string) {
+export async function markSellerOrderShipped(input: {
+  orderId: string
+  carrier?: string
+  trackingNumber?: string
+}) {
   try {
     const subject = await requireSellerSubject()
+    const orderId = input.orderId
     const order = await sellerFetch<SellerOrder>(
       `/v1/seller/orders/${encodeURIComponent(orderId)}/status`,
       subject,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'SHIPPED' }),
+        body: JSON.stringify({
+          status: 'SHIPPED',
+          carrier: input.carrier?.trim() || undefined,
+          trackingNumber: input.trackingNumber?.trim() || undefined,
+        }),
       }
     )
     revalidatePath('/seller/orders')

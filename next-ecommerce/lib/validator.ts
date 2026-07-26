@@ -43,6 +43,8 @@ export const OrderItemSchema = z.object({
   size: z.string().optional(),
   id: z.union([z.string(), z.number()]).optional(),
   isShipped: z.boolean().optional(),
+  shippingCarrier: z.string().optional(),
+  trackingNumber: z.string().optional(),
   refundedQuantity: z.number().int().nonnegative().optional(),
 })
 

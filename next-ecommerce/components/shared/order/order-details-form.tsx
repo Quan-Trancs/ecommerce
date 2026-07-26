@@ -23,6 +23,10 @@ import OrderReturnsPanel from './order-returns-panel'
 import OrderNotesThread from './order-notes-thread'
 import type { OrderNote } from '@/lib/actions/order.actions'
 import type { OrderReturnRequest } from '@/lib/actions/return.actions'
+import {
+  formatShipmentLabel,
+  trackingUrl,
+} from '@/lib/shipping/tracking'
 
 export default function OrderDetailsForm({
   order,
@@ -164,7 +168,31 @@ export default function OrderDetailsForm({
                       </Link>
                       {item.isShipped ? (
                         <p className='pl-14 text-xs text-muted-foreground'>
-                          Shipped
+                          {(() => {
+                            const label = formatShipmentLabel({
+                              carrier: item.shippingCarrier,
+                              trackingNumber: item.trackingNumber,
+                            })
+                            const href = trackingUrl(
+                              item.shippingCarrier,
+                              item.trackingNumber
+                            )
+                            if (!label) return 'Shipped'
+                            if (!href) return `Shipped · ${label}`
+                            return (
+                              <>
+                                Shipped ·{' '}
+                                <a
+                                  href={href}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  className='underline hover:text-primary'
+                                >
+                                  {label}
+                                </a>
+                              </>
+                            )
+                          })()}
                         </p>
                       ) : null}
                     </TableCell>

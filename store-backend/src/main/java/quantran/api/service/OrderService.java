@@ -648,7 +648,12 @@ public class OrderService {
      * Does not modify isPaid / payment fields.
      */
     @Transactional
-    public OrderResponseDto markShippedForSeller(String orderId, List<String> sellerProductIds) {
+    public OrderResponseDto markShippedForSeller(
+            String orderId,
+            List<String> sellerProductIds,
+            String carrier,
+            String trackingNumber
+    ) {
         if (sellerProductIds == null || sellerProductIds.isEmpty()) {
             throw new UnauthorizedException("No seller products — cannot ship");
         }
@@ -676,11 +681,20 @@ public class OrderService {
             throw new BusinessLogicException("Order must be paid before shipping");
         }
 
+        String normalizedCarrier = normalizeShipLabel(carrier, 80);
+        String normalizedTracking = normalizeShipLabel(trackingNumber, 120);
+
         LocalDateTime now = LocalDateTime.now();
         for (OrderItemEntity item : sellerLines) {
             if (!Boolean.TRUE.equals(item.getIsShipped())) {
                 item.setIsShipped(true);
                 item.setShippedAt(now);
+                if (normalizedCarrier != null) {
+                    item.setShippingCarrier(normalizedCarrier);
+                }
+                if (normalizedTracking != null) {
+                    item.setTrackingNumber(normalizedTracking);
+                }
             }
         }
 
@@ -692,6 +706,17 @@ public class OrderService {
 
         OrderEntity saved = orderRepository.save(order);
         return toDtoFiltered(saved, owned);
+    }
+
+    private static String normalizeShipLabel(String value, int maxLen) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim().replaceAll("\\s+", " ");
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        return trimmed.length() > maxLen ? trimmed.substring(0, maxLen) : trimmed;
     }
 
     private OrderResponseDto toDtoFiltered(OrderEntity order, Set<String> productIds) {
@@ -751,6 +776,8 @@ public class OrderService {
                             .size(item.getSize())
                             .isShipped(Boolean.TRUE.equals(item.getIsShipped()))
                             .shippedAt(item.getShippedAt())
+                            .shippingCarrier(item.getShippingCarrier())
+                            .trackingNumber(item.getTrackingNumber())
                             .refundedQuantity(item.getRefundedQuantity() == null ? 0 : item.getRefundedQuantity())
                             .build())
                     .collect(Collectors.toList()));

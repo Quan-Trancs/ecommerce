@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.79 — 2026-07-26
+
+Shipment carrier + tracking on seller mark-shipped.
+
+### Backend
+- Flyway `V38__order_item_tracking.sql` — `shipping_carrier`, `tracking_number` on `store_order_items`
+- `PATCH /v1/seller/orders/{id}/status` accepts optional `carrier` + `trackingNumber`
+
+### Frontend
+- Seller ship form collects optional carrier and tracking
+- Buyer/staff order details show tracking with carrier deep-links when known
+- Shipped email lists tracking when present
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.79` |
+| Store API | `store-backend/` | `1.3.79` (`store-api`) |
+
+---
+
 ## v1.3.78 — 2026-07-26
 
 Pinned-only filter on unanswered Q&A inboxes.

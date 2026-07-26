@@ -196,6 +196,8 @@ export type StoreOrderPayload = {
     id?: number
     isShipped?: boolean
     shippedAt?: string
+    shippingCarrier?: string
+    trackingNumber?: string
     refundedQuantity?: number
   }[]
 }

@@ -178,7 +178,10 @@ public class SellerController {
         List<String> productIds = productRepository.findBySellerAccountId(seller.getId()).stream()
                 .map(ProductEntity::getId)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(orderService.markShippedForSeller(id, productIds));
+        String carrier = body == null ? null : body.getCarrier();
+        String trackingNumber = body == null ? null : body.getTrackingNumber();
+        return ResponseEntity.ok(
+                orderService.markShippedForSeller(id, productIds, carrier, trackingNumber));
     }
 
     private AccountEntity requireSeller(HttpServletRequest request) {

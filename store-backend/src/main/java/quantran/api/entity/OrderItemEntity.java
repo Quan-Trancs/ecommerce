@@ -58,6 +58,12 @@ public class OrderItemEntity {
     @Column(name = "shipped_at")
     private LocalDateTime shippedAt;
 
+    @Column(name = "shipping_carrier", length = 80)
+    private String shippingCarrier;
+
+    @Column(name = "tracking_number", length = 120)
+    private String trackingNumber;
+
     /** Units already refunded (restocked) on this line. */
     @Column(name = "refunded_quantity", nullable = false)
     @Builder.Default

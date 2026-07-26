@@ -84,6 +84,14 @@ export default function OrderShippedEmail({ order }: Props) {
                         {item.name} x {item.quantity}
                       </Text>
                     </Link>
+                    {item.isShipped &&
+                    (item.shippingCarrier || item.trackingNumber) ? (
+                      <Text className='mx-2 my-0 text-xs text-gray-500'>
+                        {[item.shippingCarrier, item.trackingNumber]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </Text>
+                    ) : null}
                   </Column>
                   <Column align='right' className='align-top'>
                     <Text className='m-0 '>{formatCurrency(item.price)}</Text>

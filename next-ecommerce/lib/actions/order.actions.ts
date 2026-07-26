@@ -90,6 +90,8 @@ function storeOrderToClient(order: StoreOrder): IOrder {
       size: item.size,
       color: item.color,
       isShipped: Boolean(item.isShipped),
+      shippingCarrier: item.shippingCarrier || undefined,
+      trackingNumber: item.trackingNumber || undefined,
     })),
     shippingAddress: {
       fullName: order.shipping?.fullName || '',
