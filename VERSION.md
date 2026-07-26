@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.76 — 2026-07-26
+
+Filter unanswered Q&A inboxes by aging SLA.
+
+### Frontend
+- `?age=overdue|aging|ontrack` tabs on admin, support, and seller question inboxes
+- Age filter preserved with scope/search; empty list when no matches
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.76` |
+| Store API | `store-backend/` | `1.3.76` (`store-api`) |
+
+---
+
 ## v1.3.75 — 2026-07-26
 
 Aging / SLA badges on unanswered Q&A inboxes.

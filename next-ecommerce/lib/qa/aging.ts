@@ -61,3 +61,25 @@ export function summarizeQaAging(
   }
   return { overdue, aging, onTrack }
 }
+
+export type QaAgeFilter = 'all' | 'overdue' | 'aging' | 'ontrack'
+
+export function parseQaAgeFilter(value?: string | null): QaAgeFilter {
+  const v = (value || '').trim().toLowerCase()
+  if (v === 'overdue' || v === 'aging' || v === 'ontrack') return v
+  return 'all'
+}
+
+export function filterQuestionsByAge<T extends { createdAt: string }>(
+  items: T[],
+  filter: QaAgeFilter,
+  now = Date.now()
+): T[] {
+  if (filter === 'all') return items
+  return items.filter((item) => {
+    const level = getQaAging(item.createdAt, now).level
+    if (filter === 'overdue') return level === 'overdue'
+    if (filter === 'aging') return level === 'warn'
+    return level === 'ok'
+  })
+}
