@@ -4,6 +4,7 @@ import {
   getProductsByCategories,
   getProductsByIds,
 } from '@/lib/actions/product.actions'
+import { getSellerShopsForProducts } from '@/lib/actions/shop.actions'
 
 const isValidProductId = (id: string) => /^[A-Za-z0-9_-]{3,80}$/.test(id)
 
@@ -37,7 +38,7 @@ export const GET = async (req: NextRequest) => {
     }
 
     if (!productIdsParam || !categoriesParam) {
-      return NextResponse.json([])
+      return NextResponse.json({ products: [], shopsBySellerId: {} })
     }
 
     const productIds = productIdsParam.split(',').filter((id) => {
@@ -64,18 +65,19 @@ export const GET = async (req: NextRequest) => {
       )
     }
 
-    if (listType === 'history') {
-      const products = await getProductsByIds(productIds)
-      return NextResponse.json(
-        products.sort(
-          (a, b) =>
-            productIds.indexOf(String(a._id)) - productIds.indexOf(String(b._id))
-        )
-      )
-    }
+    const products =
+      listType === 'history'
+        ? (
+            await getProductsByIds(productIds)
+          ).sort(
+            (a, b) =>
+              productIds.indexOf(String(a._id)) -
+              productIds.indexOf(String(b._id))
+          )
+        : await getProductsByCategories(categories, productIds, 20)
 
-    const related = await getProductsByCategories(categories, productIds, 20)
-    return NextResponse.json(related)
+    const shopsBySellerId = await getSellerShopsForProducts(products)
+    return NextResponse.json({ products, shopsBySellerId })
   } catch (error) {
     console.error('Browsing history API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
