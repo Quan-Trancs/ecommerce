@@ -11,6 +11,7 @@ import {
   type AdminInboxQuestion,
 } from '@/lib/actions/qa.actions'
 import { formatDateTime } from '@/lib/utils'
+import QaAgingBadge from '@/components/shared/product/qa-aging-badge'
 
 export default function StaffQuestionsInboxClient({
   questions,
@@ -55,6 +56,7 @@ export default function StaffQuestionsInboxClient({
                     ? 'Platform listing'
                     : `Seller · ${question.sellerLabel}`}
                 </span>
+                <QaAgingBadge createdAt={question.createdAt} />
               </div>
               <p className='mt-2 text-sm font-medium text-chrome'>
                 Q: {question.body}

@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.75 — 2026-07-26
+
+Aging / SLA badges on unanswered Q&A inboxes.
+
+### Frontend
+- On track (&lt;24h), Aging (24–72h), Overdue (72h+) badges on staff + seller inboxes
+- Header counts for overdue/aging in the current list
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.75` |
+| Store API | `store-backend/` | `1.3.75` (`store-api`) |
+
+---
+
 ## v1.3.74 — 2026-07-26
 
 Seller email digests for unanswered product Q&A.

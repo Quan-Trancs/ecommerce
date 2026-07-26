@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getStaffQaInbox } from '@/lib/actions/qa.actions'
 import QaInboxSearchForm from '@/components/shared/product/qa-inbox-search-form'
 import AdminQuestionsInboxClient from './admin-questions-inbox-client'
+import { summarizeQaAging } from '@/lib/qa/aging'
 
 export const metadata = { title: 'Product questions' }
 
@@ -13,6 +14,7 @@ export default async function AdminQuestionsPage({
   const { scope, q } = await searchParams
   const showAll = scope === 'all'
   const inbox = await getStaffQaInbox({ all: showAll, q })
+  const aging = summarizeQaAging(inbox.questions.map((q) => q.createdAt))
   const scopeQuery = showAll ? 'scope=all' : ''
   const qQuery = inbox.query
     ? `q=${encodeURIComponent(inbox.query)}`
@@ -40,6 +42,9 @@ export default async function AdminQuestionsPage({
               ? ` · showing ${inbox.questions.length} match${
                   inbox.questions.length === 1 ? '' : 'es'
                 } for “${inbox.query}”`
+              : ''}
+            {inbox.questions.length > 0
+              ? ` · ${aging.overdue} overdue · ${aging.aging} aging`
               : ''}
             .
           </p>

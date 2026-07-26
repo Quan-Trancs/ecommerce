@@ -1,6 +1,7 @@
 import { getSellerQaInbox } from '@/lib/actions/qa.actions'
 import QaInboxSearchForm from '@/components/shared/product/qa-inbox-search-form'
 import SellerQuestionsInboxClient from './seller-questions-inbox-client'
+import { summarizeQaAging } from '@/lib/qa/aging'
 
 export const metadata = { title: 'Product questions' }
 
@@ -11,6 +12,7 @@ export default async function SellerQuestionsPage({
 }) {
   const { q } = await searchParams
   const inbox = await getSellerQaInbox({ q })
+  const aging = summarizeQaAging(inbox.questions.map((q) => q.createdAt))
 
   return (
     <div className='space-y-6'>
@@ -27,6 +29,9 @@ export default async function SellerQuestionsPage({
                   inbox.questions.length === 1 ? '' : 'es'
                 } for “${inbox.query}”`
               : ' (oldest first)'}
+            {inbox.questions.length > 0
+              ? ` · ${aging.overdue} overdue · ${aging.aging} aging`
+              : ''}
             .
           </p>
         </div>

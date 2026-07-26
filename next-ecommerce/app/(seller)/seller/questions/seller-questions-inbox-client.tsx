@@ -11,6 +11,7 @@ import {
   type SellerInboxQuestion,
 } from '@/lib/actions/qa.actions'
 import { formatDateTime } from '@/lib/utils'
+import QaAgingBadge from '@/components/shared/product/qa-aging-badge'
 
 export default function SellerQuestionsInboxClient({
   questions,
@@ -36,12 +37,15 @@ export default function SellerQuestionsInboxClient({
         <li key={question.id} className='space-y-3 rounded-lg border p-4'>
           <div className='flex flex-wrap items-start justify-between gap-2'>
             <div>
-              <Link
-                href={`/product/${question.productSlug}`}
-                className='font-semibold text-primary hover:underline'
-              >
-                {question.productName}
-              </Link>
+              <div className='flex flex-wrap items-center gap-2'>
+                <Link
+                  href={`/product/${question.productSlug}`}
+                  className='font-semibold text-primary hover:underline'
+                >
+                  {question.productName}
+                </Link>
+                <QaAgingBadge createdAt={question.createdAt} />
+              </div>
               <p className='mt-2 text-sm font-medium text-chrome'>
                 Q: {question.body}
               </p>
