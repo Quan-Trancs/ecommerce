@@ -24,8 +24,10 @@ import { auth } from '@/auth'
 import { getWishlistStatus, getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
 import { getStockAlertStatus } from '@/lib/actions/stock-alert.actions'
 import { getSellerShopSummary, shopHref } from '@/lib/actions/shop.actions'
+import { getShopFollowStatus } from '@/lib/actions/shop-follow.actions'
 import { getProductSellerAccountId } from '@/lib/db/product-qa'
 import ShopPoliciesSnippet from '@/components/shared/product/shop-policies-snippet'
+import ShopFollowButton from '@/components/shared/product/shop-follow-button'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -68,10 +70,19 @@ export default async function ProductDetails(props: {
   const sellerAccountId =
     product.sellerAccountId ||
     (await getProductSellerAccountId(product._id))
-  const sellerShop = await getSellerShopSummary(sellerAccountId)
-  const relatedWishlist = await getWishlistStatusesForProducts(
-    (relatedProducts.data || []).map((p) => p._id)
-  )
+  const [sellerShop, followStatus, relatedWishlist] = await Promise.all([
+    getSellerShopSummary(sellerAccountId),
+    sellerAccountId
+      ? getShopFollowStatus(sellerAccountId)
+      : Promise.resolve({
+          signedIn: false,
+          following: false,
+          isOwnShop: false,
+        }),
+    getWishlistStatusesForProducts(
+      (relatedProducts.data || []).map((p) => p._id)
+    ),
+  ])
 
   const avgRating = reviewsPanel.numReviews
     ? reviewsPanel.avgRating
@@ -213,6 +224,15 @@ export default async function ProductDetails(props: {
                 price: product.price,
               }}
             />
+            {sellerShop ? (
+              <ShopFollowButton
+                sellerAccountId={sellerShop.accountId}
+                initialFollowing={followStatus.following}
+                signedIn={followStatus.signedIn}
+                isOwnShop={followStatus.isOwnShop}
+                className='w-full'
+              />
+            ) : null}
           </div>
         </aside>
       </section>

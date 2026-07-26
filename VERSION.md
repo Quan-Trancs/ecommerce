@@ -1,5 +1,21 @@
 # Version History
 
+## v1.3.93 — 2026-07-26
+
+Follow shop from the product detail page buy box.
+
+### Frontend
+- Reuses `ShopFollowButton` + `getShopFollowStatus` when the listing has a seller shop
+- Sign-in redirect preserves the product URL
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.93` |
+| Store API | `store-backend/` | `1.3.93` (`store-api`) |
+
+---
+
 ## v1.3.92 — 2026-07-26
 
 Product detail page shows a compact seller shop policies snippet.

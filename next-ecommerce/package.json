@@ -1,6 +1,6 @@
 {
   "name": "next-ecommerce",
-  "version": "1.3.92",
+  "version": "1.3.93",
   "private": true,
   "scripts": {
     "email": "email dev",
