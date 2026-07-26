@@ -13,6 +13,7 @@ import { notifyOrderShipped } from '@/lib/email/order-notifications'
 import { checkAndNotifyLowStock } from '@/lib/notify/low-stock'
 import { checkAndNotifyBackInStock } from '@/lib/notify/back-in-stock'
 import { checkAndNotifyPriceDrops } from '@/lib/notify/price-drop'
+import { notifyShopFollowersOfNewListing } from '@/lib/notify/shop-new-listing'
 
 const DEFAULT_API_URL = 'http://localhost:8082/api'
 
@@ -108,6 +109,16 @@ export async function createSellerProduct(input: SellerProductInput) {
     })
     revalidatePath('/seller/products')
     revalidatePath('/search')
+    if (product.isPublished !== false && product.sellerAccountId) {
+      await notifyShopFollowersOfNewListing({
+        sellerAccountId: product.sellerAccountId,
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        price: Number(product.price) || null,
+      })
+      revalidatePath(`/shop/${product.sellerAccountId}`)
+    }
     return { success: true as const, product }
   } catch (error) {
     return { success: false as const, message: formatError(error) }
@@ -143,6 +154,15 @@ export async function updateSellerProduct(
     }
     if (patch.price !== undefined) {
       await checkAndNotifyPriceDrops([product.id])
+    }
+    if (patch.isPublished === true && product.sellerAccountId) {
+      await notifyShopFollowersOfNewListing({
+        sellerAccountId: product.sellerAccountId,
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        price: Number(product.price) || null,
+      })
     }
     return { success: true as const, product }
   } catch (error) {

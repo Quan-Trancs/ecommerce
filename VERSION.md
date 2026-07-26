@@ -1,5 +1,26 @@
 # Version History
 
+## v1.3.86 — 2026-07-26
+
+Follow seller shops and get new-listing alerts.
+
+### Backend
+- Flyway `V43__shop_follows.sql` — `shop_follows` + `notify_shop_follows`
+- Notify followers when a seller creates or publishes a listing
+
+### Frontend
+- Follow / Following on `/shop/{slug}`
+- `/account/following` list; account setting to opt out of alerts
+- Email + in-app `SHOP_NEW_LISTING`
+
+### Packages
+| Package | Path | Version |
+|---------|------|---------|
+| Storefront | `next-ecommerce/` | `1.3.86` |
+| Store API | `store-backend/` | `1.3.86` (`store-api`) |
+
+---
+
 ## v1.3.85 — 2026-07-26
 
 Search, sort, and in-stock filter on public seller shops.

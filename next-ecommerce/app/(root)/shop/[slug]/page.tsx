@@ -2,8 +2,11 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import ProductCard from '@/components/shared/product/product-card'
 import ShopCatalogControls from '@/components/shared/product/shop-catalog-controls'
+import ShopFollowButton from '@/components/shared/product/shop-follow-button'
 import { getPublicSellerShop, shopHref } from '@/lib/actions/shop.actions'
+import { getShopFollowStatus } from '@/lib/actions/shop-follow.actions'
 import { getWishlistStatusesForProducts } from '@/lib/actions/wishlist.actions'
+import { countShopFollowers } from '@/lib/db/shop-follows'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -44,9 +47,11 @@ export default async function PublicSellerShopPage(props: {
   }
 
   const basePath = shopHref(shop)
-  const wishlist = await getWishlistStatusesForProducts(
-    products.map((p) => p._id)
-  )
+  const [wishlist, followStatus, followerCount] = await Promise.all([
+    getWishlistStatusesForProducts(products.map((p) => p._id)),
+    getShopFollowStatus(shop.accountId),
+    countShopFollowers(shop.accountId),
+  ])
   const wishlisted = new Set(wishlist.wishlistedIds)
   const filteredEmpty = products.length === 0 && shop.productCount > 0
 
@@ -72,6 +77,9 @@ export default async function PublicSellerShopPage(props: {
             <p className='mt-2 text-sm text-muted-foreground'>
               {shop.productCount} published product
               {shop.productCount === 1 ? '' : 's'}
+              {followerCount > 0
+                ? ` · ${followerCount} follower${followerCount === 1 ? '' : 's'}`
+                : ''}
               {query
                 ? ` · ${products.length} match${
                     products.length === 1 ? '' : 'es'
@@ -84,12 +92,20 @@ export default async function PublicSellerShopPage(props: {
               <span className='font-mono text-xs'>/shop/{shop.shopSlug}</span>
             </p>
           </div>
-          <Link
-            href='/search'
-            className='text-sm text-muted-foreground underline hover:text-primary'
-          >
-            Browse all products
-          </Link>
+          <div className='flex flex-wrap items-center gap-3'>
+            <ShopFollowButton
+              sellerAccountId={shop.accountId}
+              initialFollowing={followStatus.following}
+              signedIn={followStatus.signedIn}
+              isOwnShop={followStatus.isOwnShop}
+            />
+            <Link
+              href='/search'
+              className='text-sm text-muted-foreground underline hover:text-primary'
+            >
+              Browse all products
+            </Link>
+          </div>
         </div>
         {shop.productCount > 0 ? (
           <ShopCatalogControls

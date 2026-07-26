@@ -44,6 +44,8 @@ export type DbUser = {
   notifyReviewRequests: boolean
   /** Opt-out (default true): email + in-app when wishlisted prices drop. */
   notifyPriceDrops: boolean
+  /** Opt-out (default true): email + in-app when followed shops list new products. */
+  notifyShopFollows: boolean
   image: string | null
   active: boolean
   createdAt: Date
@@ -74,6 +76,7 @@ type AccountRow = {
   notify_back_in_stock: boolean
   notify_review_requests: boolean
   notify_price_drops: boolean
+  notify_shop_follows: boolean
   image: string | null
   active: boolean
   created_at: Date
@@ -122,6 +125,7 @@ function mapRow(row: AccountRow): DbUser {
     notifyBackInStock: row.notify_back_in_stock !== false,
     notifyReviewRequests: row.notify_review_requests !== false,
     notifyPriceDrops: row.notify_price_drops !== false,
+    notifyShopFollows: row.notify_shop_follows !== false,
     image: row.image,
     active: Boolean(row.active),
     createdAt: row.created_at,
@@ -148,6 +152,7 @@ const SELECT_COLS = `
   COALESCE(notify_back_in_stock, TRUE) AS notify_back_in_stock,
   COALESCE(notify_review_requests, TRUE) AS notify_review_requests,
   COALESCE(notify_price_drops, TRUE) AS notify_price_drops,
+  COALESCE(notify_shop_follows, TRUE) AS notify_shop_follows,
   image, active, created_at, updated_at
 `
 
@@ -483,6 +488,22 @@ export async function updatePriceDropPreferences(
          updated_at = NOW()
      WHERE id = $1`,
     [id, Boolean(prefs.notifyPriceDrops)]
+  )
+  return findUserById(id)
+}
+
+export async function updateShopFollowPreferences(
+  id: string,
+  prefs: { notifyShopFollows: boolean }
+): Promise<DbUser | null> {
+  const existing = await findUserById(id)
+  if (!existing) return null
+  await query(
+    `UPDATE accounts
+     SET notify_shop_follows = $2,
+         updated_at = NOW()
+     WHERE id = $1`,
+    [id, Boolean(prefs.notifyShopFollows)]
   )
   return findUserById(id)
 }

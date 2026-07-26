@@ -21,6 +21,11 @@ export default async function AccountPage() {
       description: 'Products you saved for later',
     },
     {
+      href: '/account/following',
+      title: 'Following',
+      description: 'Seller shops you follow for new listings',
+    },
+    {
       href: '/account/addresses',
       title: 'Addresses',
       description: 'Saved shipping addresses for checkout',

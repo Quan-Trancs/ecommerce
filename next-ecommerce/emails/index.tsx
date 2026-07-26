@@ -12,6 +12,7 @@ import AbandonedCartEmail from './abandoned-cart'
 import BackInStockEmail from './back-in-stock'
 import ReviewRequestEmail from './review-request'
 import PriceDropEmail from './price-drop'
+import ShopNewListingEmail from './shop-new-listing'
 import ProductQaAnswerEmail from './product-qa-answer'
 import ProductQaAskedEmail from './product-qa-asked'
 import ProductQaDigestEmail from './product-qa-digest'
@@ -315,6 +316,47 @@ export const sendPriceDropEmail = async (input: {
         imageUrl={input.imageUrl}
         oldPrice={input.oldPrice}
         newPrice={input.newPrice}
+      />
+    ),
+  })
+  return { sent: true as const }
+}
+
+export const sendShopNewListingEmail = async (input: {
+  to: string
+  displayName?: string | null
+  shopName: string
+  shopSlug: string
+  shopHref: string
+  productName: string
+  productSlug: string
+  imageUrl?: string | null
+  price?: number | null
+}) => {
+  const resend = getResend()
+  const to = input.to.trim()
+  if (!resend || !to) {
+    console.warn(
+      'Skipping shop new-listing email:',
+      !resend ? 'RESEND_API_KEY missing' : 'buyer email missing'
+    )
+    return { sent: false as const }
+  }
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
+    to,
+    subject: `New from ${input.shopName}: ${input.productName}`,
+    react: (
+      <ShopNewListingEmail
+        displayName={input.displayName}
+        shopName={input.shopName}
+        shopSlug={input.shopSlug}
+        shopHref={input.shopHref}
+        productName={input.productName}
+        productSlug={input.productSlug}
+        imageUrl={input.imageUrl}
+        price={input.price}
       />
     ),
   })
